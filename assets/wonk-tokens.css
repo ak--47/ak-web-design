@@ -26,6 +26,7 @@
   /* labels are mono, uppercase, tracked. titles may go wide. */
   --ak-track-label: 0.2rem;
   --ak-track-title: 0.3rem;
+  --ak-track-btn: 0.08rem; /* buttons stay mono/uppercase but read as words */
 
   /* ---- geometry ---- */
   --ak-radius: 4px;
