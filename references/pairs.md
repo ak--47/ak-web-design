@@ -13,8 +13,8 @@ This file explains the roles and how to choose.
 
 | Pair | Source | Feel | Reach for it when |
 |---|---|---|---|
-| `electric` (default) | the aktunes.com glyph, `ak.js` | neon lab, night stage | tools, terminals, anything "live" |
-| `metathesis` | METATHESIS cover (brick + turquoise) | swiss poster, loud & disciplined | opinionated apps, editorial tools |
+| `metathesis` (default) | METATHESIS cover (brick + turquoise) | swiss poster, loud & disciplined | the default: tools, dashboards, most apps |
+| `glorpla` | a JAM-folder mouth-sound; electric violet + hot orchid, Mixpanel-adjacent purple | the loud purple, synth-lab | anything that should feel plugged in and slightly unhinged |
 | `demogorgon` | DEMOGORGON cover (two blues) | deep water, orchestral | calm dashboards, reading surfaces |
 | `ancient` | ANCIENT cover (orange-red + celadon) | ink splatter, warm museum | archives, docs, long-form |
 | `flourish` | FLOURISH cover (acid + ultramarine) | painted, loudest of the five | playgrounds, demos, party mode |

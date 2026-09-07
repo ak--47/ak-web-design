@@ -4,10 +4,10 @@
    Dark-first. Paper is the light mode. One poster pair per app.
 
    Usage:
-     <html data-pair="electric">              -> dark (default)
-     <html data-pair="electric" data-theme="paper">  -> paper
+     <html data-pair="metathesis">              -> dark (default)
+     <html data-pair="metathesis" data-theme="paper">  -> paper
 
-   Pairs: electric · metathesis · demogorgon · ancient · flourish
+   Pairs: metathesis (default) · glorpla · demogorgon · ancient · flourish
    ============================================================ */
 
 :root {
@@ -104,39 +104,8 @@
    ground; see references/charts.md before changing any value.
    ============================================================ */
 
-/* ---- ELECTRIC (default) · cyan + dusty purple · from ak.js ---- */
+/* ---- METATHESIS (default) · turquoise + brick ---- */
 :root,
-[data-pair="electric"] {
-  --ak-a1: #00eeff;
-  --ak-a1-ink: #0f1214;
-  --ak-a1-text: #00eeff;
-  --ak-a2: #5d5179;
-  --ak-a2-text: #a79bd0;
-  --ak-wash: rgba(0, 238, 255, 0.08);
-  --ak-ok: #a2faa3;
-  --ak-warn: #f0b64b;
-  --ak-err: #ff5d5d;
-  --ak-info: #00eeff;
-  --ak-chart-1: #00a4b8; --ak-chart-2: #9a5fd6; --ak-chart-3: #3f9e5a;
-  --ak-chart-4: #b8479e; --ak-chart-5: #6f7de8; --ak-chart-6: #d84f53;
-}
-[data-theme="paper"],
-[data-theme="paper"][data-pair="electric"] {
-  --ak-a1: #008b99;
-  --ak-a1-ink: #ffffff;
-  --ak-a1-text: #00707b;
-  --ak-a2: #5d5179;
-  --ak-a2-text: #554a70;
-  --ak-wash: rgba(0, 139, 153, 0.1);
-  --ak-ok: #2e7d43;
-  --ak-warn: #a66a0e;
-  --ak-err: #c22f2f;
-  --ak-info: #00707b;
-  --ak-chart-1: #008ba0; --ak-chart-2: #7440ad; --ak-chart-3: #2e7d43;
-  --ak-chart-4: #963a80; --ak-chart-5: #4453c4; --ak-chart-6: #b83236;
-}
-
-/* ---- METATHESIS · turquoise + brick ---- */
 [data-pair="metathesis"] {
   --ak-a1: #3fc9c9;
   --ak-a1-ink: #0f1214;
@@ -151,6 +120,7 @@
   --ak-chart-1: #12a5a5; --ak-chart-2: #d84f53; --ak-chart-3: #6f7de8;
   --ak-chart-4: #3f9e5a; --ak-chart-5: #b8479e; --ak-chart-6: #9a9a10;
 }
+[data-theme="paper"],
 [data-theme="paper"][data-pair="metathesis"] {
   --ak-a1: #148787;
   --ak-a1-ink: #ffffff;
@@ -164,6 +134,36 @@
   --ak-info: #0f6f6f;
   --ak-chart-1: #009090; --ak-chart-2: #b83236; --ak-chart-3: #4453c4;
   --ak-chart-4: #2e7d43; --ak-chart-5: #963a80; --ak-chart-6: #6b6b0c;
+}
+
+/* ---- GLORPLA · electric violet + hot orchid · the loud purple ---- */
+[data-pair="glorpla"] {
+  --ak-a1: #7856ff;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #9575ff;
+  --ak-a2: #c93ee8;
+  --ak-a2-text: #e07bf0;
+  --ak-wash: rgba(120, 86, 255, 0.12);
+  --ak-ok: #a2faa3;
+  --ak-warn: #f0b64b;
+  --ak-err: #ff5d5d;
+  --ak-info: #9575ff;
+  --ak-chart-1: #9a5fd6; --ak-chart-2: #3f9e5a; --ak-chart-3: #b8479e;
+  --ak-chart-4: #6f7de8; --ak-chart-5: #d84f53; --ak-chart-6: #12a5a5;
+}
+[data-theme="paper"][data-pair="glorpla"] {
+  --ak-a1: #6a3ddb;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #5527c9;
+  --ak-a2: #a827c9;
+  --ak-a2-text: #8f1fae;
+  --ak-wash: rgba(106, 61, 219, 0.1);
+  --ak-ok: #2e7d43;
+  --ak-warn: #a66a0e;
+  --ak-err: #c22f2f;
+  --ak-info: #5527c9;
+  --ak-chart-1: #7440ad; --ak-chart-2: #2e7d43; --ak-chart-3: #963a80;
+  --ak-chart-4: #4453c4; --ak-chart-5: #b83236; --ak-chart-6: #009090;
 }
 
 /* ---- DEMOGORGON · two blues ---- */

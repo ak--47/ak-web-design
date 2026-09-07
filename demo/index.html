@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en" class="wonk" data-pair="electric">
+<html lang="en" class="wonk" data-pair="metathesis">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WONK · the aesthetic of maximalism</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%2300eeff'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%233fc9c9'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -57,7 +57,7 @@
 
   <div>
     <header class="wonk-topbar">
-      <span class="wonk-label" id="pair-name" data-wonk-secret="music is endlessly divisible">pair: electric</span>
+      <span class="wonk-label" id="pair-name" data-wonk-secret="music is endlessly divisible">pair: metathesis</span>
       <div class="demo-row">
         <div class="pair-picker" id="pair-picker" title="pick a pair"></div>
         <button class="wonk-btn" id="theme-toggle">Paper</button>
@@ -379,7 +379,7 @@
           </div>
           <dl class="wonk-kv">
             <dt>version</dt><dd>v2.4.1 · GRAVITY IS A MYTH</dd>
-            <dt>pair</dt><dd id="kv-pair">electric</dd>
+            <dt>pair</dt><dd id="kv-pair">metathesis</dd>
             <dt>region</dt><dd>us-central1</dd>
             <dt>uptime</dt><dd class="wonk-num">26d 04h 12m</dd>
             <dt>maintainer</dt><dd>ak · knock, knock...</dd>
@@ -433,7 +433,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const PAIRS = ["electric", "metathesis", "demogorgon", "ancient", "flourish"];
+  const PAIRS = ["metathesis", "glorpla", "demogorgon", "ancient", "flourish"];
 
   // ---- pair picker ----
   const picker = document.getElementById("pair-picker");
@@ -451,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
     b.className = "pair-chip";
     b.title = p;
     b.style.background = chipColor(p);
-    b.setAttribute("aria-pressed", p === "electric");
+    b.setAttribute("aria-pressed", p === "metathesis");
     b.addEventListener("click", () => {
       wonk.setPair(p);
       nameEl.textContent = "pair: " + p;

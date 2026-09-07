@@ -41,7 +41,7 @@ Wiring instructions per stack: [adapters.md](references/adapters.md).
    never ship a light mode that is plain white.
 2. **One poster pair per app**, set once at the root
    (`<html data-pair="metathesis" class="wonk">`). Five pairs exist:
-   electric (default), metathesis, demogorgon, ancient, flourish. Choosing and
+   metathesis (default), glorpla, demogorgon, ancient, flourish. Choosing and
    tuning: [pairs.md](references/pairs.md). Never mix pairs in one app; never
    use a raw accent as text when a `-text` variant exists.
 3. **Type:** Space Grotesk (400/500/700) for UI, JetBrains Mono (400/700) for

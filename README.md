@@ -6,8 +6,8 @@ loads in every session, changes picked up live.
 
 **WONK**: dark-first (`#0f1214`), paper light mode (`#ece4d4`), Space Grotesk +
 JetBrains Mono, 1px hairlines, 4px radius, square-wave dividers, five poster
-pairs from the album art (electric / metathesis / demogorgon / ancient /
-flourish), irregular jitter on live states, validated chart palettes, and a
+pairs (metathesis by default / glorpla / demogorgon / ancient / flourish),
+irregular jitter on live states, validated chart palettes, and a
 mandatory easter egg.
 
 - `SKILL.md` — the rules + four modes (reskin / build / audit / demo)
