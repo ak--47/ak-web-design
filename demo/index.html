@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../assets/wonk-tokens.css">
 <link rel="stylesheet" href="../assets/wonk.css">
 <script defer src="../assets/wonk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js"></script>
 <style>
   /* demo-page-only layout */
@@ -354,11 +355,19 @@ document.addEventListener("DOMContentLoaded", () => {
       ["chart-1", "--ak-chart-1"], ["chart-2", "--ak-chart-2"], ["chart-3", "--ak-chart-3"],
       ["chart-4", "--ak-chart-4"], ["chart-5", "--ak-chart-5"], ["chart-6", "--ak-chart-6"],
     ];
+    const inkFor = (hex) => {
+      // relative luminance -> dark ink on light fills, white on dark fills
+      const m = hex.match(/^#([0-9a-f]{6})$/i);
+      if (!m) return "#fff";
+      const [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255);
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      return lum > 0.45 ? "#0f1214" : "#ffffff";
+    };
     document.getElementById("swatch-grid").innerHTML = rows
       .map(([name, token]) => {
         const val = v(token);
         return `<div class="demo-swatch" style="background:${val}">
-          <span class="wonk-label" style="color:#fff; mix-blend-mode:difference">${name} · ${val}</span>
+          <span class="wonk-label" style="color:${inkFor(val)}">${name} · ${val}</span>
         </div>`;
       })
       .join("");

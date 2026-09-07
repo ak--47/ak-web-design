@@ -4,11 +4,15 @@ Charts are first-class in WONK. Default library: **Observable Plot**
 (`@observablehq/plot`). For streams above ~100k points, use **uPlot** with the
 same tokens. Never Recharts, never Chart.js defaults, never a stock theme.
 
-Load Plot (UMD, defines global `Plot`):
+Load Plot (UMD, defines global `Plot`; it needs the `d3` global first):
 
 ```html
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js"></script>
 ```
+
+In a bundled app (Vite etc.), `import * as Plot from "@observablehq/plot"`
+instead — no d3 global needed.
 
 ## The rules (from the dataviz method, instantiated for WONK)
 

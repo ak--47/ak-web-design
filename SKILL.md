@@ -46,8 +46,9 @@ Wiring instructions per stack: [adapters.md](references/adapters.md).
    use a raw accent as text when a `-text` variant exists.
 3. **Type:** Space Grotesk (400/500/700) for UI, JetBrains Mono (400/700) for
    data, code, numbers, and labels. Headings are mixed-case grotesk with tight
-   tracking. Uppercase + 0.2rem tracking is reserved for labels
-   (`.wonk-label`) and mono microcopy; uppercase + 0.5rem for page titles
+   tracking. Navigation and tabs are mixed-case grotesk too — mono uppercase
+   there reads as noise. Uppercase + 0.2rem tracking is reserved for labels
+   (`.wonk-label`) and mono microcopy; uppercase + 0.3rem for page titles
    (`.wonk-title`) only. Numbers always mono, tabular.
 4. **Geometry:** 4px radius, full circles for avatars/status dots, 1px
    hairline borders everywhere, connective vertical hairlines between stacked

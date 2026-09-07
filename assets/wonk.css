@@ -236,10 +236,10 @@
 /* ---- tabs ---- */
 .wonk-tabs { display: flex; gap: var(--ak-s2); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); }
 .wonk-tab {
-  font-family: var(--ak-font-mono);
-  font-size: var(--ak-text-xs);
-  letter-spacing: var(--ak-track-label);
-  text-transform: uppercase;
+  font-family: var(--ak-font-sans);
+  font-size: var(--ak-text-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--ak-ink-3);
   background: none;
   border: none;
@@ -353,10 +353,10 @@
   margin-bottom: var(--ak-s6);
 }
 .wonk-navlink {
-  font-family: var(--ak-font-mono);
-  font-size: var(--ak-text-xs);
-  letter-spacing: var(--ak-track-label);
-  text-transform: uppercase;
+  font-family: var(--ak-font-sans);
+  font-size: var(--ak-text-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--ak-ink-3);
   padding: var(--ak-s2) var(--ak-s3);
   border-radius: var(--ak-radius);

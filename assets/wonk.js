@@ -42,11 +42,12 @@
   // Apply to any element with [data-wonk-glyph].
   const GLYPHS = ["∿", "⌁", "♪", "⚙", "λ", "⌥", "∫", "⧉", "♭", "№", "⚡", "✄"];
   function glyph(el) {
-    const css = getComputedStyle(document.documentElement);
-    const colors = ["--ak-a1-text", "--ak-a2-text", "--ak-ok", "--ak-warn", "--ak-info"]
-      .map((v) => css.getPropertyValue(v).trim())
-      .filter(Boolean);
     const swap = () => {
+      // read tokens live: pair/theme can change under us
+      const css = getComputedStyle(document.documentElement);
+      const colors = ["--ak-a1-text", "--ak-a2-text", "--ak-ok", "--ak-warn", "--ak-info"]
+        .map((v) => css.getPropertyValue(v).trim())
+        .filter(Boolean);
       el.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
       if (colors.length) el.style.color = colors[Math.floor(Math.random() * colors.length)];
       // subtle morph: tiny scale/rotate wobble, springs back
