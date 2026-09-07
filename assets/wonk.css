@@ -373,6 +373,19 @@
 }
 .wonk-tip:hover::after { opacity: 1; transform: translateX(-50%); }
 
+/* ---- chart tooltips (Observable Plot's tip mark) ----
+   Plot draws a white box with currentColor text; both are wrong on our
+   grounds. Invert it to match .wonk-tip: ink box, ground text. */
+.wonk g[aria-label="tip"] path {
+  fill: var(--ak-ink);
+  stroke: var(--ak-hairline-strong);
+  stroke-width: 1;
+}
+.wonk g[aria-label="tip"] text,
+.wonk g[aria-label="tip"] tspan {
+  fill: var(--ak-ground);
+}
+
 /* ---- code block ---- */
 .wonk-pre {
   font-family: var(--ak-font-mono);

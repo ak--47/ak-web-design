@@ -39,6 +39,9 @@ instead — no d3 global needed.
    adjacent fills; grid recessive (use `--ak-hairline` at most).
 8. **Legend always present for >= 2 series; direct-label up to 4 series.
    Ship a hover tooltip by default** (Plot's `tip: true` on the main mark).
+   `wonk.css` already restyles Plot's tip to the WONK tooltip (inverted:
+   ink box, ground text) via `g[aria-label="tip"]` — do not restyle it per
+   chart, and keep that selector working when upgrading Plot.
    Offer a table view for anything a screen reader must read.
 9. **Render and look.** The validator checks color, not layout. Screenshot the
    chart; check label collisions and overflow before calling it done.
