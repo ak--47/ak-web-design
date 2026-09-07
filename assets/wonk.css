@@ -1,0 +1,431 @@
+/* ============================================================
+   WONK components · requires wonk-tokens.css
+   Class prefix: .wonk-
+   Fonts: load Space Grotesk (400,500,700) + JetBrains Mono (400,700)
+   ============================================================ */
+
+/* ---- base ---- */
+.wonk,
+.wonk body {
+  background: var(--ak-ground);
+  color: var(--ak-ink);
+  font-family: var(--ak-font-sans);
+  font-size: var(--ak-text-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wonk *, .wonk *::before, .wonk *::after { box-sizing: border-box; }
+
+.wonk :focus-visible {
+  outline: 2px solid var(--ak-a1-text);
+  outline-offset: 2px;
+  border-radius: var(--ak-radius);
+}
+.wonk ::selection { background: var(--ak-wash); color: var(--ak-ink); }
+
+/* ---- typography ---- */
+/* headings: mixed-case grotesk. uppercase-wide is reserved for
+   page titles (.wonk-title) and labels (.wonk-label). */
+.wonk h1, .wonk h2, .wonk h3, .wonk h4 {
+  font-family: var(--ak-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 var(--ak-s3);
+}
+.wonk h1 { font-size: var(--ak-text-3xl); }
+.wonk h2 { font-size: var(--ak-text-2xl); }
+.wonk h3 { font-size: var(--ak-text-xl); }
+.wonk h4 { font-size: var(--ak-text-lg); }
+.wonk p  { margin: 0 0 var(--ak-s4); color: var(--ak-ink-2); }
+.wonk a  { color: var(--ak-a1-text); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color var(--ak-t-fast) var(--ak-ease); }
+.wonk a:hover { border-bottom-color: var(--ak-a1-text); }
+.wonk small { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
+
+.wonk-title {
+  font-family: var(--ak-font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--ak-track-title);
+  font-size: var(--ak-text-2xl);
+}
+.wonk-label {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--ak-track-label);
+  color: var(--ak-ink-3);
+}
+.wonk-num {
+  font-family: var(--ak-font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.wonk code, .wonk-mono { font-family: var(--ak-font-mono); font-size: 0.9em; }
+.wonk kbd {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-bottom-width: 2px;
+  border-radius: var(--ak-radius);
+  padding: 0.1rem 0.4rem;
+  background: var(--ak-surface);
+}
+
+/* ---- square-wave divider (the WONK divider) ---- */
+.wonk-divider {
+  height: 24px;
+  border: none;
+  margin: var(--ak-s8) 0;
+  background-color: var(--ak-hairline-strong);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='24'%3E%3Cpath d='M0,18 H20 V6 H44 V18 H76 V6 H88 V18 H132 V6 H164 V18 H192' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") repeat-x center / 192px 24px;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='24'%3E%3Cpath d='M0,18 H20 V6 H44 V18 H76 V6 H88 V18 H132 V6 H164 V18 H192' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") repeat-x center / 192px 24px;
+}
+.wonk-divider--accent { background-color: var(--ak-a1-text); }
+
+/* plain hairline when the wave is too loud */
+.wonk-rule { border: none; border-top: var(--ak-hairline-w) solid var(--ak-hairline); margin: var(--ak-s6) 0; }
+
+/* ---- buttons ---- */
+.wonk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ak-s2);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  letter-spacing: var(--ak-track-label);
+  text-transform: uppercase;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--ak-radius);
+  border: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+  background: transparent;
+  color: var(--ak-ink);
+  cursor: pointer;
+  transition: background var(--ak-t-fast) var(--ak-ease),
+              border-color var(--ak-t-fast) var(--ak-ease),
+              transform var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-btn:hover { background: var(--ak-hover); }
+.wonk-btn:active { background: var(--ak-active); transform: translateY(1px); }
+
+.wonk-btn--primary {
+  background: var(--ak-a1);
+  border-color: var(--ak-a1);
+  color: var(--ak-a1-ink);
+  font-weight: 700;
+}
+.wonk-btn--primary:hover { background: var(--ak-a1); filter: brightness(1.1); }
+.wonk-btn--danger { border-color: var(--ak-err); color: var(--ak-err); }
+.wonk-btn--danger:hover { background: color-mix(in srgb, var(--ak-err) 12%, transparent); }
+.wonk-btn--quiet { border-color: transparent; color: var(--ak-ink-2); }
+.wonk-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- forms ---- */
+.wonk-field { display: flex; flex-direction: column; gap: var(--ak-s2); margin-bottom: var(--ak-s4); }
+.wonk-input, .wonk-select, .wonk-textarea {
+  font-family: var(--ak-font-sans);
+  font-size: var(--ak-text-md);
+  color: var(--ak-ink);
+  background: var(--ak-surface);
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  padding: 0.55rem 0.75rem;
+  transition: border-color var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-input:hover, .wonk-select:hover, .wonk-textarea:hover { border-color: var(--ak-hairline-strong); }
+.wonk-input:focus, .wonk-select:focus, .wonk-textarea:focus {
+  outline: none;
+  border-color: var(--ak-a1-text);
+}
+.wonk-input::placeholder, .wonk-textarea::placeholder { color: var(--ak-ink-3); }
+.wonk-input--error { border-color: var(--ak-err); }
+.wonk-help { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
+.wonk-help--error { color: var(--ak-err); }
+
+/* toggle */
+.wonk-toggle { position: relative; display: inline-block; width: 42px; height: 24px; }
+.wonk-toggle input { opacity: 0; width: 0; height: 0; }
+.wonk-toggle .track {
+  position: absolute; inset: 0;
+  border: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-surface);
+  transition: background var(--ak-t-med) var(--ak-ease);
+  cursor: pointer;
+}
+.wonk-toggle .track::before {
+  content: "";
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-ink-2);
+  transition: transform var(--ak-t-med) var(--ak-ease), background var(--ak-t-med) var(--ak-ease);
+}
+.wonk-toggle input:checked + .track { background: var(--ak-wash); border-color: var(--ak-a1); }
+.wonk-toggle input:checked + .track::before { transform: translateX(18px); background: var(--ak-a1); }
+
+/* ---- cards & stats ---- */
+.wonk-card {
+  background: var(--ak-surface);
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  padding: var(--ak-s6);
+}
+.wonk-card--flat { background: transparent; }
+.wonk-card--accent { border-top: 3px solid var(--ak-a1); }
+
+.wonk-stat { display: flex; flex-direction: column; gap: var(--ak-s1); }
+.wonk-stat .wonk-num { font-size: var(--ak-text-2xl); line-height: 1.1; }
+.wonk-stat .delta-up { color: var(--ak-ok); }
+.wonk-stat .delta-down { color: var(--ak-err); }
+
+/* connective vertical hairline between stacked blocks (aktunes idiom) */
+.wonk-stack > * + * { position: relative; margin-top: var(--ak-s12); }
+.wonk-stack > * + *::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--ak-s12));
+  left: 50%;
+  width: var(--ak-hairline-w);
+  height: var(--ak-s12);
+  background: var(--ak-hairline);
+}
+
+/* ---- badges ---- */
+.wonk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ak-s1);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  letter-spacing: 0.15rem;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--ak-radius);
+  border: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+  color: var(--ak-ink-2);
+}
+.wonk-badge--ok   { border-color: var(--ak-ok);   color: var(--ak-ok); }
+.wonk-badge--warn { border-color: var(--ak-warn); color: var(--ak-warn); }
+.wonk-badge--err  { border-color: var(--ak-err);  color: var(--ak-err); }
+.wonk-badge--info { border-color: var(--ak-info); color: var(--ak-info); }
+.wonk-badge--accent { border-color: var(--ak-a1-text); color: var(--ak-a1-text); }
+
+/* ---- table ---- */
+.wonk-table { width: 100%; border-collapse: collapse; font-size: var(--ak-text-sm); }
+.wonk-table th {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  font-weight: 400;
+  letter-spacing: var(--ak-track-label);
+  text-transform: uppercase;
+  color: var(--ak-ink-3);
+  text-align: left;
+  padding: var(--ak-s2) var(--ak-s3);
+  border-bottom: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+}
+.wonk-table td {
+  padding: var(--ak-s3);
+  border-bottom: var(--ak-hairline-w) solid var(--ak-hairline);
+  color: var(--ak-ink-2);
+}
+.wonk-table tr:hover td { background: var(--ak-hover); }
+.wonk-table td.num, .wonk-table th.num { text-align: right; font-family: var(--ak-font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---- tabs ---- */
+.wonk-tabs { display: flex; gap: var(--ak-s2); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); }
+.wonk-tab {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  letter-spacing: var(--ak-track-label);
+  text-transform: uppercase;
+  color: var(--ak-ink-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--ak-s2) var(--ak-s3);
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color var(--ak-t-fast) var(--ak-ease), border-color var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-tab:hover { color: var(--ak-ink); }
+.wonk-tab[aria-selected="true"] { color: var(--ak-a1-text); border-bottom-color: var(--ak-a1); }
+
+/* ---- modal ---- */
+.wonk-modal[open] {
+  background: var(--ak-surface);
+  color: var(--ak-ink);
+  border: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+  border-radius: var(--ak-radius);
+  padding: var(--ak-s8);
+  max-width: min(90vw, 32rem);
+  box-shadow: var(--ak-shadow);
+  animation: wonk-pop var(--ak-t-med) var(--ak-ease);
+}
+.wonk-modal::backdrop { background: var(--ak-overlay); }
+@keyframes wonk-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- toast ---- */
+.wonk-toasts {
+  position: fixed;
+  bottom: var(--ak-s6);
+  right: var(--ak-s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-s2);
+  z-index: 100;
+}
+.wonk-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-s3);
+  background: var(--ak-surface);
+  border: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+  border-left: 3px solid var(--ak-a1);
+  border-radius: var(--ak-radius);
+  padding: var(--ak-s3) var(--ak-s4);
+  font-size: var(--ak-text-sm);
+  box-shadow: var(--ak-shadow);
+  animation: wonk-slide-in var(--ak-t-med) var(--ak-ease);
+}
+.wonk-toast--ok   { border-left-color: var(--ak-ok); }
+.wonk-toast--warn { border-left-color: var(--ak-warn); }
+.wonk-toast--err  { border-left-color: var(--ak-err); }
+@keyframes wonk-slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- tooltip (CSS-only, data-tip) ---- */
+.wonk-tip { position: relative; }
+.wonk-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--ak-ink);
+  color: var(--ak-ground);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  letter-spacing: 0.05rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--ak-radius);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ak-t-fast) var(--ak-ease), transform var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-tip:hover::after { opacity: 1; transform: translateX(-50%); }
+
+/* ---- code block ---- */
+.wonk-pre {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-sm);
+  background: var(--ak-surface);
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  padding: var(--ak-s4);
+  overflow-x: auto;
+  color: var(--ak-ink-2);
+}
+.wonk-pre .tok-key { color: var(--ak-a1-text); }
+.wonk-pre .tok-str { color: var(--ak-ok); }
+.wonk-pre .tok-com { color: var(--ak-ink-3); font-style: italic; }
+
+/* ---- app shell ---- */
+.wonk-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.wonk-side {
+  border-right: var(--ak-hairline-w) solid var(--ak-hairline);
+  padding: var(--ak-s6) var(--ak-s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-s2);
+}
+.wonk-side .brand {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--ak-track-title);
+  margin-bottom: var(--ak-s6);
+}
+.wonk-navlink {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  letter-spacing: var(--ak-track-label);
+  text-transform: uppercase;
+  color: var(--ak-ink-3);
+  padding: var(--ak-s2) var(--ak-s3);
+  border-radius: var(--ak-radius);
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  transition: color var(--ak-t-fast) var(--ak-ease), background var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-navlink:hover { color: var(--ak-ink); background: var(--ak-hover); }
+.wonk-navlink.active { color: var(--ak-a1-text); border-left-color: var(--ak-a1); background: var(--ak-wash); }
+.wonk-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ak-s4);
+  padding: var(--ak-s3) var(--ak-s6);
+  border-bottom: var(--ak-hairline-w) solid var(--ak-hairline);
+}
+
+/* ---- live / loading ---- */
+.wonk-dot {
+  width: 10px; height: 10px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-a1);
+  display: inline-block;
+}
+.wonk-dot--idle { background: var(--ak-ink-3); }
+/* .wonk-dot--live gets irregular jitter from wonk.js; CSS fallback: */
+.wonk-dot--live { animation: wonk-blink 1.2s steps(2, start) infinite; }
+@keyframes wonk-blink { 50% { opacity: 0.15; } }
+
+/* spectrum loader: give it 12 empty spans */
+.wonk-spectrum { display: inline-flex; align-items: flex-end; gap: 3px; height: 28px; }
+.wonk-spectrum span {
+  width: 4px;
+  background: var(--ak-a1);
+  animation: wonk-spectrum 0.9s var(--ak-ease) infinite;
+}
+.wonk-spectrum span:nth-child(3n)  { animation-delay: -0.5s; background: var(--ak-a2-text); }
+.wonk-spectrum span:nth-child(4n)  { animation-delay: -0.7s; }
+.wonk-spectrum span:nth-child(5n)  { animation-delay: -0.2s; }
+.wonk-spectrum span:nth-child(2n+1){ animation-delay: -0.35s; }
+@keyframes wonk-spectrum {
+  0%, 100% { height: 20%; }
+  30% { height: 95%; }
+  60% { height: 45%; }
+}
+
+.wonk-skeleton {
+  border-radius: var(--ak-radius);
+  background: linear-gradient(90deg, var(--ak-hover) 25%, var(--ak-active) 50%, var(--ak-hover) 75%);
+  background-size: 200% 100%;
+  animation: wonk-shimmer 1.4s linear infinite;
+  min-height: 1em;
+}
+@keyframes wonk-shimmer { to { background-position: -200% 0; } }
+
+/* ---- empty state ---- */
+.wonk-empty {
+  text-align: center;
+  padding: var(--ak-s12) var(--ak-s6);
+  color: var(--ak-ink-3);
+}
+.wonk-empty .glyph { font-size: 2.5rem; color: var(--ak-a2-text); margin-bottom: var(--ak-s3); }
+
+/* ---- reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .wonk *, .wonk *::before, .wonk *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

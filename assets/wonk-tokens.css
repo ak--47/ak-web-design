@@ -1,0 +1,256 @@
+/* ============================================================
+   WONK design tokens · the aesthetic of maximalism
+   Source of truth for the AK design system.
+   Dark-first. Paper is the light mode. One poster pair per app.
+
+   Usage:
+     <html data-pair="electric">              -> dark (default)
+     <html data-pair="electric" data-theme="paper">  -> paper
+
+   Pairs: electric · metathesis · demogorgon · ancient · flourish
+   ============================================================ */
+
+:root {
+  /* ---- type ---- */
+  --ak-font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --ak-font-mono: "JetBrains Mono", ui-monospace, "Courier New", monospace;
+
+  --ak-text-xs: 0.7rem;
+  --ak-text-sm: 0.8rem;
+  --ak-text-md: 1rem;
+  --ak-text-lg: 1.25rem;
+  --ak-text-xl: 1.6rem;
+  --ak-text-2xl: 2.1rem;
+  --ak-text-3xl: 2.75rem;
+
+  /* labels are mono, uppercase, tracked. titles may go wide. */
+  --ak-track-label: 0.2rem;
+  --ak-track-title: 0.5rem;
+
+  /* ---- geometry ---- */
+  --ak-radius: 4px;
+  --ak-radius-full: 999px;
+  --ak-hairline-w: 1px;
+
+  /* ---- space (0.25rem base) ---- */
+  --ak-s1: 0.25rem;
+  --ak-s2: 0.5rem;
+  --ak-s3: 0.75rem;
+  --ak-s4: 1rem;
+  --ak-s6: 1.5rem;
+  --ak-s8: 2rem;
+  --ak-s12: 3rem;
+  --ak-s16: 4rem;
+
+  /* content column, from the aktunes article panel */
+  --ak-column: 40rem;
+
+  /* ---- motion ---- */
+  /* springy but purposeful; the jitter lives in wonk.js, not here */
+  --ak-ease: cubic-bezier(0.2, 0.9, 0.25, 1.05);
+  --ak-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ak-t-fast: 150ms;
+  --ak-t-med: 250ms;
+  --ak-t-slow: 400ms;
+
+  /* ---- dark theme (default) ---- */
+  color-scheme: dark;
+  --ak-ground: #0f1214;
+  --ak-surface: #16191c;
+  --ak-surface-2: #1c2024;
+  --ak-overlay: rgba(15, 18, 20, 0.88);
+  --ak-ink: #ffffff;
+  --ak-ink-2: rgba(255, 255, 255, 0.72);
+  --ak-ink-3: rgba(255, 255, 255, 0.5);
+  --ak-hairline: rgba(255, 255, 255, 0.22);
+  --ak-hairline-strong: rgba(255, 255, 255, 0.45);
+  --ak-hover: rgba(255, 255, 255, 0.075);
+  --ak-active: rgba(255, 255, 255, 0.175);
+  --ak-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="paper"] {
+  /* paper: the printed record. bone ground, ink text. */
+  color-scheme: light;
+  --ak-ground: #ece4d4;
+  --ak-surface: #f2ecdf;
+  --ak-surface-2: #f7f3e9;
+  --ak-overlay: rgba(236, 228, 212, 0.92);
+  --ak-ink: #1b1f22;
+  --ak-ink-2: rgba(27, 31, 34, 0.75);
+  --ak-ink-3: rgba(27, 31, 34, 0.55);
+  --ak-hairline: rgba(27, 31, 34, 0.28);
+  --ak-hairline-strong: rgba(27, 31, 34, 0.5);
+  --ak-hover: rgba(27, 31, 34, 0.06);
+  --ak-active: rgba(27, 31, 34, 0.12);
+  --ak-shadow: 0 8px 32px rgba(27, 31, 34, 0.18);
+}
+
+/* ============================================================
+   POSTER PAIRS
+   Each pair sets:
+     --ak-a1        primary accent (fills: buttons, active states)
+     --ak-a1-ink    text color placed ON an a1 fill
+     --ak-a1-text   a1 adjusted so it is legible AS text on the ground
+     --ak-a2        secondary accent (fills, large shapes)
+     --ak-a2-text   a2 adjusted for text/border use on the ground
+     --ak-wash      a1 at low alpha, for selected/hover surfaces
+     --ak-ok / --ak-warn / --ak-err / --ak-info   pair-tuned semantics
+     --ak-chart-1..6   categorical chart series, FIXED order, never cycled
+   Rule: -text variants must pass 4.5:1 on the ground. err is always
+   the hottest color on screen. warn is always amber-family.
+   Chart series are machine-validated (CVD + contrast) against each
+   ground; see references/charts.md before changing any value.
+   ============================================================ */
+
+/* ---- ELECTRIC (default) · cyan + dusty purple · from ak.js ---- */
+:root,
+[data-pair="electric"] {
+  --ak-a1: #00eeff;
+  --ak-a1-ink: #0f1214;
+  --ak-a1-text: #00eeff;
+  --ak-a2: #5d5179;
+  --ak-a2-text: #a79bd0;
+  --ak-wash: rgba(0, 238, 255, 0.08);
+  --ak-ok: #a2faa3;
+  --ak-warn: #f0b64b;
+  --ak-err: #ff5d5d;
+  --ak-info: #00eeff;
+  --ak-chart-1: #00a4b8; --ak-chart-2: #9a5fd6; --ak-chart-3: #3f9e5a;
+  --ak-chart-4: #b8479e; --ak-chart-5: #6f7de8; --ak-chart-6: #d84f53;
+}
+[data-theme="paper"],
+[data-theme="paper"][data-pair="electric"] {
+  --ak-a1: #008b99;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #00707b;
+  --ak-a2: #5d5179;
+  --ak-a2-text: #554a70;
+  --ak-wash: rgba(0, 139, 153, 0.1);
+  --ak-ok: #2e7d43;
+  --ak-warn: #a66a0e;
+  --ak-err: #c22f2f;
+  --ak-info: #00707b;
+  --ak-chart-1: #008ba0; --ak-chart-2: #7440ad; --ak-chart-3: #2e7d43;
+  --ak-chart-4: #963a80; --ak-chart-5: #4453c4; --ak-chart-6: #b83236;
+}
+
+/* ---- METATHESIS · turquoise + brick ---- */
+[data-pair="metathesis"] {
+  --ak-a1: #3fc9c9;
+  --ak-a1-ink: #0f1214;
+  --ak-a1-text: #52d6d6;
+  --ak-a2: #b83236;
+  --ak-a2-text: #e06467;
+  --ak-wash: rgba(63, 201, 201, 0.08);
+  --ak-ok: #8fd6a4;
+  --ak-warn: #e8a24b;
+  --ak-err: #e06467;
+  --ak-info: #52d6d6;
+  --ak-chart-1: #12a5a5; --ak-chart-2: #d84f53; --ak-chart-3: #6f7de8;
+  --ak-chart-4: #3f9e5a; --ak-chart-5: #b8479e; --ak-chart-6: #9a9a10;
+}
+[data-theme="paper"][data-pair="metathesis"] {
+  --ak-a1: #148787;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #0f6f6f;
+  --ak-a2: #b83236;
+  --ak-a2-text: #a02b2f;
+  --ak-wash: rgba(20, 135, 135, 0.1);
+  --ak-ok: #2e7d43;
+  --ak-warn: #a66a0e;
+  --ak-err: #a02b2f;
+  --ak-info: #0f6f6f;
+  --ak-chart-1: #009090; --ak-chart-2: #b83236; --ak-chart-3: #4453c4;
+  --ak-chart-4: #2e7d43; --ak-chart-5: #963a80; --ak-chart-6: #6b6b0c;
+}
+
+/* ---- DEMOGORGON · two blues ---- */
+[data-pair="demogorgon"] {
+  --ak-a1: #5b8de6;
+  --ak-a1-ink: #0f1214;
+  --ak-a1-text: #7da4ee;
+  --ak-a2: #1e2f78; /* fill only on dark; never text */
+  --ak-a2-text: #8b9cf0;
+  --ak-wash: rgba(91, 141, 230, 0.1);
+  --ak-ok: #8fd6a4;
+  --ak-warn: #e8a24b;
+  --ak-err: #ff6b6b;
+  --ak-info: #7da4ee;
+  --ak-chart-1: #4a7fd6; --ak-chart-2: #d84f53; --ak-chart-3: #12a5a5;
+  --ak-chart-4: #9a5fd6; --ak-chart-5: #3f9e5a; --ak-chart-6: #b8479e;
+}
+[data-theme="paper"][data-pair="demogorgon"] {
+  --ak-a1: #2f5cb0;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #29509c;
+  --ak-a2: #1e2f78;
+  --ak-a2-text: #1e2f78;
+  --ak-wash: rgba(47, 92, 176, 0.1);
+  --ak-ok: #2e7d43;
+  --ak-warn: #a66a0e;
+  --ak-err: #c22f2f;
+  --ak-info: #29509c;
+  --ak-chart-1: #2f5cb0; --ak-chart-2: #b83236; --ak-chart-3: #009090;
+  --ak-chart-4: #7440ad; --ak-chart-5: #2e7d43; --ak-chart-6: #963a80;
+}
+
+/* ---- ANCIENT · orange-red + celadon ---- */
+[data-pair="ancient"] {
+  --ak-a1: #f2582e;
+  --ak-a1-ink: #0f1214;
+  --ak-a1-text: #f97a52;
+  --ak-a2: #e8e9c8;
+  --ak-a2-text: #dfe0b8;
+  --ak-wash: rgba(242, 88, 46, 0.1);
+  --ak-ok: #b5d99a;
+  --ak-warn: #e8b04b;
+  --ak-err: #f97a52;
+  --ak-info: #dfe0b8;
+  --ak-chart-1: #e05a2e; --ak-chart-2: #12a5a5; --ak-chart-3: #9a5fd6;
+  --ak-chart-4: #9a9a10; --ak-chart-5: #6f7de8; --ak-chart-6: #b8479e;
+}
+[data-theme="paper"][data-pair="ancient"] {
+  --ak-a1: #cf3a12;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #b03210;
+  --ak-a2: #8a8c60;
+  --ak-a2-text: #63653f;
+  --ak-wash: rgba(207, 58, 18, 0.08);
+  --ak-ok: #55702d;
+  --ak-warn: #a66a0e;
+  --ak-err: #b03210;
+  --ak-info: #63653f;
+  --ak-chart-1: #b5461c; --ak-chart-2: #009090; --ak-chart-3: #7440ad;
+  --ak-chart-4: #6b6b0c; --ak-chart-5: #4453c4; --ak-chart-6: #963a80;
+}
+
+/* ---- FLOURISH · acid yellow-green + ultramarine ---- */
+[data-pair="flourish"] {
+  --ak-a1: #d4d418;
+  --ak-a1-ink: #0f1214;
+  --ak-a1-text: #e0e03a;
+  --ak-a2: #4c5fe2;
+  --ak-a2-text: #8b98f2;
+  --ak-wash: rgba(212, 212, 24, 0.08);
+  --ak-ok: #9fd44c;
+  --ak-warn: #e8a24b;
+  --ak-err: #ff6b6b;
+  --ak-info: #8b98f2;
+  --ak-chart-1: #9a9a10; --ak-chart-2: #6f7de8; --ak-chart-3: #d84f53;
+  --ak-chart-4: #12a5a5; --ak-chart-5: #9a5fd6; --ak-chart-6: #3f9e5a;
+}
+[data-theme="paper"][data-pair="flourish"] {
+  --ak-a1: #7d7d0e;
+  --ak-a1-ink: #ffffff;
+  --ak-a1-text: #62620b;
+  --ak-a2: #3949c9;
+  --ak-a2-text: #2c3ab5;
+  --ak-wash: rgba(125, 125, 14, 0.1);
+  --ak-ok: #55702d;
+  --ak-warn: #a66a0e;
+  --ak-err: #c22f2f;
+  --ak-info: #2c3ab5;
+  --ak-chart-1: #6b6b0c; --ak-chart-2: #4453c4; --ak-chart-3: #b83236;
+  --ak-chart-4: #009090; --ak-chart-5: #7440ad; --ak-chart-6: #2e7d43;
+}

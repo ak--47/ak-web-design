@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="electric">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WONK · the aesthetic of maximalism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/wonk-tokens.css">
+<link rel="stylesheet" href="../assets/wonk.css">
+<script defer src="../assets/wonk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js"></script>
+<style>
+  /* demo-page-only layout */
+  body { margin: 0; }
+  .demo-main { padding: var(--ak-s8); max-width: 72rem; }
+  .demo-section { margin-bottom: var(--ak-s12); scroll-margin-top: var(--ak-s6); }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--ak-s4); }
+  .demo-row { display: flex; flex-wrap: wrap; gap: var(--ak-s3); align-items: center; }
+  .demo-swatch { height: 56px; border-radius: var(--ak-radius); border: 1px solid var(--ak-hairline); display: flex; align-items: flex-end; padding: var(--ak-s1) var(--ak-s2); }
+  .demo-swatch .wonk-label { color: inherit; opacity: .9; }
+  .pair-picker { display: flex; gap: var(--ak-s1); flex-wrap: wrap; }
+  .pair-chip {
+    width: 22px; height: 22px; border-radius: var(--ak-radius-full);
+    border: 2px solid transparent; cursor: pointer; padding: 0;
+  }
+  .pair-chip[aria-pressed="true"] { border-color: var(--ak-ink); }
+  .type-scale div { margin-bottom: var(--ak-s2); }
+  @media (max-width: 800px) { .wonk-shell { grid-template-columns: 1fr; } .wonk-side { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="wonk-shell">
+  <aside class="wonk-side">
+    <div class="brand"><span data-wonk-glyph>∿</span> WONK</div>
+    <a class="wonk-navlink active" href="#type">Type</a>
+    <a class="wonk-navlink" href="#color">Color</a>
+    <a class="wonk-navlink" href="#buttons">Buttons</a>
+    <a class="wonk-navlink" href="#forms">Forms</a>
+    <a class="wonk-navlink" href="#badges">Badges</a>
+    <a class="wonk-navlink" href="#cards">Cards</a>
+    <a class="wonk-navlink" href="#table">Table</a>
+    <a class="wonk-navlink" href="#tabs">Tabs</a>
+    <a class="wonk-navlink" href="#overlays">Overlays</a>
+    <a class="wonk-navlink" href="#code">Code</a>
+    <a class="wonk-navlink" href="#charts">Charts</a>
+    <a class="wonk-navlink" href="#live">Live</a>
+    <a class="wonk-navlink" href="#empty">Empty</a>
+  </aside>
+
+  <div>
+    <header class="wonk-topbar">
+      <span class="wonk-label" id="pair-name" data-wonk-secret="music is endlessly divisible">pair: electric</span>
+      <div class="demo-row">
+        <div class="pair-picker" id="pair-picker" title="pick a pair"></div>
+        <button class="wonk-btn" id="theme-toggle">Paper</button>
+      </div>
+    </header>
+
+    <main class="demo-main">
+
+      <section class="demo-section">
+        <div class="wonk-label">the ak design system</div>
+        <h1 class="wonk-title" style="font-size:var(--ak-text-3xl)">WONK</h1>
+        <p style="max-width:44ch">Minimal structure. Maximal color and texture, in defined slots.
+        Music is endlessly divisible; so is a UI. This page is the whole system on one scroll.</p>
+        <hr class="wonk-divider wonk-divider--accent">
+      </section>
+
+      <section class="demo-section" id="type">
+        <div class="wonk-label">01 · type</div>
+        <h2>Gravity is a myth</h2>
+        <div class="type-scale">
+          <h1>Heading one — Space Grotesk 700</h1>
+          <h2>Heading two, mixed case, tight</h2>
+          <h3>Heading three carries most screens</h3>
+          <h4>Heading four for card titles</h4>
+          <p>Body text is Space Grotesk 400. It stays quiet so the color can be loud.
+             Links look like <a href="#type">this link</a>. Numbers are always mono:
+             <span class="wonk-num">1,204,881</span>. Keyboard: <kbd>⌘</kbd> <kbd>K</kbd>.</p>
+          <div class="wonk-label">labels are jetbrains mono · uppercase · tracked</div>
+          <div class="wonk-title" style="font-size:var(--ak-text-xl); margin-top:var(--ak-s3)">Titles go wide</div>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="color">
+        <div class="wonk-label">02 · color — one poster pair per app</div>
+        <h3>Accents, semantics, chart series</h3>
+        <div class="demo-grid" id="swatch-grid"></div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="buttons">
+        <div class="wonk-label">03 · buttons</div>
+        <h3>Knock, knock...</h3>
+        <div class="demo-row">
+          <button class="wonk-btn wonk-btn--primary">Deploy</button>
+          <button class="wonk-btn">Inspect</button>
+          <button class="wonk-btn wonk-btn--danger">Destroy</button>
+          <button class="wonk-btn wonk-btn--quiet">Nevermind</button>
+          <button class="wonk-btn" disabled>Disabled</button>
+          <button class="wonk-btn wonk-tip" data-tip="oh... interesting">Hover me</button>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="forms">
+        <div class="wonk-label">04 · forms</div>
+        <h3>Tell me things</h3>
+        <div class="demo-grid">
+          <div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="f1">name</label>
+              <input class="wonk-input" id="f1" placeholder="ak">
+            </div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="f2">thoughts</label>
+              <textarea class="wonk-textarea" id="f2" rows="3" placeholder="not 'message'. thoughts."></textarea>
+            </div>
+          </div>
+          <div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="f3">genre</label>
+              <select class="wonk-select" id="f3">
+                <option>glitch-hop</option><option>neuro</option><option>west coast bass</option>
+              </select>
+            </div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="f4">endpoint (error state)</label>
+              <input class="wonk-input wonk-input--error" id="f4" value="htp:/oops">
+              <span class="wonk-help wonk-help--error">that is not a url and you know it</span>
+            </div>
+            <div class="wonk-field">
+              <span class="wonk-label">performance mode</span>
+              <label class="wonk-toggle"><input type="checkbox" checked><span class="track"></span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="badges">
+        <div class="wonk-label">05 · badges</div>
+        <h3>States wear their own colors</h3>
+        <div class="demo-row">
+          <span class="wonk-badge">default</span>
+          <span class="wonk-badge wonk-badge--accent">v2.4.1</span>
+          <span class="wonk-badge wonk-badge--ok">✓ healthy</span>
+          <span class="wonk-badge wonk-badge--warn">△ degraded</span>
+          <span class="wonk-badge wonk-badge--err">✕ down</span>
+          <span class="wonk-badge wonk-badge--info">i streaming</span>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="cards">
+        <div class="wonk-label">06 · cards & stats</div>
+        <h3>Numbers get the mono treatment</h3>
+        <div class="demo-grid">
+          <div class="wonk-card wonk-card--accent">
+            <div class="wonk-stat">
+              <span class="wonk-label">events / sec</span>
+              <span class="wonk-num">48,112</span>
+              <small class="delta-up">▲ 12% vs yesterday</small>
+            </div>
+          </div>
+          <div class="wonk-card">
+            <div class="wonk-stat">
+              <span class="wonk-label">p99 latency</span>
+              <span class="wonk-num">212ms</span>
+              <small class="delta-down">▼ needs a look</small>
+            </div>
+          </div>
+          <div class="wonk-card">
+            <h4>Pipeline healthy</h4>
+            <p>All 14 services report green. Last incident 26 days ago.</p>
+            <button class="wonk-btn">Inspect</button>
+          </div>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="table">
+        <div class="wonk-label">07 · table</div>
+        <h3>Dense data, quiet chrome</h3>
+        <table class="wonk-table">
+          <thead><tr><th>service</th><th>status</th><th class="num">req/s</th><th class="num">p95</th><th class="num">errors</th></tr></thead>
+          <tbody>
+            <tr><td>ingest-api</td><td><span class="wonk-badge wonk-badge--ok">✓ ok</span></td><td class="num">18,204</td><td class="num">84ms</td><td class="num">0.01%</td></tr>
+            <tr><td>identity-merge</td><td><span class="wonk-badge wonk-badge--ok">✓ ok</span></td><td class="num">9,551</td><td class="num">122ms</td><td class="num">0.00%</td></tr>
+            <tr><td>export-worker</td><td><span class="wonk-badge wonk-badge--warn">△ slow</span></td><td class="num">2,140</td><td class="num">890ms</td><td class="num">0.40%</td></tr>
+            <tr><td>webhook-fanout</td><td><span class="wonk-badge wonk-badge--err">✕ down</span></td><td class="num">0</td><td class="num">—</td><td class="num">100%</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="tabs">
+        <div class="wonk-label">08 · tabs</div>
+        <div class="wonk-tabs">
+          <button class="wonk-tab" aria-selected="true" data-panel="#panel-a">Overview</button>
+          <button class="wonk-tab" aria-selected="false" data-panel="#panel-b">Logs</button>
+          <button class="wonk-tab" aria-selected="false" data-panel="#panel-c">Config</button>
+        </div>
+        <div id="panel-a" style="padding:var(--ak-s4) 0"><p>The overview panel. Calm by default.</p></div>
+        <div id="panel-b" hidden style="padding:var(--ak-s4) 0"><p>Logs go here. They scroll, you don't.</p></div>
+        <div id="panel-c" hidden style="padding:var(--ak-s4) 0"><p>Config. Touch carefully.</p></div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="overlays">
+        <div class="wonk-label">09 · modal · toast · tooltip</div>
+        <div class="demo-row">
+          <button class="wonk-btn" id="open-modal">Open modal</button>
+          <button class="wonk-btn" onclick="wonk.toast('Deployed to prod', 'ok')">Toast ok</button>
+          <button class="wonk-btn" onclick="wonk.toast('Queue is backing up', 'warn')">Toast warn</button>
+          <button class="wonk-btn" onclick="wonk.toast('webhook-fanout is down', 'err')">Toast err</button>
+          <span class="wonk-tip" data-tip="tooltips are mono + inverted" style="border-bottom:1px dashed var(--ak-hairline-strong); cursor:help">tooltip on this text</span>
+        </div>
+        <dialog class="wonk-modal" id="demo-modal">
+          <div class="wonk-label">confirm</div>
+          <h3>Destroy the staging cluster?</h3>
+          <p>This cannot be undone. It never can.</p>
+          <div class="demo-row">
+            <button class="wonk-btn wonk-btn--danger" onclick="document.getElementById('demo-modal').close(); wonk.toast('gone.', 'err')">Destroy</button>
+            <button class="wonk-btn wonk-btn--quiet" onclick="document.getElementById('demo-modal').close()">Nevermind</button>
+          </div>
+        </dialog>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="code">
+        <div class="wonk-label">10 · code</div>
+        <pre class="wonk-pre"><code><span class="tok-com">// wire an app to WONK</span>
+&lt;html <span class="tok-key">data-pair</span>=<span class="tok-str">"metathesis"</span> <span class="tok-key">class</span>=<span class="tok-str">"wonk"</span>&gt;
+<span class="tok-key">wonk.toast</span>(<span class="tok-str">"you're getting wonkier..."</span>, <span class="tok-str">"info"</span>)</code></pre>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="charts">
+        <div class="wonk-label">11 · charts — observable plot, validated series</div>
+        <h3>Never stock</h3>
+        <div class="demo-grid" style="grid-template-columns: 1fr">
+          <div class="wonk-card">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">events by service · last 48h</div>
+            <div id="chart-line"></div>
+          </div>
+          <div class="wonk-card">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">errors by service · today</div>
+            <div id="chart-bar"></div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="live">
+        <div class="wonk-label">12 · live & loading — the jitter lives here only</div>
+        <div class="demo-row" style="gap:var(--ak-s8)">
+          <span class="demo-row"><span class="wonk-dot wonk-dot--live" data-wonk-live></span><span class="wonk-label" style="color:var(--ak-ink-2)">live · ingest</span></span>
+          <span class="demo-row"><span class="wonk-dot wonk-dot--idle"></span><span class="wonk-label">idle · batch</span></span>
+          <span class="wonk-spectrum" aria-label="loading"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+          <div style="flex:1; min-width:180px"><div class="wonk-skeleton" style="height:14px; margin-bottom:8px"></div><div class="wonk-skeleton" style="height:14px; width:70%"></div></div>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section" id="empty">
+        <div class="wonk-label">13 · empty state</div>
+        <div class="wonk-card wonk-card--flat wonk-empty">
+          <div class="glyph" data-wonk-glyph>∿</div>
+          <h4>Nothing here yet.</h4>
+          <p>That's ok with me. Wire up a source and the waveforms start.</p>
+          <button class="wonk-btn wonk-btn--primary">Knock, knock...</button>
+        </div>
+      </section>
+
+      <footer style="text-align:center; padding:var(--ak-s8) 0">
+        <span class="wonk-label">wonk · aktunes · collaboration is how projects get finished</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const PAIRS = ["electric", "metathesis", "demogorgon", "ancient", "flourish"];
+
+  // ---- pair picker ----
+  const picker = document.getElementById("pair-picker");
+  const nameEl = document.getElementById("pair-name");
+  function chipColor(pair) {
+    const probe = document.createElement("div");
+    probe.setAttribute("data-pair", pair);
+    document.body.appendChild(probe);
+    const c = getComputedStyle(probe).getPropertyValue("--ak-a1").trim();
+    probe.remove();
+    return c;
+  }
+  PAIRS.forEach((p) => {
+    const b = document.createElement("button");
+    b.className = "pair-chip";
+    b.title = p;
+    b.style.background = chipColor(p);
+    b.setAttribute("aria-pressed", p === "electric");
+    b.addEventListener("click", () => {
+      wonk.setPair(p);
+      nameEl.textContent = "pair: " + p;
+      [...picker.children].forEach((c) => c.setAttribute("aria-pressed", c === b));
+      [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
+      renderSwatches();
+      renderCharts();
+    });
+    picker.appendChild(b);
+  });
+
+  // ---- theme toggle ----
+  const toggle = document.getElementById("theme-toggle");
+  toggle.addEventListener("click", () => {
+    const paper = document.documentElement.getAttribute("data-theme") === "paper";
+    wonk.setTheme(paper ? "dark" : "paper");
+    toggle.textContent = paper ? "Paper" : "Dark";
+    [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
+    renderSwatches();
+    renderCharts();
+  });
+
+  // ---- modal ----
+  document.getElementById("open-modal").addEventListener("click", () =>
+    document.getElementById("demo-modal").showModal()
+  );
+
+  // ---- swatches ----
+  function renderSwatches() {
+    const css = getComputedStyle(document.documentElement);
+    const v = (n) => css.getPropertyValue(n).trim();
+    const rows = [
+      ["a1", "--ak-a1"], ["a1-text", "--ak-a1-text"], ["a2", "--ak-a2"], ["a2-text", "--ak-a2-text"],
+      ["ok", "--ak-ok"], ["warn", "--ak-warn"], ["err", "--ak-err"], ["info", "--ak-info"],
+      ["chart-1", "--ak-chart-1"], ["chart-2", "--ak-chart-2"], ["chart-3", "--ak-chart-3"],
+      ["chart-4", "--ak-chart-4"], ["chart-5", "--ak-chart-5"], ["chart-6", "--ak-chart-6"],
+    ];
+    document.getElementById("swatch-grid").innerHTML = rows
+      .map(([name, token]) => {
+        const val = v(token);
+        return `<div class="demo-swatch" style="background:${val}">
+          <span class="wonk-label" style="color:#fff; mix-blend-mode:difference">${name} · ${val}</span>
+        </div>`;
+      })
+      .join("");
+  }
+  renderSwatches();
+
+  // ---- charts (see references/charts.md) ----
+  const SERVICES = ["ingest", "export", "identity"];
+  const lineData = [];
+  for (let h = 0; h < 48; h++) {
+    SERVICES.forEach((s, i) => {
+      lineData.push({
+        t: h,
+        svc: s,
+        v: 800 + i * 400 + Math.sin(h / 5 + i * 2) * 300 + Math.random() * 120,
+      });
+    });
+  }
+  const barData = [
+    { svc: "ingest-api", errs: 12 }, { svc: "identity", errs: 4 },
+    { svc: "export", errs: 41 }, { svc: "webhooks", errs: 88 }, { svc: "cdc", errs: 7 },
+  ];
+
+  function wonkChart(el, build) {
+    const css = getComputedStyle(document.documentElement);
+    const v = (n) => css.getPropertyValue(n).trim();
+    const series = [1, 2, 3, 4, 5, 6].map((i) => v(`--ak-chart-${i}`));
+    el.replaceChildren(
+      Plot.plot({
+        style: {
+          background: "transparent",
+          color: v("--ak-ink-3"),
+          fontFamily: v("--ak-font-mono"),
+          fontSize: "11px",
+        },
+        ...build({ series, grid: v("--ak-hairline") }),
+      })
+    );
+  }
+
+  function renderCharts() {
+    wonkChart(document.getElementById("chart-line"), ({ series, grid }) => ({
+      height: 240,
+      marginLeft: 50,
+      x: { label: "hour" },
+      y: { grid: true, label: null },
+      color: { domain: SERVICES, range: series, legend: true },
+      marks: [
+        Plot.ruleY([0], { stroke: grid }),
+        Plot.lineY(lineData, { x: "t", y: "v", stroke: "svc", strokeWidth: 2, tip: true }),
+      ],
+    }));
+    wonkChart(document.getElementById("chart-bar"), ({ series, grid }) => ({
+      height: 200,
+      marginLeft: 90,
+      x: { grid: true, label: "errors" },
+      y: { label: null },
+      marks: [
+        Plot.ruleX([0], { stroke: grid }),
+        Plot.barX(barData, {
+          y: "svc", x: "errs", fill: series[0], rx: 2,
+          insetTop: 1, insetBottom: 1, sort: { y: "-x" }, tip: true,
+        }),
+        Plot.textX(barData, { y: "svc", x: "errs", text: (d) => d.errs, dx: 14 }),
+      ],
+    }));
+  }
+  renderCharts();
+
+  // ---- sidebar active state ----
+  const links = [...document.querySelectorAll(".wonk-navlink")];
+  links.forEach((l) =>
+    l.addEventListener("click", () => links.forEach((x) => x.classList.toggle("active", x === l)))
+  );
+});
+</script>
+</body>
+</html>
