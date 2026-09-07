@@ -33,8 +33,14 @@ an incident view.
 The glyph morph (`data-wonk-glyph`) is the sanctioned toy: slow 1500ms cycle,
 random glyph + color + a small springy scale/rotate wobble; hover turns it
 into the 100–180ms irregular strobe. Use it in brand corners, footers, empty
-states — one per view, not one per component. Everything respects
-`prefers-reduced-motion` (wonk.js checks; keep it that way).
+states — one per view, not one per component.
+
+The type scatter (`data-wonk-scatter`) makes a short display word spring
+apart letter-by-letter on hover and snap back on leave. Hero titles and
+wordmarks only, never body text, one per view.
+
+Everything respects `prefers-reduced-motion` (wonk.js checks; keep it that
+way).
 
 ## The line
 

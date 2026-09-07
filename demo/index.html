@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WONK · the aesthetic of maximalism</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%2300eeff'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -62,15 +63,16 @@
 
     <main class="demo-main">
 
-      <section class="demo-section">
+      <section class="demo-section wonk-reveal">
         <div class="wonk-label">the ak design system</div>
-        <h1 class="wonk-title" style="font-size:var(--ak-text-3xl)">WONK</h1>
+        <h1 class="wonk-title" style="font-size:var(--ak-text-3xl)" data-wonk-scatter>WONK</h1>
         <p style="max-width:44ch">Minimal structure. Maximal color and texture, in defined slots.
         Music is endlessly divisible; so is a UI. This page is the whole system on one scroll.</p>
-        <hr class="wonk-divider wonk-divider--accent">
+        <svg id="hero-wave" viewBox="0 0 800 90" preserveAspectRatio="none"
+             style="width:100%; height:90px; display:block; margin-top:var(--ak-s6)" aria-hidden="true"></svg>
       </section>
 
-      <section class="demo-section" id="type">
+      <section class="demo-section wonk-reveal" id="type">
         <div class="wonk-label">01 · type</div>
         <h2>Gravity is a myth</h2>
         <div class="type-scale">
@@ -86,9 +88,9 @@
         </div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="color">
+      <section class="demo-section wonk-reveal" id="color">
         <div class="wonk-label">02 · color — one poster pair per app</div>
         <h3>Accents, semantics, chart series</h3>
         <div class="demo-grid" id="swatch-grid"></div>
@@ -96,7 +98,7 @@
 
       <hr class="wonk-divider">
 
-      <section class="demo-section" id="buttons">
+      <section class="demo-section wonk-reveal" id="buttons">
         <div class="wonk-label">03 · buttons</div>
         <h3>Knock, knock...</h3>
         <div class="demo-row">
@@ -109,9 +111,9 @@
         </div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="forms">
+      <section class="demo-section wonk-reveal" id="forms">
         <div class="wonk-label">04 · forms</div>
         <h3>Tell me things</h3>
         <div class="demo-grid">
@@ -141,13 +143,26 @@
               <span class="wonk-label">performance mode</span>
               <label class="wonk-toggle"><input type="checkbox" checked><span class="track"></span></label>
             </div>
+            <div class="wonk-field">
+              <span class="wonk-label">options</span>
+              <div class="demo-row">
+                <label class="wonk-check"><input type="checkbox" checked> sidechain</label>
+                <label class="wonk-check"><input type="checkbox"> quantize</label>
+                <label class="wonk-check"><input type="radio" name="wetdry" checked> wet</label>
+                <label class="wonk-check"><input type="radio" name="wetdry"> dry</label>
+              </div>
+            </div>
+            <div class="wonk-field">
+              <span class="wonk-label">render · 64%</span>
+              <div class="wonk-progress"><span style="width:64%"></span></div>
+            </div>
           </div>
         </div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="badges">
+      <section class="demo-section wonk-reveal" id="badges">
         <div class="wonk-label">05 · badges</div>
         <h3>States wear their own colors</h3>
         <div class="demo-row">
@@ -160,9 +175,9 @@
         </div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="cards">
+      <section class="demo-section wonk-reveal" id="cards">
         <div class="wonk-label">06 · cards & stats</div>
         <h3>Numbers get the mono treatment</h3>
         <div class="demo-grid">
@@ -171,6 +186,7 @@
               <span class="wonk-label">events / sec</span>
               <span class="wonk-num">48,112</span>
               <small class="delta-up">▲ 12% vs yesterday</small>
+              <span id="stat-spark" style="margin-top:var(--ak-s2)"></span>
             </div>
           </div>
           <div class="wonk-card">
@@ -188,9 +204,9 @@
         </div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="table">
+      <section class="demo-section wonk-reveal" id="table">
         <div class="wonk-label">07 · table</div>
         <h3>Dense data, quiet chrome</h3>
         <table class="wonk-table">
@@ -204,9 +220,9 @@
         </table>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="tabs">
+      <section class="demo-section wonk-reveal" id="tabs">
         <div class="wonk-label">08 · tabs</div>
         <div class="wonk-tabs">
           <button class="wonk-tab" aria-selected="true" data-panel="#panel-a">Overview</button>
@@ -218,9 +234,9 @@
         <div id="panel-c" hidden style="padding:var(--ak-s4) 0"><p>Config. Touch carefully.</p></div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="overlays">
+      <section class="demo-section wonk-reveal" id="overlays">
         <div class="wonk-label">09 · modal · toast · tooltip</div>
         <div class="demo-row">
           <button class="wonk-btn" id="open-modal">Open modal</button>
@@ -240,18 +256,24 @@
         </dialog>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="code">
+      <section class="demo-section wonk-reveal" id="code">
         <div class="wonk-label">10 · code</div>
         <pre class="wonk-pre"><code><span class="tok-com">// wire an app to WONK</span>
 &lt;html <span class="tok-key">data-pair</span>=<span class="tok-str">"metathesis"</span> <span class="tok-key">class</span>=<span class="tok-str">"wonk"</span>&gt;
 <span class="tok-key">wonk.toast</span>(<span class="tok-str">"you're getting wonkier..."</span>, <span class="tok-str">"info"</span>)</code></pre>
+        <div class="wonk-log" style="margin-top:var(--ak-s4)">
+          <div><span class="ts">04:31:17.199</span> <span class="lv-ok">OK  </span> <span class="msg">ingest-api accepted batch of 512</span></div>
+          <div><span class="ts">04:31:17.532</span> <span class="lv-warn">WARN</span> <span class="msg">export-worker queue depth 12,004</span></div>
+          <div><span class="ts">04:31:18.011</span> <span class="lv-err">ERR </span> <span class="msg">webhook-fanout connection refused (attempt 3)</span></div>
+          <div><span class="ts">04:31:18.244</span> <span class="lv-ok">OK  </span> <span class="msg">identity-merge flushed 9,551 profiles</span></div>
+        </div>
       </section>
 
       <hr class="wonk-divider">
 
-      <section class="demo-section" id="charts">
+      <section class="demo-section wonk-reveal" id="charts">
         <div class="wonk-label">11 · charts — observable plot, validated series</div>
         <h3>Never stock</h3>
         <div class="demo-grid" style="grid-template-columns: 1fr">
@@ -268,7 +290,7 @@
 
       <hr class="wonk-divider">
 
-      <section class="demo-section" id="live">
+      <section class="demo-section wonk-reveal" id="live">
         <div class="wonk-label">12 · live & loading — the jitter lives here only</div>
         <div class="demo-row" style="gap:var(--ak-s8)">
           <span class="demo-row"><span class="wonk-dot wonk-dot--live" data-wonk-live></span><span class="wonk-label" style="color:var(--ak-ink-2)">live · ingest</span></span>
@@ -278,9 +300,9 @@
         </div>
       </section>
 
-      <hr class="wonk-divider">
+      <hr class="wonk-rule">
 
-      <section class="demo-section" id="empty">
+      <section class="demo-section wonk-reveal" id="empty">
         <div class="wonk-label">13 · empty state</div>
         <div class="wonk-card wonk-card--flat wonk-empty">
           <div class="glyph" data-wonk-glyph>∿</div>
@@ -323,8 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
       nameEl.textContent = "pair: " + p;
       [...picker.children].forEach((c) => c.setAttribute("aria-pressed", c === b));
       [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
-      renderSwatches();
-      renderCharts();
+      renderAll();
     });
     picker.appendChild(b);
   });
@@ -336,8 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
     wonk.setTheme(paper ? "dark" : "paper");
     toggle.textContent = paper ? "Paper" : "Dark";
     [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
-    renderSwatches();
-    renderCharts();
+    renderAll();
   });
 
   // ---- modal ----
@@ -372,7 +392,33 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .join("");
   }
-  renderSwatches();
+
+  // ---- hero: damped sine under a dashed exponential envelope (the aktunes bg) ----
+  function renderHero() {
+    const css = getComputedStyle(document.documentElement);
+    const v = (n) => css.getPropertyValue(n).trim();
+    const W = 800, H = 90, mid = H / 2, A = 34, k = 0.085, lam = 260;
+    const pts = [], top = [], bot = [];
+    for (let x = 0; x <= W; x += 4) {
+      const env = A * Math.exp(-x / lam);
+      pts.push(`${x},${(mid - Math.sin(x * k) * env).toFixed(1)}`);
+      top.push(`${x},${(mid - env).toFixed(1)}`);
+      bot.push(`${x},${(mid + env).toFixed(1)}`);
+    }
+    document.getElementById("hero-wave").innerHTML =
+      `<polyline points="${top.join(" ")}" fill="none" stroke="${v("--ak-hairline")}" stroke-width="1" stroke-dasharray="4 5"/>` +
+      `<polyline points="${bot.join(" ")}" fill="none" stroke="${v("--ak-hairline")}" stroke-width="1" stroke-dasharray="4 5"/>` +
+      `<line x1="0" y1="${mid}" x2="${W}" y2="${mid}" stroke="${v("--ak-hairline")}" stroke-width="1"/>` +
+      `<polyline points="${pts.join(" ")}" fill="none" stroke="${v("--ak-a1-text")}" stroke-width="1.75" opacity="0.85"/>`;
+  }
+
+  // ---- stat sparkline ----
+  const sparkValues = Array.from({ length: 32 }, (_, i) =>
+    40 + Math.sin(i / 4) * 12 + Math.random() * 9 + i * 0.6
+  );
+  function renderSpark() {
+    wonk.spark(document.getElementById("stat-spark"), sparkValues, { w: 160, h: 34 });
+  }
 
   // ---- charts (see references/charts.md) ----
   const SERVICES = ["ingest", "export", "identity"];
@@ -435,13 +481,28 @@ document.addEventListener("DOMContentLoaded", () => {
       ],
     }));
   }
-  renderCharts();
 
-  // ---- sidebar active state ----
+  function renderAll() {
+    renderSwatches();
+    renderHero();
+    renderSpark();
+    renderCharts();
+  }
+  renderAll();
+
+  // ---- sidebar follows scroll ----
   const links = [...document.querySelectorAll(".wonk-navlink")];
-  links.forEach((l) =>
-    l.addEventListener("click", () => links.forEach((x) => x.classList.toggle("active", x === l)))
+  const byId = Object.fromEntries(links.map((l) => [l.getAttribute("href").slice(1), l]));
+  const setActive = (id) => links.forEach((l) => l.classList.toggle("active", l === byId[id]));
+  links.forEach((l) => l.addEventListener("click", () => setActive(l.getAttribute("href").slice(1))));
+  const spy = new IntersectionObserver(
+    (entries) => {
+      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (hit && byId[hit.target.id]) setActive(hit.target.id);
+    },
+    { rootMargin: "-20% 0px -60% 0px" }
   );
+  document.querySelectorAll(".demo-section[id]").forEach((s) => spy.observe(s));
 });
 </script>
 </body>

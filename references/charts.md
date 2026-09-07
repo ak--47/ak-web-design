@@ -43,6 +43,14 @@ instead — no d3 global needed.
 9. **Render and look.** The validator checks color, not layout. Screenshot the
    chart; check label collisions and overflow before calling it done.
 
+## Sparklines
+
+For a tiny trend inside a stat tile or table cell, skip Plot: call
+`wonk.spark(el, values, {w, h})` from wonk.js. It draws a 2px polyline in
+`--ak-chart-1` with a `--ak-chart-2` end dot — no axes, no labels. A spark is
+a shape, not a chart; anything the reader must decode precisely gets a real
+Plot chart below.
+
 ## Theming Plot from tokens
 
 Plot renders SVG, so most theming is CSS plus a few options. Use this helper:

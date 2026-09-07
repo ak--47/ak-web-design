@@ -106,8 +106,8 @@
               border-color var(--ak-t-fast) var(--ak-ease),
               transform var(--ak-t-fast) var(--ak-ease);
 }
-.wonk-btn:hover { background: var(--ak-hover); }
-.wonk-btn:active { background: var(--ak-active); transform: translateY(1px); }
+.wonk-btn:not([disabled]):hover { background: var(--ak-hover); transform: translateY(-1px); }
+.wonk-btn:not([disabled]):active { background: var(--ak-active); transform: translateY(1px); }
 
 .wonk-btn--primary {
   background: var(--ak-a1);
@@ -115,7 +115,7 @@
   color: var(--ak-a1-ink);
   font-weight: 700;
 }
-.wonk-btn--primary:hover { background: var(--ak-a1); filter: brightness(1.1); }
+.wonk-btn--primary:not([disabled]):hover { background: var(--ak-a1); filter: brightness(1.1); }
 .wonk-btn--danger { border-color: var(--ak-err); color: var(--ak-err); }
 .wonk-btn--danger:hover { background: color-mix(in srgb, var(--ak-err) 12%, transparent); }
 .wonk-btn--quiet { border-color: transparent; color: var(--ak-ink-2); }
@@ -142,6 +142,57 @@
 .wonk-input--error { border-color: var(--ak-err); }
 .wonk-help { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
 .wonk-help--error { color: var(--ak-err); }
+
+/* checkbox / radio */
+.wonk-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ak-s2);
+  font-size: var(--ak-text-sm);
+  color: var(--ak-ink-2);
+  cursor: pointer;
+}
+.wonk-check input {
+  appearance: none;
+  width: 18px; height: 18px;
+  margin: 0;
+  border: var(--ak-hairline-w) solid var(--ak-hairline-strong);
+  border-radius: var(--ak-radius);
+  background: var(--ak-surface);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+  transition: background var(--ak-t-fast) var(--ak-ease), border-color var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-check input:checked { background: var(--ak-a1); border-color: var(--ak-a1); }
+.wonk-check input[type="checkbox"]:checked::before {
+  content: "";
+  width: 10px; height: 10px;
+  background: var(--ak-a1-ink);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 82% 2%, 43% 60%);
+}
+.wonk-check input[type="radio"] { border-radius: var(--ak-radius-full); }
+.wonk-check input[type="radio"]:checked::before {
+  content: "";
+  width: 8px; height: 8px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-a1-ink);
+}
+
+/* progress */
+.wonk-progress {
+  height: 6px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-active);
+  overflow: hidden;
+}
+.wonk-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ak-a1);
+  transition: width var(--ak-t-slow) var(--ak-ease);
+}
 
 /* toggle */
 .wonk-toggle { position: relative; display: inline-block; width: 42px; height: 24px; }
@@ -263,7 +314,7 @@
   box-shadow: var(--ak-shadow);
   animation: wonk-pop var(--ak-t-med) var(--ak-ease);
 }
-.wonk-modal::backdrop { background: var(--ak-overlay); }
+.wonk-modal::backdrop { background: var(--ak-overlay); backdrop-filter: blur(3px); }
 @keyframes wonk-pop {
   from { opacity: 0; transform: translateY(10px) scale(0.98); }
   to   { opacity: 1; transform: none; }
@@ -336,6 +387,24 @@
 .wonk-pre .tok-key { color: var(--ak-a1-text); }
 .wonk-pre .tok-str { color: var(--ak-ok); }
 .wonk-pre .tok-com { color: var(--ak-ink-3); font-style: italic; }
+
+/* ---- log block ---- */
+.wonk-log {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  line-height: 1.8;
+  background: var(--ak-surface);
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  padding: var(--ak-s4);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.wonk-log .ts { color: var(--ak-ink-3); }
+.wonk-log .msg { color: var(--ak-ink-2); }
+.wonk-log .lv-ok { color: var(--ak-ok); }
+.wonk-log .lv-warn { color: var(--ak-warn); }
+.wonk-log .lv-err { color: var(--ak-err); font-weight: 700; }
 
 /* ---- app shell ---- */
 .wonk-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
@@ -420,6 +489,27 @@
   color: var(--ak-ink-3);
 }
 .wonk-empty .glyph { font-size: 2.5rem; color: var(--ak-a2-text); margin-bottom: var(--ak-s3); }
+
+/* ---- scroll reveal ----
+   hidden only when JS is present (wonk.js adds .wonk-js to the root),
+   so a no-JS page never hides content */
+.wonk-js .wonk-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity var(--ak-t-slow) var(--ak-ease-out),
+              transform var(--ak-t-slow) var(--ak-ease-out);
+}
+.wonk-js .wonk-reveal.is-in { opacity: 1; transform: none; }
+
+/* ---- scrollbars ---- */
+.wonk::-webkit-scrollbar, .wonk *::-webkit-scrollbar { width: 10px; height: 10px; }
+.wonk::-webkit-scrollbar-thumb, .wonk *::-webkit-scrollbar-thumb {
+  background: var(--ak-hairline-strong);
+  border-radius: var(--ak-radius-full);
+  border: 2px solid var(--ak-ground);
+}
+.wonk::-webkit-scrollbar-track, .wonk *::-webkit-scrollbar-track { background: transparent; }
+.wonk { scrollbar-width: thin; scrollbar-color: var(--ak-hairline-strong) transparent; }
 
 /* ---- reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
