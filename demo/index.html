@@ -49,6 +49,9 @@
     <a class="wonk-navlink" href="#code">Code</a>
     <a class="wonk-navlink" href="#charts">Charts</a>
     <a class="wonk-navlink" href="#live">Live</a>
+    <a class="wonk-navlink" href="#nav">Nav</a>
+    <a class="wonk-navlink" href="#alerts">Alerts</a>
+    <a class="wonk-navlink" href="#exotic">Exotic</a>
     <a class="wonk-navlink" href="#empty">Empty</a>
   </aside>
 
@@ -125,6 +128,17 @@
             <div class="wonk-field">
               <label class="wonk-label" for="f2">thoughts</label>
               <textarea class="wonk-textarea" id="f2" rows="3" placeholder="not 'message'. thoughts."></textarea>
+            </div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="f5">wet / dry</label>
+              <input type="range" class="wonk-range" id="f5" min="0" max="100" value="64">
+            </div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="f6">search</label>
+              <div style="position:relative">
+                <input class="wonk-input" id="f6" placeholder="find anything..." style="width:100%; padding-right:60px; box-sizing:border-box">
+                <kbd style="position:absolute; right:8px; top:50%; transform:translateY(-50%)">⌘K</kbd>
+              </div>
             </div>
           </div>
           <div>
@@ -302,8 +316,106 @@
 
       <hr class="wonk-rule">
 
+      <section class="demo-section wonk-reveal" id="nav">
+        <div class="wonk-label">13 · navigation</div>
+        <h3>Getting around</h3>
+        <div class="demo-row" style="justify-content:space-between; margin-bottom:var(--ak-s6)">
+          <nav class="wonk-crumbs" aria-label="breadcrumbs">
+            <a href="#nav">cerebros</a><span class="sep">/</span>
+            <a href="#nav">pipelines</a><span class="sep">/</span>
+            <span class="here">ingest-api</span>
+          </nav>
+          <div class="demo-row">
+            <span class="wonk-avatar" title="AK">ak</span>
+            <details class="wonk-menu">
+              <summary class="wonk-btn">Actions ▾</summary>
+              <div class="menu">
+                <button onclick="wonk.toast('redeploying...', 'info')">Redeploy</button>
+                <button onclick="wonk.toast('opening logs', 'info')">View logs</button>
+                <button onclick="wonk.toast('pinned to dashboard', 'ok')">Pin to dashboard</button>
+                <hr>
+                <button class="danger" onclick="wonk.toast('nope. destroy is a modal.', 'warn')">Destroy</button>
+              </div>
+            </details>
+          </div>
+        </div>
+        <nav class="wonk-pages" aria-label="pagination">
+          <button class="wonk-page" disabled>←</button>
+          <button class="wonk-page">1</button>
+          <button class="wonk-page">2</button>
+          <button class="wonk-page" aria-current="page">3</button>
+          <button class="wonk-page">4</button>
+          <button class="wonk-page" disabled>…</button>
+          <button class="wonk-page">12</button>
+          <button class="wonk-page">→</button>
+        </nav>
+      </section>
+
+      <hr class="wonk-rule">
+
+      <section class="demo-section wonk-reveal" id="alerts">
+        <div class="wonk-label">14 · alerts & disclosure</div>
+        <h3>Speak up, fold away</h3>
+        <div style="display:flex; flex-direction:column; gap:var(--ak-s2); margin-bottom:var(--ak-s6)">
+          <div class="wonk-alert"><span class="ico">i</span><span><strong>Heads up.</strong> Schema pull runs nightly at 02:00 UTC.</span></div>
+          <div class="wonk-alert wonk-alert--ok"><span class="ico">✓</span><span><strong>All clear.</strong> Backfill finished, 4.2M rows in 11 minutes.</span></div>
+          <div class="wonk-alert wonk-alert--warn"><span class="ico">△</span><span><strong>Degrading.</strong> export-worker p95 has doubled since 09:00.</span></div>
+          <div class="wonk-alert wonk-alert--err"><span class="ico">✕</span><span><strong>Down.</strong> webhook-fanout stopped accepting connections.</span></div>
+        </div>
+        <div class="demo-grid">
+          <div class="wonk-acc">
+            <details open>
+              <summary>What is a poster pair?</summary>
+              <div class="body">Two colors plus ink and ground, taken from one album cover. One app gets one pair, forever.</div>
+            </details>
+            <details>
+              <summary>Why is the jitter irregular?</summary>
+              <div class="body">Because perfectly-eased motion is off-brand. Live things blink like a VU meter, not a metronome.</div>
+            </details>
+            <details>
+              <summary>Where do the chart colors come from?</summary>
+              <div class="body">Six validated slots per pair per theme. A machine checked them for colorblind separation and contrast. Do not freestyle.</div>
+            </details>
+          </div>
+          <dl class="wonk-kv">
+            <dt>version</dt><dd>v2.4.1 · GRAVITY IS A MYTH</dd>
+            <dt>pair</dt><dd id="kv-pair">electric</dd>
+            <dt>region</dt><dd>us-central1</dd>
+            <dt>uptime</dt><dd class="wonk-num">26d 04h 12m</dd>
+            <dt>maintainer</dt><dd>ak · knock, knock...</dd>
+          </dl>
+        </div>
+      </section>
+
+      <hr class="wonk-divider">
+
+      <section class="demo-section wonk-reveal" id="exotic">
+        <div class="wonk-label">15 · exotic — the hardware rack</div>
+        <h3>Widgets no other design system ships</h3>
+        <div class="demo-grid">
+          <div class="wonk-card">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">input levels</div>
+            <div data-wonk-vu="14"></div>
+          </div>
+          <div class="wonk-card">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">the rack</div>
+            <div class="demo-row" style="gap:var(--ak-s6)">
+              <div data-wonk-knob data-label="drive" data-min="0" data-max="11" data-value="7"></div>
+              <div data-wonk-knob data-label="mix" data-min="0" data-max="100" data-value="42"></div>
+              <div data-wonk-knob data-label="hz" data-min="20" data-max="2000" data-value="440"></div>
+            </div>
+          </div>
+          <div class="wonk-card" style="grid-column: 1 / -1">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">oscilloscope</div>
+            <div data-wonk-scope></div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="wonk-rule">
+
       <section class="demo-section wonk-reveal" id="empty">
-        <div class="wonk-label">13 · empty state</div>
+        <div class="wonk-label">16 · empty state</div>
         <div class="wonk-card wonk-card--flat wonk-empty">
           <div class="glyph" data-wonk-glyph>∿</div>
           <h4>Nothing here yet.</h4>
@@ -487,6 +599,8 @@ document.addEventListener("DOMContentLoaded", () => {
     renderHero();
     renderSpark();
     renderCharts();
+    const kv = document.getElementById("kv-pair");
+    if (kv) kv.textContent = document.documentElement.getAttribute("data-pair");
   }
   renderAll();
 

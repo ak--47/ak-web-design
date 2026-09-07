@@ -148,6 +148,131 @@
       `<circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3" fill="${dot}"/></svg>`;
   }
 
+  // ---- VU meter ----
+  // <div data-wonk-vu="12"></div> -> animated level bars, WONK-irregular timing.
+  // Decorative by default; call wonk.vu(el).set([0..100,...]) to drive it with
+  // real values (it stops self-animating once you feed it).
+  function vu(el) {
+    const n = parseInt(el.dataset.wonkVu, 10) || 12;
+    el.classList.add("wonk-vu");
+    el.setAttribute("aria-hidden", "true");
+    el.replaceChildren();
+    const bars = Array.from({ length: n }, () => {
+      const b = document.createElement("span");
+      b.className = "bar";
+      el.appendChild(b);
+      return b;
+    });
+    const paint = (levels) =>
+      bars.forEach((b, i) => {
+        const l = Math.max(4, Math.min(100, levels[i] ?? 4));
+        b.style.height = l + "%";
+        b.classList.toggle("clip", l > 88);
+        b.classList.toggle("hot", l > 68 && l <= 88);
+      });
+    let auto = !REDUCED;
+    let levels = bars.map(() => rand(10, 60));
+    paint(levels);
+    (function tick() {
+      if (!el.isConnected || !auto) return;
+      levels = levels.map((l) => Math.max(4, Math.min(100, l + rand(-22, 24))));
+      paint(levels);
+      setTimeout(tick, rand(90, 160));
+    })();
+    const api = { set(vals) { auto = false; paint(vals); } };
+    el.wonkVu = api;
+    return api;
+  }
+
+  // ---- knob ----
+  // <div data-wonk-knob data-label="drive" data-min="0" data-max="11" data-value="7"></div>
+  // Drag vertically or use arrow keys. Fires "input" events with detail.value.
+  function knob(el) {
+    const min = parseFloat(el.dataset.min ?? 0);
+    const max = parseFloat(el.dataset.max ?? 100);
+    let val = parseFloat(el.dataset.value ?? (min + max) / 2);
+    const label = el.dataset.label || "";
+    el.classList.add("wonk-knob");
+    el.innerHTML =
+      `<svg width="56" height="56" viewBox="0 0 56 56" role="slider" tabindex="0"` +
+      ` aria-label="${label}" aria-valuemin="${min}" aria-valuemax="${max}">` +
+      `<circle cx="28" cy="28" r="24" fill="var(--ak-surface)" stroke="var(--ak-hairline-strong)"/>` +
+      `<line x1="28" y1="47" x2="28" y2="52" stroke="var(--ak-hairline-strong)" transform="rotate(-135 28 28)"/>` +
+      `<line x1="28" y1="47" x2="28" y2="52" stroke="var(--ak-hairline-strong)" transform="rotate(135 28 28)"/>` +
+      `<line class="ptr" x1="28" y1="28" x2="28" y2="9" stroke="var(--ak-a1)" stroke-width="2.5" stroke-linecap="round"/>` +
+      `</svg><span class="val wonk-num"></span><span class="lbl wonk-label">${label}</span>`;
+    const svg = el.querySelector("svg");
+    const ptr = el.querySelector(".ptr");
+    const out = el.querySelector(".val");
+    const render = () => {
+      const frac = (val - min) / (max - min);
+      ptr.setAttribute("transform", `rotate(${-135 + frac * 270} 28 28)`);
+      svg.setAttribute("aria-valuenow", String(Math.round(val)));
+      out.textContent = Math.round(val);
+      el.dispatchEvent(new CustomEvent("input", { detail: { value: val } }));
+    };
+    render();
+    let fromY = null, fromVal = 0;
+    svg.addEventListener("pointerdown", (e) => {
+      fromY = e.clientY; fromVal = val;
+      svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener("pointermove", (e) => {
+      if (fromY === null) return;
+      val = Math.max(min, Math.min(max, fromVal + ((fromY - e.clientY) / 100) * (max - min)));
+      render();
+    });
+    svg.addEventListener("pointerup", () => (fromY = null));
+    svg.addEventListener("keydown", (e) => {
+      const step = (max - min) / 20;
+      if (e.key === "ArrowUp" || e.key === "ArrowRight") { val = Math.min(max, val + step); render(); e.preventDefault(); }
+      if (e.key === "ArrowDown" || e.key === "ArrowLeft") { val = Math.max(min, val - step); render(); e.preventDefault(); }
+    });
+  }
+
+  // ---- oscilloscope ----
+  // <div data-wonk-scope></div> -> animated trace over a hairline grid.
+  // Decoration for brand corners and loading walls; reduced motion gets one
+  // static frame.
+  function scopeWidget(el) {
+    el.classList.add("wonk-scope");
+    el.setAttribute("aria-hidden", "true");
+    const c = document.createElement("canvas");
+    el.replaceChildren(c);
+    const ctx = c.getContext("2d");
+    let t = rand(0, 100);
+    const frame = () => {
+      const w = (c.width = c.clientWidth || 300);
+      const h = (c.height = c.clientHeight || 120);
+      const css = getComputedStyle(document.documentElement);
+      const grid = css.getPropertyValue("--ak-hairline").trim();
+      const trace = css.getPropertyValue("--ak-a1-text").trim();
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = grid;
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      ctx.strokeStyle = trace;
+      ctx.lineWidth = 1.75;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 2) {
+        const y =
+          h / 2 +
+          Math.sin(x * 0.045 + t) * (h * 0.28) * Math.sin(t * 0.31 + x * 0.003) +
+          Math.sin(x * 0.21 - t * 1.7) * 4;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
+    if (REDUCED) { frame(); return; }
+    (function loop() {
+      if (!el.isConnected) return;
+      t += 0.045;
+      frame();
+      requestAnimationFrame(loop);
+    })();
+  }
+
   // ---- toast ----
   // wonk.toast("Deployed", "ok" | "warn" | "err" | "info")
   function toast(msg, kind = "info", ms = 3500) {
@@ -215,6 +340,9 @@
     scope.querySelectorAll("[data-wonk-live]").forEach(live);
     scope.querySelectorAll("[data-wonk-glyph]").forEach(glyph);
     scope.querySelectorAll("[data-wonk-scatter]").forEach(scatter);
+    scope.querySelectorAll("[data-wonk-vu]").forEach(vu);
+    scope.querySelectorAll("[data-wonk-knob]").forEach(knob);
+    scope.querySelectorAll("[data-wonk-scope]").forEach(scopeWidget);
     scope.querySelectorAll(".wonk-tabs").forEach(tabs);
     scope.querySelectorAll("[data-wonk-secret]").forEach(secret);
     reveal(scope);
@@ -225,5 +353,8 @@
     init();
   }
 
-  window.wonk = { toast, live, glyph, tabs, setPair, setTheme, init, reveal, spark, scatter };
+  window.wonk = {
+    toast, live, glyph, tabs, setPair, setTheme, init, reveal, spark, scatter,
+    vu, knob, scope: scopeWidget,
+  };
 })();

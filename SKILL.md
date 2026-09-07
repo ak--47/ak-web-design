@@ -93,11 +93,12 @@ Wiring instructions per stack: [adapters.md](references/adapters.md).
 
 ### build — new UI in WONK
 
-Start from the demo page's markup patterns (`demo/index.html`), not from
-scratch. Root gets `class="wonk" data-pair="..."`. Compose from `.wonk-`
-components; write new CSS only for what the system lacks — and when a new
-component earns its place, add it to `assets/wonk.css` and the demo page, so
-the system grows instead of forking.
+Copy markup from the catalog ([components.md](references/components.md)) and
+the demo page (`demo/index.html`), not from scratch. Root gets
+`class="wonk" data-pair="..."`. Compose from `.wonk-` components; write new
+CSS only for what the system lacks — and when a new component earns its
+place, add it to `assets/wonk.css`, the catalog, and the demo page in the
+same commit, so the system grows instead of forking.
 
 ### audit — check an app against WONK
 
@@ -129,6 +130,7 @@ the demo page changes in the same commit.
 
 ## Deeper reference (read on demand)
 
+- [components.md](references/components.md) — the full catalog: copy-paste markup for every component and the JS API
 - [pairs.md](references/pairs.md) — the five pairs, token roles, tuning rules
 - [charts.md](references/charts.md) — Plot theming, validated palettes, the validator command
 - [adapters.md](references/adapters.md) — Tailwind, shadcn/Radix, vanilla wiring

@@ -12,7 +12,8 @@ mandatory easter egg.
 
 - `SKILL.md` — the rules + four modes (reskin / build / audit / demo)
 - `assets/` — `wonk-tokens.css` (source of truth), `wonk.css`, `wonk.js`
-- `references/` — pairs, charts, adapters, easter eggs
+- `references/` — components catalog, pairs, charts, adapters, easter eggs
+- Exotic widgets: VU meter, synth knobs (drive goes to 11), oscilloscope
 - `demo/index.html` — every component on one page; serve the repo root:
   `python3 -m http.server 4748` then open `http://localhost:4748/demo/`
 
