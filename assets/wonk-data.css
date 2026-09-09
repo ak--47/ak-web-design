@@ -1,0 +1,52 @@
+/* WONK data workbench. Load after wonk.css. Native HTML owns semantics. */
+.wonk-workbench { max-width: 90rem; margin: auto; padding: var(--ak-s6); }
+.wonk-workbench > * + * { margin-top: var(--ak-s6); }
+.wonk-rack { border: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: var(--ak-surface); min-width: 0; }
+.wonk-rack-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ak-s3); padding: var(--ak-s4); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); }
+.wonk-rack-head h2, .wonk-rack-head h3 { margin: 0; font-size: var(--ak-text-lg); }
+.wonk-rack-body { padding: var(--ak-s4); }
+.wonk-channel-bank { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+.wonk-channel { padding: var(--ak-s4); border-inline-end: var(--ak-hairline-w) solid var(--ak-hairline); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); display: grid; align-content: start; gap: var(--ak-s3); min-width: 0; }
+.wonk-channel h3 { font-size: var(--ak-text-md); margin: 0; }
+.wonk-channel .wonk-num { font-size: var(--ak-text-xl); }
+.wonk-channel small, .wonk-freshness, .wonk-rack .wonk-help { color: var(--ak-ink-2); }
+.wonk-meter { width: 100%; height: 1rem; accent-color: var(--ak-a1-text); }
+.wonk-meter::-webkit-meter-bar { background: var(--ak-ground); border: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-radius: var(--ak-radius); }
+.wonk-meter::-webkit-meter-optimum-value, .wonk-meter::-webkit-meter-suboptimum-value, .wonk-meter::-webkit-meter-even-less-good-value { background: var(--ak-a1-text); }
+.wonk-meter::-moz-meter-bar { background: var(--ak-a1-text); }
+.wonk-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--ak-s3); }
+.wonk-toolbar .wonk-field { flex: 1 1 12rem; min-width: 0; }
+.wonk-filter-list { display: flex; flex-wrap: wrap; gap: var(--ak-s2); margin: var(--ak-s3) 0 0; padding: 0; list-style: none; }
+.wonk-filter-chip { display: inline-flex; gap: var(--ak-s2); align-items: center; border: var(--ak-hairline-w) solid var(--ak-a1-text); border-radius: var(--ak-radius); background: var(--ak-wash); padding: var(--ak-s1) var(--ak-s2); color: var(--ak-ink); font: var(--ak-text-sm) var(--ak-font-mono); }
+.wonk-filter-chip button { color: var(--ak-a1-text); background: transparent; border: 0; cursor: pointer; min-width: 2.75rem; min-height: 2.75rem; font: inherit; }
+.wonk-table-scroll { overflow: auto; max-height: 28rem; scrollbar-gutter: stable; }
+.wonk-table-scroll .wonk-table { min-width: 40rem; }
+.wonk-table-scroll th { position: sticky; top: 0; z-index: 1; background: var(--ak-surface-2); color: var(--ak-ink-2); }
+.wonk-table-scroll caption { text-align: left; padding: var(--ak-s3); color: var(--ak-ink-2); }
+.wonk-sort { border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; min-height: 2.75rem; cursor: pointer; text-align: inherit; }
+.wonk-table tr[data-selected="true"] td { background: var(--ak-wash); }
+.wonk-table input[type="checkbox"] { accent-color: var(--ak-a1-text); width: 1.25rem; height: 1.25rem; }
+.wonk-selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ak-s3); padding: var(--ak-s3) var(--ak-s4); background: var(--ak-wash); border-top: var(--ak-hairline-w) solid var(--ak-hairline); }
+.wonk-selection-bar output { flex: 1; min-width: 10rem; font: var(--ak-text-sm) var(--ak-font-mono); }
+.wonk-query-editor { width: 100%; min-height: 10rem; resize: vertical; tab-size: 2; font-family: var(--ak-font-mono); }
+.wonk-query-meta { display: flex; flex-wrap: wrap; gap: var(--ak-s3); margin-block: var(--ak-s3); color: var(--ak-ink-2); font: var(--ak-text-sm) var(--ak-font-mono); }
+.wonk-inspector[open] { position: fixed; inset: 0 0 0 auto; width: min(100%, 32rem); max-width: 100%; max-height: 100dvh; height: 100dvh; margin: 0; border-radius: 0; overflow: auto; padding: var(--ak-s6); }
+.wonk-inspector .wonk-kv { overflow-wrap: anywhere; }
+.wonk-inspector .wonk-pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.wonk-freshness { display: flex; flex-wrap: wrap; gap: var(--ak-s2); align-items: center; font: var(--ak-text-sm) var(--ak-font-mono); }
+.wonk-job-list { list-style: none; padding: 0; margin: 0; }
+.wonk-job { padding: var(--ak-s4); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); display: grid; gap: var(--ak-s2); }
+.wonk-job header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--ak-s2); }
+.wonk-job progress { width: 100%; accent-color: var(--ak-a1-text); }
+.wonk-state { padding: var(--ak-s6); border-inline-start: 3px solid var(--ak-a1-text); background: var(--ak-surface); }
+.wonk-state[data-state="error"] { border-color: var(--ak-err); }
+.wonk-state[data-state="stale"] { border-color: var(--ak-warn); }
+.wonk-state h3 { font-size: var(--ak-text-lg); }
+.wonk-workbench .wonk-label { color: var(--ak-ink-2); }
+.wonk-workbench .wonk-btn { min-height: 2.75rem; }
+.wonk-workbench [hidden] { display: none !important; }
+@media (max-width: 640px) {
+  .wonk-workbench { padding: var(--ak-s3); }
+  .wonk-toolbar > .wonk-btn { flex: 1 1 auto; }
+  .wonk-rack-head { align-items: start; }
+}

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WONK · data workbench</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/wonk-tokens.css">
+  <link rel="stylesheet" href="../assets/wonk.css">
+  <link rel="stylesheet" href="../assets/wonk-controls.css">
+  <link rel="stylesheet" href="../assets/wonk-data.css">
+  <link rel="stylesheet" href="../assets/wonk-motion.css">
+  <link rel="stylesheet" href="../assets/wonk-code.css">
+  <script defer src="../assets/wonk.js"></script>
+  <script defer src="../assets/wonk-controls.js"></script>
+  <script defer src="../assets/wonk-motion.js"></script>
+  <!-- code pack vendor: Prism 1.29.0, must load in this exact order
+       (see ../references/code.md), deferred and before wonk-code.js. -->
+  <script defer src="../assets/vendor/prism/prism-core.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-markup.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-css.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-clike.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-javascript.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-json.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-sql.min.js"></script>
+  <script defer src="../assets/vendor/prism/prism-bash.min.js"></script>
+  <script defer src="../assets/wonk-code.js"></script>
+  <script defer src="workbench.js"></script>
+</head>
+<body>
+<main class="wonk-workbench">
+  <header class="wonk-rack-head">
+    <div><a href="index.html">&larr; Component library</a><h1>Event workbench</h1></div>
+    <button class="wonk-btn" id="theme-toggle" type="button">Paper</button>
+  </header>
+  <div class="wonk-freshness"><span class="wonk-badge">fixture</span><span>12</span> local records &middot; snapshot <time datetime="2026-09-09T09:00:00Z">09 Sep 2026, 09:00 UTC</time></div>
+  <p>Inspect an event stream. Set a latency threshold. Keep the rows that need attention. All controls use local fixtures.</p>
+
+  <section class="wonk-rack" aria-labelledby="channels-title">
+    <header class="wonk-rack-head"><h2 id="channels-title">Source channels</h2><span class="wonk-label" data-wonk-secret="the query is shorter than the solo">01 / input</span></header>
+    <div class="wonk-channel-bank" id="channels"></div>
+  </section>
+
+  <section class="wonk-rack" aria-labelledby="query-title">
+    <header class="wonk-rack-head"><h2 id="query-title">Set the query</h2><span class="wonk-badge" id="draft-state">applied</span></header>
+    <form id="query-form" class="wonk-rack-body">
+      <div class="wonk-toolbar">
+        <div class="wonk-field"><label for="search" class="wonk-label">event or record ID</label><input id="search" class="wonk-input" type="search" placeholder="purchase or evt-004"></div>
+        <div class="wonk-field">
+          <label for="source" class="wonk-label">source</label>
+          <select id="source" class="wonk-select">
+            <option value="all">All sources</option>
+            <option value="web">web</option>
+            <option value="server">server</option>
+            <option value="mobile">mobile</option>
+          </select>
+        </div>
+        <div data-wonk-knob data-label="minimum latency" data-min="0" data-max="1000" data-step="25" data-value="0" data-unit="ms" id="threshold"></div>
+        <button type="submit" class="wonk-btn wonk-btn--primary">Run local query</button>
+        <button type="button" id="reset" class="wonk-btn">Reset draft</button>
+      </div>
+      <p class="wonk-help">Adjustments change the draft. Run applies it. No backend, SQL execution, or query charge.</p>
+      <details class="wonk-acc">
+        <summary>Inspect the query specification</summary>
+        <div class="body">
+          <div class="wonk-label" id="query-spec-label">applied specification &middot; read only</div>
+          <pre class="wonk-pre wonk-query-editor" id="query-spec" aria-labelledby="query-spec-label"><code data-language="json"></code></pre>
+        </div>
+      </details>
+      <ul class="wonk-filter-list" id="filter-chips" aria-label="Applied filters"></ul>
+    </form>
+  </section>
+
+  <section class="wonk-rack" aria-labelledby="results-title">
+    <header class="wonk-rack-head"><h2 id="results-title">Results</h2><output id="result-count" class="wonk-num" aria-live="polite" aria-atomic="true"></output></header>
+    <div class="wonk-table-scroll" role="region" aria-label="Event results, scroll horizontally for all columns" tabindex="0">
+      <table class="wonk-table" id="results-table">
+        <caption>Latency in milliseconds. Each row represents one event. Select a record ID to inspect its payload.</caption>
+        <thead>
+          <tr>
+            <th scope="col"><input id="select-all" type="checkbox" aria-label="Select all visible records"></th>
+            <th scope="col">record</th><th scope="col">event</th><th scope="col">source</th>
+            <th scope="col" class="num" aria-sort="descending"><button class="wonk-sort" id="sort-latency" type="button">latency &darr;</button></th>
+            <th scope="col">status</th>
+          </tr>
+        </thead>
+        <tbody id="result-rows"></tbody>
+      </table>
+    </div>
+    <div class="wonk-state" id="no-results" hidden><h3>No records match.</h3><p>The source contains 12 records. Remove a filter or lower the latency threshold.</p><button type="button" class="wonk-btn" id="clear-filters">Clear applied filters</button></div>
+    <div class="wonk-selection-bar">
+      <output id="selection-count" aria-live="polite">0 selected</output>
+      <button type="button" id="clear-selection" class="wonk-btn" disabled>Clear selection</button>
+      <button type="button" id="export-selection" class="wonk-btn" disabled>Download selected JSON</button>
+    </div>
+  </section>
+
+  <section class="wonk-rack" aria-labelledby="jobs-title">
+    <header class="wonk-rack-head"><h2 id="jobs-title">Import jobs</h2><span class="wonk-badge">fixed snapshot</span></header>
+    <ol class="wonk-job-list">
+      <li class="wonk-job">
+        <header><strong>web / batch 041</strong><span class="wonk-badge wonk-badge--ok">complete</span></header>
+        <label for="job-web" class="wonk-mono">1,200 / 1,200 records written</label>
+        <progress id="job-web" max="1200" value="1200">100%</progress>
+      </li>
+      <li class="wonk-job">
+        <header><strong>server / batch 042</strong><span class="wonk-badge">paused</span></header>
+        <label for="job-server" class="wonk-mono">750 / 1,000 records written</label>
+        <progress id="job-server" max="1000" value="750">75%</progress>
+        <p class="wonk-help">Paused by operator at 08:58 UTC. Counts do not advance in this fixture.</p>
+      </li>
+      <li class="wonk-job">
+        <header><strong>mobile / batch 043</strong><span class="wonk-badge wonk-badge--err">failed</span></header>
+        <p>Record 18 has no event name. No records from this batch were written.</p>
+        <details>
+          <summary>Validation detail</summary>
+          <pre class="wonk-pre"><code data-language="json">{ "record": 18, "field": "event", "error": "required" }</code></pre>
+        </details>
+      </li>
+    </ol>
+  </section>
+
+  <section class="wonk-rack" aria-labelledby="states-title">
+    <header class="wonk-rack-head"><h2 id="states-title">Show what the data knows</h2><span class="wonk-label">state recipes</span></header>
+    <div class="wonk-channel-bank">
+      <article class="wonk-state" data-state="stale">
+        <h3>Last result is stale.</h3>
+        <p>Refresh failed at 09:02 UTC. The table still shows the 09:00 UTC snapshot.</p>
+        <span class="wonk-badge">stale fixture</span>
+      </article>
+      <article class="wonk-state" data-state="error">
+        <h3>Query failed.</h3>
+        <p>The source rejected the request. Preserve the draft and show the source's error before offering retry.</p>
+        <span class="wonk-badge">error recipe</span>
+      </article>
+      <article class="wonk-state">
+        <h3>No source connected.</h3>
+        <p>Explain the required connection and permission. A missing source has no row count yet.</p>
+        <span class="wonk-badge">unconfigured recipe</span>
+      </article>
+    </div>
+  </section>
+  <footer class="wonk-freshness">Fixture data stays in this browser. Fonts load from Google. Production apps should self-host fonts.</footer>
+</main>
+<dialog id="inspector" class="wonk-modal wonk-inspector" aria-labelledby="inspector-title">
+  <form method="dialog"><button class="wonk-btn" autofocus>Close inspector</button></form>
+  <h2 id="inspector-title">Record</h2>
+  <dl class="wonk-kv" id="record-meta"></dl>
+  <h3>Payload</h3>
+  <pre class="wonk-pre"><code id="record-payload" data-language="json"></code></pre>
+</dialog>
+</body>
+</html>

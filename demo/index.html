@@ -5,38 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WONK · the aesthetic of maximalism</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%233fc9c9'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
+
+<!--
+  ============================================================
+  WONK demo/index.html — the full component catalog.
+  THIS FILE IS LONG. Read only the section your task needs.
+
+  Every markup block is wrapped in a matching pair of one-line HTML
+  comments: "SECTION:name START" ... "SECTION:name END". catalog.js
+  wraps its matching logic with the same two lines, as JS comments.
+  Grep both files for "SECTION:" plus a family name, then read only
+  between START and END.
+
+  Section names, in document order: chrome, hero, type, color,
+  buttons, forms, badges, cards, table, tabs, overlays, code, charts,
+  live, nav, alerts, exotic, empty, instruments, datatools, motion,
+  footer, boot. footer has no script section. boot runs every
+  render*() function once and wires the sidebar scrollspy.
+
+  Validate the markers before committing: the count of "SECTION:"
+  lines with the START word must equal the count with the END word
+  (this intro paragraph mentions both words without being a marker).
+
+  Local fixtures only, nothing polls or calls a backend. instruments,
+  datatools, and motion below are compact inline samples; the full
+  interactive galleries are one click away: instruments.html,
+  workbench.html, motion.html. Don't duplicate those galleries here.
+  ============================================================
+-->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- Space Grotesk (UI) + IBM Plex Mono 400/500/600/700 (the system's
+     mono token, --ak-font-mono: labels, numbers, code, data,
+     everywhere). See wonk-tokens.css. -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="../assets/wonk-tokens.css">
 <link rel="stylesheet" href="../assets/wonk.css">
-<script defer src="../assets/wonk.js"></script>
+<link rel="stylesheet" href="../assets/wonk-controls.css">
+<link rel="stylesheet" href="../assets/wonk-data.css">
+<link rel="stylesheet" href="../assets/wonk-motion.css">
+<link rel="stylesheet" href="../assets/wonk-code.css">
+<link rel="stylesheet" href="catalog.css">
+
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js"></script>
-<style>
-  /* demo-page-only layout */
-  body { margin: 0; }
-  .demo-main { padding: var(--ak-s8); max-width: 72rem; }
-  .demo-section { margin-bottom: var(--ak-s12); scroll-margin-top: var(--ak-s6); }
-  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--ak-s4); }
-  .demo-row { display: flex; flex-wrap: wrap; gap: var(--ak-s3); align-items: center; }
-  .demo-swatch { height: 56px; border-radius: var(--ak-radius); border: 1px solid var(--ak-hairline); display: flex; align-items: flex-end; padding: var(--ak-s1) var(--ak-s2); }
-  .demo-swatch .wonk-label { color: inherit; opacity: .9; }
-  .pair-picker { display: flex; gap: var(--ak-s1); flex-wrap: wrap; }
-  .pair-chip {
-    width: 22px; height: 22px; border-radius: var(--ak-radius-full);
-    border: 2px solid transparent; cursor: pointer; padding: 0;
-  }
-  .pair-chip[aria-pressed="true"] { border-color: var(--ak-ink); }
-  .type-scale div { margin-bottom: var(--ak-s2); }
-  @media (max-width: 800px) { .wonk-shell { grid-template-columns: 1fr; } .wonk-side { display: none; } }
-</style>
+
+<!-- base -->
+<script defer src="../assets/wonk.js"></script>
+<!-- instruments pack: knob/fader/window/segmented/stepper -->
+<script defer src="../assets/wonk-controls.js"></script>
+<!-- motion pack: eight one-shot effects -->
+<script defer src="../assets/wonk-motion.js"></script>
+<!-- code pack vendor: Prism 1.29.0, must load in this exact order
+     (see references/code.md), deferred and before wonk-code.js. If a
+     file is ever missing, wonk-code.js degrades any code block to
+     plain, visibly-flagged text (see references/code.md, "vendor
+     failure"). It never fakes a highlighted result. -->
+<script defer src="../assets/vendor/prism/prism-core.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-markup.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-css.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-clike.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-javascript.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-json.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-sql.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-bash.min.js"></script>
+<script defer src="../assets/wonk-code.js"></script>
+<!-- browser-callable checks for wonk-code, not run automatically --
+     see references/code.md, "browser checks" -->
+<script defer src="code-checks.js"></script>
+<!-- this page's own logic, all of it -->
+<script defer src="catalog.js"></script>
 </head>
 <body>
 
 <div class="wonk-shell">
-  <aside class="wonk-side">
-    <div class="brand"><span data-wonk-glyph>∿</span> WONK</div>
+  <!-- SECTION:chrome START -->
+  <aside class="wonk-side" id="wonk-side">
+    <div class="brand"><span data-wonk-glyph>&#8767;</span> WONK</div>
     <a class="wonk-navlink active" href="#type">Type</a>
     <a class="wonk-navlink" href="#color">Color</a>
     <a class="wonk-navlink" href="#buttons">Buttons</a>
@@ -53,56 +100,76 @@
     <a class="wonk-navlink" href="#alerts">Alerts</a>
     <a class="wonk-navlink" href="#exotic">Exotic</a>
     <a class="wonk-navlink" href="#empty">Empty</a>
+    <a class="wonk-navlink" href="#instruments">Instruments</a>
+    <a class="wonk-navlink" href="#datatools">Data tools</a>
+    <a class="wonk-navlink" href="#motion">Motion</a>
   </aside>
 
   <div>
     <header class="wonk-topbar">
-      <span class="wonk-label" id="pair-name" data-wonk-secret="music is endlessly divisible">pair: metathesis</span>
+      <div class="demo-row">
+        <button class="wonk-btn demo-menu-btn" id="menu-toggle" type="button"
+                aria-expanded="false" aria-controls="wonk-side">Menu</button>
+        <span class="wonk-label" id="pair-name" data-wonk-secret="music is endlessly divisible">pair: metathesis</span>
+      </div>
       <div class="demo-row">
         <div class="pair-picker" id="pair-picker" title="pick a pair"></div>
         <button class="wonk-btn" id="theme-toggle">Paper</button>
       </div>
     </header>
+    <!-- SECTION:chrome END -->
 
     <main class="demo-main">
 
+      <!-- SECTION:hero START -->
       <section class="demo-section wonk-reveal">
         <div class="wonk-label">the ak design system</div>
         <h1 class="wonk-title" style="font-size:var(--ak-text-3xl)" data-wonk-scatter>WONK</h1>
         <p style="max-width:44ch">Minimal structure. Maximal color and texture, in defined slots.
-        Music is endlessly divisible; so is a UI. This page is the whole system on one scroll.</p>
+        Music is endlessly divisible; so is a UI. Start with the base components, then open a working gallery.</p>
+        <nav class="demo-row" aria-label="Specialized galleries">
+          <a class="wonk-btn" href="instruments.html">Instruments</a>
+          <a class="wonk-btn" href="workbench.html">Data workbench</a>
+          <a class="wonk-btn" href="motion.html">Motion library</a>
+        </nav>
         <svg id="hero-wave" viewBox="0 0 800 90" preserveAspectRatio="none"
              style="width:100%; height:90px; display:block; margin-top:var(--ak-s6)" aria-hidden="true"></svg>
       </section>
+      <!-- SECTION:hero END -->
 
+      <!-- SECTION:type START -->
       <section class="demo-section wonk-reveal" id="type">
-        <div class="wonk-label">01 · type</div>
+        <div class="wonk-label">01 &middot; type</div>
         <h2>Gravity is a myth</h2>
         <div class="type-scale">
-          <h1>Heading one — Space Grotesk 700</h1>
+          <h1>Heading one &mdash; Space Grotesk 700</h1>
           <h2>Heading two, mixed case, tight</h2>
           <h3>Heading three carries most screens</h3>
           <h4>Heading four for card titles</h4>
           <p>Body text is Space Grotesk 400. It stays quiet so the color can be loud.
              Links look like <a href="#type">this link</a>. Numbers are always mono:
-             <span class="wonk-num">1,204,881</span>. Keyboard: <kbd>⌘</kbd> <kbd>K</kbd>.</p>
-          <div class="wonk-label">labels are jetbrains mono · uppercase · tracked</div>
+             <span class="wonk-num">1,204,881</span>. Keyboard: <kbd>&#8984;</kbd> <kbd>K</kbd>.</p>
+          <div class="wonk-label">labels are ibm plex mono &middot; uppercase &middot; tracked &middot; --ak-font-mono</div>
           <div class="wonk-title" style="font-size:var(--ak-text-xl); margin-top:var(--ak-s3)">Titles go wide</div>
         </div>
       </section>
+      <!-- SECTION:type END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:color START -->
       <section class="demo-section wonk-reveal" id="color">
-        <div class="wonk-label">02 · color — one poster pair per app</div>
+        <div class="wonk-label">02 &middot; color &mdash; one poster pair per app</div>
         <h3>Accents, semantics, chart series</h3>
         <div class="demo-grid" id="swatch-grid"></div>
       </section>
+      <!-- SECTION:color END -->
 
       <hr class="wonk-divider">
 
+      <!-- SECTION:buttons START -->
       <section class="demo-section wonk-reveal" id="buttons">
-        <div class="wonk-label">03 · buttons</div>
+        <div class="wonk-label">03 &middot; buttons</div>
         <h3>Knock, knock...</h3>
         <div class="demo-row">
           <button class="wonk-btn wonk-btn--primary">Deploy</button>
@@ -113,11 +180,13 @@
           <button class="wonk-btn wonk-tip" data-tip="oh... interesting">Hover me</button>
         </div>
       </section>
+      <!-- SECTION:buttons END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:forms START -->
       <section class="demo-section wonk-reveal" id="forms">
-        <div class="wonk-label">04 · forms</div>
+        <div class="wonk-label">04 &middot; forms</div>
         <h3>Tell me things</h3>
         <div class="demo-grid">
           <div>
@@ -137,7 +206,7 @@
               <label class="wonk-label" for="f6">search</label>
               <div style="position:relative">
                 <input class="wonk-input" id="f6" placeholder="find anything..." style="width:100%; padding-right:60px; box-sizing:border-box">
-                <kbd style="position:absolute; right:8px; top:50%; transform:translateY(-50%)">⌘K</kbd>
+                <kbd style="position:absolute; right:8px; top:50%; transform:translateY(-50%)">&#8984;K</kbd>
               </div>
             </div>
           </div>
@@ -167,39 +236,43 @@
               </div>
             </div>
             <div class="wonk-field">
-              <span class="wonk-label">render · 64%</span>
+              <span class="wonk-label">render &middot; 64%</span>
               <div class="wonk-progress"><span style="width:64%"></span></div>
             </div>
           </div>
         </div>
       </section>
+      <!-- SECTION:forms END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:badges START -->
       <section class="demo-section wonk-reveal" id="badges">
-        <div class="wonk-label">05 · badges</div>
+        <div class="wonk-label">05 &middot; badges</div>
         <h3>States wear their own colors</h3>
         <div class="demo-row">
           <span class="wonk-badge">default</span>
           <span class="wonk-badge wonk-badge--accent">v2.4.1</span>
-          <span class="wonk-badge wonk-badge--ok">✓ healthy</span>
-          <span class="wonk-badge wonk-badge--warn">△ degraded</span>
-          <span class="wonk-badge wonk-badge--err">✕ down</span>
+          <span class="wonk-badge wonk-badge--ok">&#10003; healthy</span>
+          <span class="wonk-badge wonk-badge--warn">&#9651; degraded</span>
+          <span class="wonk-badge wonk-badge--err">&#10005; down</span>
           <span class="wonk-badge wonk-badge--info">i streaming</span>
         </div>
       </section>
+      <!-- SECTION:badges END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:cards START -->
       <section class="demo-section wonk-reveal" id="cards">
-        <div class="wonk-label">06 · cards & stats</div>
+        <div class="wonk-label">06 &middot; cards &amp; stats</div>
         <h3>Numbers get the mono treatment</h3>
         <div class="demo-grid">
           <div class="wonk-card wonk-card--accent">
             <div class="wonk-stat">
               <span class="wonk-label">events / sec</span>
               <span class="wonk-num">48,112</span>
-              <small class="delta-up">▲ 12% vs yesterday</small>
+              <small class="delta-up">&#9650; 12% vs yesterday</small>
               <span id="stat-spark" style="margin-top:var(--ak-s2)"></span>
             </div>
           </div>
@@ -207,7 +280,7 @@
             <div class="wonk-stat">
               <span class="wonk-label">p99 latency</span>
               <span class="wonk-num">212ms</span>
-              <small class="delta-down">▼ needs a look</small>
+              <small class="delta-down">&#9660; needs a look</small>
             </div>
           </div>
           <div class="wonk-card">
@@ -217,27 +290,31 @@
           </div>
         </div>
       </section>
+      <!-- SECTION:cards END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:table START -->
       <section class="demo-section wonk-reveal" id="table">
-        <div class="wonk-label">07 · table</div>
+        <div class="wonk-label">07 &middot; table</div>
         <h3>Dense data, quiet chrome</h3>
         <table class="wonk-table">
           <thead><tr><th>service</th><th>status</th><th class="num">req/s</th><th class="num">p95</th><th class="num">errors</th></tr></thead>
           <tbody>
-            <tr><td>ingest-api</td><td><span class="wonk-badge wonk-badge--ok">✓ ok</span></td><td class="num">18,204</td><td class="num">84ms</td><td class="num">0.01%</td></tr>
-            <tr><td>identity-merge</td><td><span class="wonk-badge wonk-badge--ok">✓ ok</span></td><td class="num">9,551</td><td class="num">122ms</td><td class="num">0.00%</td></tr>
-            <tr><td>export-worker</td><td><span class="wonk-badge wonk-badge--warn">△ slow</span></td><td class="num">2,140</td><td class="num">890ms</td><td class="num">0.40%</td></tr>
-            <tr><td>webhook-fanout</td><td><span class="wonk-badge wonk-badge--err">✕ down</span></td><td class="num">0</td><td class="num">—</td><td class="num">100%</td></tr>
+            <tr><td>ingest-api</td><td><span class="wonk-badge wonk-badge--ok">&#10003; ok</span></td><td class="num">18,204</td><td class="num">84ms</td><td class="num">0.01%</td></tr>
+            <tr><td>identity-merge</td><td><span class="wonk-badge wonk-badge--ok">&#10003; ok</span></td><td class="num">9,551</td><td class="num">122ms</td><td class="num">0.00%</td></tr>
+            <tr><td>export-worker</td><td><span class="wonk-badge wonk-badge--warn">&#9651; slow</span></td><td class="num">2,140</td><td class="num">890ms</td><td class="num">0.40%</td></tr>
+            <tr><td>webhook-fanout</td><td><span class="wonk-badge wonk-badge--err">&#10005; down</span></td><td class="num">0</td><td class="num">&mdash;</td><td class="num">100%</td></tr>
           </tbody>
         </table>
       </section>
+      <!-- SECTION:table END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:tabs START (no script section: wonk.js auto-wires .wonk-tabs) -->
       <section class="demo-section wonk-reveal" id="tabs">
-        <div class="wonk-label">08 · tabs</div>
+        <div class="wonk-label">08 &middot; tabs</div>
         <div class="wonk-tabs">
           <button class="wonk-tab" aria-selected="true" data-panel="#panel-a">Overview</button>
           <button class="wonk-tab" aria-selected="false" data-panel="#panel-b">Logs</button>
@@ -247,11 +324,13 @@
         <div id="panel-b" hidden style="padding:var(--ak-s4) 0"><p>Logs go here. They scroll, you don't.</p></div>
         <div id="panel-c" hidden style="padding:var(--ak-s4) 0"><p>Config. Touch carefully.</p></div>
       </section>
+      <!-- SECTION:tabs END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:overlays START -->
       <section class="demo-section wonk-reveal" id="overlays">
-        <div class="wonk-label">09 · modal · toast · tooltip</div>
+        <div class="wonk-label">09 &middot; modal &middot; toast &middot; tooltip</div>
         <div class="demo-row">
           <button class="wonk-btn" id="open-modal">Open modal</button>
           <button class="wonk-btn" onclick="wonk.toast('Deployed to prod', 'ok')">Toast ok</button>
@@ -269,55 +348,131 @@
           </div>
         </dialog>
       </section>
+      <!-- SECTION:overlays END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:code START -->
       <section class="demo-section wonk-reveal" id="code">
-        <div class="wonk-label">10 · code</div>
-        <pre class="wonk-pre"><code><span class="tok-com">// wire an app to WONK</span>
-&lt;html <span class="tok-key">data-pair</span>=<span class="tok-str">"metathesis"</span> <span class="tok-key">class</span>=<span class="tok-str">"wonk"</span>&gt;
-<span class="tok-key">wonk.toast</span>(<span class="tok-str">"you're getting wonkier..."</span>, <span class="tok-str">"info"</span>)</code></pre>
-        <div class="wonk-log" style="margin-top:var(--ak-s4)">
-          <div><span class="ts">04:31:17.199</span> <span class="lv-ok">OK  </span> <span class="msg">ingest-api accepted batch of 512</span></div>
-          <div><span class="ts">04:31:17.532</span> <span class="lv-warn">WARN</span> <span class="msg">export-worker queue depth 12,004</span></div>
-          <div><span class="ts">04:31:18.011</span> <span class="lv-err">ERR </span> <span class="msg">webhook-fanout connection refused (attempt 3)</span></div>
-          <div><span class="ts">04:31:18.244</span> <span class="lv-ok">OK  </span> <span class="msg">identity-merge flushed 9,551 profiles</span></div>
+        <div class="wonk-label">10 &middot; code &mdash; syntax highlighting, logs, json editor</div>
+        <h3>Code and data you can read</h3>
+        <p>Prism provides syntax highlighting for markup, JSON, JavaScript, and SQL. Expand a log entry to inspect its padded JSON payload. Use Format JSON to indent a draft and render its preview.</p>
+        <nav class="family-toc demo-row" aria-label="Code pack contents">
+          <a href="#code-markup">markup</a>
+          <a href="#code-json">json</a>
+          <a href="#code-js">javascript</a>
+          <a href="#code-sql">sql</a>
+          <a href="#code-editor">json editor</a>
+        </nav>
+
+        <div class="demo-grid" id="code-blocks">
+          <div class="wonk-card" id="code-markup">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">markup &middot; wiring an app to wonk</div>
+            <pre class="wonk-pre"><code data-language="markup">&lt;html data-pair="metathesis" class="wonk"&gt;
+  &lt;script&gt;wonk.toast("you're getting wonkier...", "info")&lt;/script&gt;
+&lt;/html&gt;</code></pre>
+          </div>
+          <div class="wonk-card" id="code-json">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">json &middot; one event record</div>
+            <pre class="wonk-pre"><code data-language="json">{
+  "id": "evt-004",
+  "event": "purchase",
+  "source": "web",
+  "latency": 800,
+  "status": "rejected"
+}</code></pre>
+          </div>
+          <div class="wonk-card" id="code-js">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">javascript &middot; play a motion effect</div>
+            <pre class="wonk-pre"><code data-language="javascript">// value already updated -- accent, never tween the digits
+readout.textContent = measured.toLocaleString();
+const result = await wonkMotion.play(readout, "value-changed");
+if (result.status === "done") console.log("settled");</code></pre>
+          </div>
+          <div class="wonk-card" id="code-sql">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">sql &middot; the applied query specification</div>
+            <pre class="wonk-pre"><code data-language="sql">select event, source, latency
+from local_events
+where source = 'web'
+  and latency >= 0
+order by latency desc;</code></pre>
+          </div>
+        </div>
+
+        <div class="wonk-card" style="margin-top:var(--ak-s4)">
+          <div class="wonk-label" style="margin-bottom:var(--ak-s2)">event log &middot; each entry is a real <code>wonkCode.render</code> payload, not a flat string</div>
+          <div class="event-log" id="code-log"></div>
+        </div>
+
+        <div class="wonk-card" id="code-editor" style="margin-top:var(--ak-s4)">
+          <div class="wonk-label" style="margin-bottom:var(--ak-s3)"><code>.wonk-json-editor</code> &middot; parses with <code>JSON.parse</code> only, never <code>eval</code></div>
+          <div class="wonk-json-editor">
+            <div class="wonk-json-editor-row">
+              <div class="wonk-field">
+                <label class="wonk-label" for="json-editor-input">draft json</label>
+                <textarea id="json-editor-input" class="wonk-textarea" rows="8" spellcheck="false">{"event": "purchase", "source": "web", "latency": 800, "tags": ["checkout", "web"]}</textarea>
+              </div>
+              <div class="wonk-json-editor-preview">
+                <div class="wonk-label">preview &middot; last valid format</div>
+              </div>
+            </div>
+            <div class="wonk-json-editor-actions">
+              <button type="button" class="wonk-json-editor-format wonk-btn wonk-btn--primary">Format JSON</button>
+              <span class="wonk-help">edits here never touch the code blocks above</span>
+            </div>
+            <div class="wonk-json-editor-error" role="alert" hidden></div>
+          </div>
+        </div>
+
+        <div class="wonk-card" id="code-checks" style="margin-top:var(--ak-s4)">
+          <div class="wonk-label" style="margin-bottom:var(--ak-s2)"><code>demo/code-checks.js</code> &middot; builds and tears down its own hidden fixtures</div>
+          <div class="demo-row">
+            <button class="wonk-btn wonk-btn--primary" id="run-code-checks-btn" type="button">Run code checks</button>
+            <span class="wonk-label" id="code-checks-summary"></span>
+          </div>
+          <div class="event-log" id="code-checks-log" style="margin-top:var(--ak-s3); max-height:16rem"></div>
         </div>
       </section>
+      <!-- SECTION:code END -->
 
       <hr class="wonk-divider">
 
+      <!-- SECTION:charts START -->
       <section class="demo-section wonk-reveal" id="charts">
-        <div class="wonk-label">11 · charts — observable plot, validated series</div>
+        <div class="wonk-label">11 &middot; charts &mdash; observable plot, validated series</div>
         <h3>Never stock</h3>
         <div class="demo-grid" style="grid-template-columns: 1fr">
           <div class="wonk-card">
-            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">events by service · last 48h</div>
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">events by service &middot; last 48h</div>
             <div id="chart-line"></div>
           </div>
           <div class="wonk-card">
-            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">errors by service · today</div>
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">errors by service &middot; today</div>
             <div id="chart-bar"></div>
           </div>
         </div>
       </section>
+      <!-- SECTION:charts END -->
 
       <hr class="wonk-divider">
 
+      <!-- SECTION:live START -->
       <section class="demo-section wonk-reveal" id="live">
-        <div class="wonk-label">12 · live & loading — the jitter lives here only</div>
+        <div class="wonk-label">12 &middot; live &amp; loading &mdash; the jitter lives here only</div>
         <div class="demo-row" style="gap:var(--ak-s8)">
-          <span class="demo-row"><span class="wonk-dot wonk-dot--live" data-wonk-live></span><span class="wonk-label" style="color:var(--ak-ink-2)">live · ingest</span></span>
-          <span class="demo-row"><span class="wonk-dot wonk-dot--idle"></span><span class="wonk-label">idle · batch</span></span>
+          <span class="demo-row"><span class="wonk-dot wonk-dot--live" data-wonk-live></span><span class="wonk-label" style="color:var(--ak-ink-2)">live &middot; ingest</span></span>
+          <span class="demo-row"><span class="wonk-dot wonk-dot--idle"></span><span class="wonk-label">idle &middot; batch</span></span>
           <span class="wonk-spectrum" aria-label="loading"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
           <div style="flex:1; min-width:180px"><div class="wonk-skeleton" style="height:14px; margin-bottom:8px"></div><div class="wonk-skeleton" style="height:14px; width:70%"></div></div>
         </div>
       </section>
+      <!-- SECTION:live END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:nav START -->
       <section class="demo-section wonk-reveal" id="nav">
-        <div class="wonk-label">13 · navigation</div>
+        <div class="wonk-label">13 &middot; navigation</div>
         <h3>Getting around</h3>
         <div class="demo-row" style="justify-content:space-between; margin-bottom:var(--ak-s6)">
           <nav class="wonk-crumbs" aria-label="breadcrumbs">
@@ -328,7 +483,7 @@
           <div class="demo-row">
             <span class="wonk-avatar" title="AK">ak</span>
             <details class="wonk-menu">
-              <summary class="wonk-btn">Actions ▾</summary>
+              <summary class="wonk-btn">Actions &#9662;</summary>
               <div class="menu">
                 <button onclick="wonk.toast('redeploying...', 'info')">Redeploy</button>
                 <button onclick="wonk.toast('opening logs', 'info')">View logs</button>
@@ -340,27 +495,29 @@
           </div>
         </div>
         <nav class="wonk-pages" aria-label="pagination">
-          <button class="wonk-page" disabled>←</button>
+          <button class="wonk-page" disabled>&larr;</button>
           <button class="wonk-page">1</button>
           <button class="wonk-page">2</button>
           <button class="wonk-page" aria-current="page">3</button>
           <button class="wonk-page">4</button>
-          <button class="wonk-page" disabled>…</button>
+          <button class="wonk-page" disabled>&hellip;</button>
           <button class="wonk-page">12</button>
-          <button class="wonk-page">→</button>
+          <button class="wonk-page">&rarr;</button>
         </nav>
       </section>
+      <!-- SECTION:nav END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:alerts START -->
       <section class="demo-section wonk-reveal" id="alerts">
-        <div class="wonk-label">14 · alerts & disclosure</div>
+        <div class="wonk-label">14 &middot; alerts &amp; disclosure</div>
         <h3>Speak up, fold away</h3>
         <div style="display:flex; flex-direction:column; gap:var(--ak-s2); margin-bottom:var(--ak-s6)">
           <div class="wonk-alert"><span class="ico">i</span><span><strong>Heads up.</strong> Schema pull runs nightly at 02:00 UTC.</span></div>
-          <div class="wonk-alert wonk-alert--ok"><span class="ico">✓</span><span><strong>All clear.</strong> Backfill finished, 4.2M rows in 11 minutes.</span></div>
-          <div class="wonk-alert wonk-alert--warn"><span class="ico">△</span><span><strong>Degrading.</strong> export-worker p95 has doubled since 09:00.</span></div>
-          <div class="wonk-alert wonk-alert--err"><span class="ico">✕</span><span><strong>Down.</strong> webhook-fanout stopped accepting connections.</span></div>
+          <div class="wonk-alert wonk-alert--ok"><span class="ico">&#10003;</span><span><strong>All clear.</strong> Backfill finished, 4.2M rows in 11 minutes.</span></div>
+          <div class="wonk-alert wonk-alert--warn"><span class="ico">&#9651;</span><span><strong>Degrading.</strong> export-worker p95 has doubled since 09:00.</span></div>
+          <div class="wonk-alert wonk-alert--err"><span class="ico">&#10005;</span><span><strong>Down.</strong> webhook-fanout stopped accepting connections.</span></div>
         </div>
         <div class="demo-grid">
           <div class="wonk-acc">
@@ -378,19 +535,21 @@
             </details>
           </div>
           <dl class="wonk-kv">
-            <dt>version</dt><dd>v2.4.1 · GRAVITY IS A MYTH</dd>
+            <dt>version</dt><dd>v2.4.1 &middot; GRAVITY IS A MYTH</dd>
             <dt>pair</dt><dd id="kv-pair">metathesis</dd>
             <dt>region</dt><dd>us-central1</dd>
             <dt>uptime</dt><dd class="wonk-num">26d 04h 12m</dd>
-            <dt>maintainer</dt><dd>ak · knock, knock...</dd>
+            <dt>maintainer</dt><dd>ak &middot; knock, knock...</dd>
           </dl>
         </div>
       </section>
+      <!-- SECTION:alerts END -->
 
       <hr class="wonk-divider">
 
+      <!-- SECTION:exotic START -->
       <section class="demo-section wonk-reveal" id="exotic">
-        <div class="wonk-label">15 · exotic — the hardware rack</div>
+        <div class="wonk-label">15 &middot; exotic &mdash; the hardware rack</div>
         <h3>Widgets no other design system ships</h3>
         <div class="demo-grid">
           <div class="wonk-card">
@@ -411,213 +570,348 @@
           </div>
         </div>
       </section>
+      <!-- SECTION:exotic END -->
 
       <hr class="wonk-rule">
 
+      <!-- SECTION:empty START -->
       <section class="demo-section wonk-reveal" id="empty">
-        <div class="wonk-label">16 · empty state</div>
+        <div class="wonk-label">16 &middot; empty state</div>
         <div class="wonk-card wonk-card--flat wonk-empty">
-          <div class="glyph" data-wonk-glyph>∿</div>
+          <div class="glyph" data-wonk-glyph>&#8767;</div>
           <h4>Nothing here yet.</h4>
           <p>That's ok with me. Wire up a source and the waveforms start.</p>
           <button class="wonk-btn wonk-btn--primary">Knock, knock...</button>
         </div>
       </section>
+      <!-- SECTION:empty END -->
 
+      <hr class="wonk-divider">
+
+      <!-- SECTION:instruments START -->
+      <section class="demo-section wonk-reveal" id="instruments">
+        <div class="wonk-label">17 &middot; instruments &mdash; precision controls for data tools</div>
+        <h3>Knob, fader, window, segmented, stepper</h3>
+        <p style="max-width:56ch">
+          one of each instrument, wired to the shared log below. every
+          starting value is a fixture. <code>input</code> previews; only
+          <code>change</code> commits a draft. full lifecycle checks and
+          keyboard/pointer detail: <a href="instruments.html">instruments.html</a>.
+        </p>
+        <nav class="family-toc demo-row" aria-label="Instrument contents">
+          <a href="#instr-knob">knob</a>
+          <a href="#instr-fader">fader</a>
+          <a href="#instr-window">window</a>
+          <a href="#instr-segmented">segmented</a>
+          <a href="#instr-stepper">stepper</a>
+        </nav>
+
+        <div class="demo-grid">
+          <div class="wonk-card" id="instr-knob">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">knob &middot; confidence threshold</div>
+            <div data-wonk-knob data-label="confidence threshold" data-min="0" data-max="1" data-step="0.05" data-value="0.8" data-unit=""></div>
+          </div>
+          <div class="wonk-card" id="instr-fader">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">fader &middot; p95 latency alert</div>
+            <fieldset class="wonk-fader" data-min="0" data-max="500" data-step="10" data-value="120">
+              <legend class="wonk-label" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)">p95 latency alert</legend>
+              <div class="wonk-fader-row">
+                <input type="range" class="wonk-range">
+                <input type="number" class="wonk-fader-exact">
+                <span class="wonk-fader-unit">ms</span>
+              </div>
+            </fieldset>
+          </div>
+          <div class="wonk-card" id="instr-segmented">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">segmented &middot; granularity</div>
+            <fieldset class="wonk-segmented">
+              <legend class="wonk-label" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)">granularity</legend>
+              <div class="wonk-segmented-track">
+                <label><input type="radio" name="demo-granularity" value="hour" checked><span>hour</span></label>
+                <label><input type="radio" name="demo-granularity" value="day"><span>day</span></label>
+                <label><input type="radio" name="demo-granularity" value="week"><span>week</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <div class="wonk-card" id="instr-stepper">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">stepper &middot; rows per page</div>
+            <fieldset class="wonk-stepper" data-min="1" data-max="100" data-step="1" data-value="20">
+              <legend class="wonk-label" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)">rows per page</legend>
+              <div class="wonk-stepper-row">
+                <button type="button" class="wonk-stepper-btn" data-dir="-1" aria-label="decrease rows per page">&minus;</button>
+                <input type="number" class="wonk-stepper-input" aria-label="rows per page">
+                <button type="button" class="wonk-stepper-btn" data-dir="1" aria-label="increase rows per page">+</button>
+              </div>
+              <span class="wonk-stepper-unit">rows</span>
+            </fieldset>
+          </div>
+          <div class="wonk-card" id="instr-window" style="grid-column: 1 / -1">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">bounded window &middot; comparison window</div>
+            <fieldset class="wonk-window" data-min="2026-01-01" data-max="2026-12-31">
+              <legend class="wonk-label" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)">comparison window</legend>
+              <div class="wonk-window-row">
+                <div class="wonk-field">
+                  <label class="wonk-label" for="instr-w-from">from</label>
+                  <input class="wonk-input" type="date" id="instr-w-from" value="2026-08-01">
+                </div>
+                <span class="wonk-window-sep">&rarr;</span>
+                <div class="wonk-field">
+                  <label class="wonk-label" for="instr-w-to">to</label>
+                  <input class="wonk-input" type="date" id="instr-w-to" value="2026-09-01">
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+        <div class="wonk-card" style="margin-top:var(--ak-s4)">
+          <div class="wonk-label" style="margin-bottom:var(--ak-s2)">shared event log &middot; every instrument above logs here</div>
+          <div class="event-log" id="instr-log"></div>
+        </div>
+      </section>
+      <!-- SECTION:instruments END -->
+
+      <hr class="wonk-divider">
+
+      <!-- SECTION:datatools START -->
+      <section class="demo-section wonk-reveal" id="datatools">
+        <div class="wonk-label">18 &middot; data tools &mdash; the instrument rack applied to a table</div>
+        <h3>Source, parameter, result, in that order</h3>
+        <p style="max-width:56ch">
+          6 local records. <code>change</code> commits the draft; Run applies
+          it. Nothing here executes SQL or calls a backend. The full
+          12-record, multi-filter version lives at
+          <a href="workbench.html">workbench.html</a>.
+        </p>
+        <nav class="family-toc demo-row" aria-label="Data tools contents">
+          <a href="#dt-channels">channels</a>
+          <a href="#dt-query">query</a>
+          <a href="#dt-results">results</a>
+          <a href="#dt-jobs">jobs</a>
+          <a href="#dt-states">states</a>
+        </nav>
+
+        <div id="dt-channels">
+          <div class="wonk-label" style="margin:var(--ak-s4) 0 var(--ak-s2)">source channels</div>
+          <div class="wonk-channel-bank" id="dt-channel-bank"></div>
+        </div>
+
+        <div id="dt-query" style="margin-top:var(--ak-s6)">
+          <div class="demo-row" style="justify-content:space-between">
+            <div class="wonk-label">set the query</div>
+            <span class="wonk-badge" id="dt-draft-state">applied</span>
+          </div>
+          <form id="dt-query-form">
+            <div class="wonk-toolbar" style="margin-top:var(--ak-s3)">
+              <div class="wonk-field">
+                <label for="dt-search" class="wonk-label">event or record ID</label>
+                <input id="dt-search" class="wonk-input" type="search" placeholder="purchase or evt-004">
+              </div>
+              <div class="wonk-field">
+                <label for="dt-source" class="wonk-label">source</label>
+                <select id="dt-source" class="wonk-select">
+                  <option value="all">All sources</option>
+                  <option value="web">web</option>
+                  <option value="server">server</option>
+                  <option value="mobile">mobile</option>
+                </select>
+              </div>
+              <div data-wonk-knob data-label="minimum latency" data-min="0" data-max="1000" data-step="25" data-value="0" data-unit="ms" id="dt-threshold"></div>
+              <button type="submit" class="wonk-btn wonk-btn--primary">Run local query</button>
+              <button type="button" id="dt-reset" class="wonk-btn">Reset draft</button>
+            </div>
+            <p class="wonk-help">Adjustments change the draft. Run applies it. No backend, SQL execution, or query charge.</p>
+            <ul class="wonk-filter-list" id="dt-filter-chips" aria-label="Applied filters"></ul>
+          </form>
+        </div>
+
+        <div id="dt-results" style="margin-top:var(--ak-s6)">
+          <div class="demo-row" style="justify-content:space-between">
+            <div class="wonk-label">results</div>
+            <output id="dt-result-count" class="wonk-num" aria-live="polite" aria-atomic="true"></output>
+          </div>
+          <div class="wonk-table-scroll" role="region" aria-label="Event results, scroll horizontally for all columns" tabindex="0" style="margin-top:var(--ak-s2)">
+            <table class="wonk-table" id="dt-results-table">
+              <caption>Latency in milliseconds. Select a record ID to inspect its payload.</caption>
+              <thead><tr>
+                <th scope="col"><input id="dt-select-all" type="checkbox" aria-label="Select all visible records"></th>
+                <th scope="col">record</th><th scope="col">event</th><th scope="col">source</th>
+                <th scope="col" class="num" aria-sort="descending"><button class="wonk-sort" id="dt-sort-latency" type="button">latency &#8595;</button></th>
+                <th scope="col">status</th>
+              </tr></thead>
+              <tbody id="dt-result-rows"></tbody>
+            </table>
+          </div>
+          <div class="wonk-state" id="dt-no-results" hidden>
+            <h3>No records match.</h3>
+            <p>The source contains 6 records. Remove a filter or lower the latency threshold.</p>
+            <button type="button" class="wonk-btn" id="dt-clear-filters">Clear applied filters</button>
+          </div>
+          <div class="wonk-selection-bar">
+            <output id="dt-selection-count" aria-live="polite">0 selected</output>
+            <button type="button" id="dt-clear-selection" class="wonk-btn" disabled>Clear selection</button>
+            <button type="button" id="dt-export-selection" class="wonk-btn" disabled>Download selected JSON</button>
+          </div>
+        </div>
+
+        <div id="dt-jobs" style="margin-top:var(--ak-s6)">
+          <div class="demo-row" style="justify-content:space-between">
+            <div class="wonk-label">import jobs</div>
+            <span class="wonk-badge">fixed snapshot</span>
+          </div>
+          <ol class="wonk-job-list">
+            <li class="wonk-job">
+              <header><strong>web / batch 041</strong><span class="wonk-badge wonk-badge--ok">complete</span></header>
+              <label for="dt-job-web" class="wonk-mono">1,200 / 1,200 records written</label>
+              <progress id="dt-job-web" max="1200" value="1200">100%</progress>
+            </li>
+            <li class="wonk-job">
+              <header><strong>server / batch 042</strong><span class="wonk-badge">paused</span></header>
+              <label for="dt-job-server" class="wonk-mono">750 / 1,000 records written</label>
+              <progress id="dt-job-server" max="1000" value="750">75%</progress>
+              <p class="wonk-help">Paused by operator at 08:58 UTC. Counts do not advance in this fixture.</p>
+            </li>
+          </ol>
+          <div class="wonk-freshness"><span class="wonk-badge">fixture</span> 6 local records &middot; snapshot <time datetime="2026-09-09T09:00:00Z">09 Sep 2026, 09:00 UTC</time></div>
+        </div>
+
+        <div id="dt-states" style="margin-top:var(--ak-s6)">
+          <div class="wonk-label" style="margin-bottom:var(--ak-s2)">states &mdash; empty, stale, error, unconfigured</div>
+          <div class="wonk-channel-bank">
+            <article class="wonk-state" data-state="stale">
+              <h3>Last result is stale.</h3>
+              <p>Refresh failed at 09:02 UTC. The table still shows the 09:00 UTC snapshot.</p>
+              <span class="wonk-badge">stale fixture</span>
+            </article>
+            <article class="wonk-state" data-state="error">
+              <h3>Query failed.</h3>
+              <p>The source rejected the request. Preserve the draft and show the source's error before offering retry.</p>
+              <span class="wonk-badge">error recipe</span>
+            </article>
+            <article class="wonk-state">
+              <h3>No source connected.</h3>
+              <p>Explain the required connection and permission. A missing source has no row count yet.</p>
+              <span class="wonk-badge">unconfigured recipe</span>
+            </article>
+          </div>
+        </div>
+      </section>
+      <!-- SECTION:datatools END -->
+
+      <hr class="wonk-divider">
+
+      <!-- SECTION:motion START -->
+      <section class="demo-section wonk-reveal" id="motion">
+        <div class="wonk-label">19 &middot; motion &mdash; all eight effects, replayable</div>
+        <h3>One shot, on request, never a loop</h3>
+        <p style="max-width:56ch">
+          every button below calls the real <code>wonkMotion.play(el, name)</code>.
+          nothing plays on load, nothing loops. click twice to replay; motion
+          cancels and restarts cleanly. reduced motion resolves every effect
+          to its end state immediately. full contract and browser checks:
+          <a href="motion.html">motion.html</a>.
+        </p>
+        <nav class="family-toc demo-row" aria-label="Motion contents">
+          <a href="#motion-panel">panel</a>
+          <a href="#motion-value">value</a>
+          <a href="#motion-row">row</a>
+          <a href="#motion-filter">filter</a>
+          <a href="#motion-progress">progress</a>
+          <a href="#motion-trace">trace</a>
+          <a href="#motion-confirm">confirm</a>
+        </nav>
+
+        <div class="demo-grid">
+          <div class="wonk-card" id="motion-panel">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">panel-enter / panel-exit</div>
+            <div class="demo-row">
+              <button class="wonk-btn wonk-btn--primary" id="motion-panel-open">Open</button>
+              <button class="wonk-btn" id="motion-panel-close">Close</button>
+            </div>
+            <div id="motion-panel-el" hidden style="margin-top:var(--ak-s3); padding:var(--ak-s3); border:1px solid var(--ak-hairline-strong); border-radius:var(--ak-radius)">
+              <p style="margin:0">Static export settings fixture.</p>
+            </div>
+          </div>
+          <div class="wonk-card" id="motion-value">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">value-changed</div>
+            <div class="wonk-stat">
+              <span class="wonk-label">events / sec</span>
+              <span class="wonk-num" id="motion-value-num">48,112</span>
+            </div>
+            <div class="demo-row" style="margin-top:var(--ak-s3)">
+              <button class="wonk-btn" id="motion-value-bump">Bump value</button>
+            </div>
+          </div>
+          <div class="wonk-card" id="motion-row">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">row-inserted</div>
+            <table class="wonk-table" id="motion-row-table">
+              <thead><tr><th>service</th><th class="num">req/s</th></tr></thead>
+              <tbody id="motion-row-body"><tr><td>ingest-api</td><td class="num">18,204</td></tr></tbody>
+            </table>
+            <div class="demo-row" style="margin-top:var(--ak-s3)">
+              <button class="wonk-btn" id="motion-row-add">Add row</button>
+            </div>
+          </div>
+          <div class="wonk-card" id="motion-filter">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">filter-applied</div>
+            <div class="demo-row" style="margin-bottom:var(--ak-s3)">
+              <button class="wonk-btn" data-motion-filter="all">All</button>
+              <button class="wonk-btn" data-motion-filter="ok">OK only</button>
+            </div>
+            <table class="wonk-table" id="motion-filter-table">
+              <thead><tr><th>service</th><th>status</th></tr></thead>
+              <tbody id="motion-filter-body"></tbody>
+            </table>
+          </div>
+          <div class="wonk-card" id="motion-progress">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">progress-complete</div>
+            <div class="wonk-progress"><span id="motion-progress-fill" style="width:0%"></span></div>
+            <div class="demo-row" style="margin-top:var(--ak-s3)">
+              <button class="wonk-btn" id="motion-progress-run">Run to 100%</button>
+            </div>
+          </div>
+          <div class="wonk-card" id="motion-trace">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">trace-draw</div>
+            <svg id="motion-trace-svg" viewBox="0 0 160 50" width="160" height="50" aria-hidden="true">
+              <path data-wonk-trace pathLength="1" d="M4,40 L40,12 L76,34 L112,8 L156,26"
+                    fill="none" stroke="var(--ak-a1-text)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="demo-row" style="margin-top:var(--ak-s3)">
+              <button class="wonk-btn" id="motion-trace-replay">Replay draw</button>
+            </div>
+          </div>
+          <div class="wonk-card" id="motion-confirm">
+            <div class="wonk-label" style="margin-bottom:var(--ak-s3)">confirm-check</div>
+            <svg id="motion-confirm-svg" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+              <g data-wonk-pop>
+                <circle cx="12" cy="12" r="10" fill="none" stroke="var(--ak-ok)" stroke-width="2" data-wonk-trace pathLength="1"/>
+                <path d="M7,12 L10.5,15.5 L17,8" fill="none" stroke="var(--ak-ok)" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" data-wonk-trace pathLength="1"/>
+              </g>
+            </svg>
+            <div class="demo-row" style="margin-top:var(--ak-s3)">
+              <button class="wonk-btn wonk-btn--primary" id="motion-confirm-run">Confirm save</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- SECTION:motion END -->
+
+      <!-- SECTION:footer START (no script section) -->
       <footer style="text-align:center; padding:var(--ak-s8) 0">
-        <span class="wonk-label">wonk · aktunes · collaboration is how projects get finished</span>
+        <span class="wonk-label">wonk &middot; aktunes &middot; collaboration is how projects get finished</span>
       </footer>
+      <!-- SECTION:footer END -->
     </main>
   </div>
 </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const PAIRS = ["metathesis", "glorpla", "demogorgon", "ancient", "flourish"];
+<dialog id="dt-inspector" class="wonk-modal wonk-inspector" aria-labelledby="dt-inspector-title">
+  <form method="dialog"><button class="wonk-btn" autofocus>Close inspector</button></form>
+  <h2 id="dt-inspector-title">Record</h2>
+  <dl class="wonk-kv" id="dt-record-meta"></dl>
+  <h3>Payload</h3>
+  <pre class="wonk-pre"><code id="dt-record-payload" data-language="json"></code></pre>
+</dialog>
 
-  // ---- pair picker ----
-  const picker = document.getElementById("pair-picker");
-  const nameEl = document.getElementById("pair-name");
-  function chipColor(pair) {
-    const probe = document.createElement("div");
-    probe.setAttribute("data-pair", pair);
-    document.body.appendChild(probe);
-    const c = getComputedStyle(probe).getPropertyValue("--ak-a1").trim();
-    probe.remove();
-    return c;
-  }
-  PAIRS.forEach((p) => {
-    const b = document.createElement("button");
-    b.className = "pair-chip";
-    b.title = p;
-    b.style.background = chipColor(p);
-    b.setAttribute("aria-pressed", p === "metathesis");
-    b.addEventListener("click", () => {
-      wonk.setPair(p);
-      nameEl.textContent = "pair: " + p;
-      [...picker.children].forEach((c) => c.setAttribute("aria-pressed", c === b));
-      [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
-      renderAll();
-    });
-    picker.appendChild(b);
-  });
-
-  // ---- theme toggle ----
-  const toggle = document.getElementById("theme-toggle");
-  toggle.addEventListener("click", () => {
-    const paper = document.documentElement.getAttribute("data-theme") === "paper";
-    wonk.setTheme(paper ? "dark" : "paper");
-    toggle.textContent = paper ? "Paper" : "Dark";
-    [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
-    renderAll();
-  });
-
-  // ---- modal ----
-  document.getElementById("open-modal").addEventListener("click", () =>
-    document.getElementById("demo-modal").showModal()
-  );
-
-  // ---- swatches ----
-  function renderSwatches() {
-    const css = getComputedStyle(document.documentElement);
-    const v = (n) => css.getPropertyValue(n).trim();
-    const rows = [
-      ["a1", "--ak-a1"], ["a1-text", "--ak-a1-text"], ["a2", "--ak-a2"], ["a2-text", "--ak-a2-text"],
-      ["ok", "--ak-ok"], ["warn", "--ak-warn"], ["err", "--ak-err"], ["info", "--ak-info"],
-      ["chart-1", "--ak-chart-1"], ["chart-2", "--ak-chart-2"], ["chart-3", "--ak-chart-3"],
-      ["chart-4", "--ak-chart-4"], ["chart-5", "--ak-chart-5"], ["chart-6", "--ak-chart-6"],
-    ];
-    const inkFor = (hex) => {
-      // relative luminance -> dark ink on light fills, white on dark fills
-      const m = hex.match(/^#([0-9a-f]{6})$/i);
-      if (!m) return "#fff";
-      const [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255);
-      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      return lum > 0.45 ? "#0f1214" : "#ffffff";
-    };
-    document.getElementById("swatch-grid").innerHTML = rows
-      .map(([name, token]) => {
-        const val = v(token);
-        return `<div class="demo-swatch" style="background:${val}">
-          <span class="wonk-label" style="color:${inkFor(val)}">${name} · ${val}</span>
-        </div>`;
-      })
-      .join("");
-  }
-
-  // ---- hero: damped sine under a dashed exponential envelope (the aktunes bg) ----
-  function renderHero() {
-    const css = getComputedStyle(document.documentElement);
-    const v = (n) => css.getPropertyValue(n).trim();
-    const W = 800, H = 90, mid = H / 2, A = 34, k = 0.085, lam = 260;
-    const pts = [], top = [], bot = [];
-    for (let x = 0; x <= W; x += 4) {
-      const env = A * Math.exp(-x / lam);
-      pts.push(`${x},${(mid - Math.sin(x * k) * env).toFixed(1)}`);
-      top.push(`${x},${(mid - env).toFixed(1)}`);
-      bot.push(`${x},${(mid + env).toFixed(1)}`);
-    }
-    document.getElementById("hero-wave").innerHTML =
-      `<polyline points="${top.join(" ")}" fill="none" stroke="${v("--ak-hairline")}" stroke-width="1" stroke-dasharray="4 5"/>` +
-      `<polyline points="${bot.join(" ")}" fill="none" stroke="${v("--ak-hairline")}" stroke-width="1" stroke-dasharray="4 5"/>` +
-      `<line x1="0" y1="${mid}" x2="${W}" y2="${mid}" stroke="${v("--ak-hairline")}" stroke-width="1"/>` +
-      `<polyline points="${pts.join(" ")}" fill="none" stroke="${v("--ak-a1-text")}" stroke-width="1.75" opacity="0.85"/>`;
-  }
-
-  // ---- stat sparkline ----
-  const sparkValues = Array.from({ length: 32 }, (_, i) =>
-    40 + Math.sin(i / 4) * 12 + Math.random() * 9 + i * 0.6
-  );
-  function renderSpark() {
-    wonk.spark(document.getElementById("stat-spark"), sparkValues, { w: 160, h: 34 });
-  }
-
-  // ---- charts (see references/charts.md) ----
-  const SERVICES = ["ingest", "export", "identity"];
-  const lineData = [];
-  for (let h = 0; h < 48; h++) {
-    SERVICES.forEach((s, i) => {
-      lineData.push({
-        t: h,
-        svc: s,
-        v: 800 + i * 400 + Math.sin(h / 5 + i * 2) * 300 + Math.random() * 120,
-      });
-    });
-  }
-  const barData = [
-    { svc: "ingest-api", errs: 12 }, { svc: "identity", errs: 4 },
-    { svc: "export", errs: 41 }, { svc: "webhooks", errs: 88 }, { svc: "cdc", errs: 7 },
-  ];
-
-  function wonkChart(el, build) {
-    const css = getComputedStyle(document.documentElement);
-    const v = (n) => css.getPropertyValue(n).trim();
-    const series = [1, 2, 3, 4, 5, 6].map((i) => v(`--ak-chart-${i}`));
-    el.replaceChildren(
-      Plot.plot({
-        style: {
-          background: "transparent",
-          color: v("--ak-ink-3"),
-          fontFamily: v("--ak-font-mono"),
-          fontSize: "11px",
-        },
-        ...build({ series, grid: v("--ak-hairline") }),
-      })
-    );
-  }
-
-  function renderCharts() {
-    wonkChart(document.getElementById("chart-line"), ({ series, grid }) => ({
-      height: 240,
-      marginLeft: 50,
-      x: { label: "hour" },
-      y: { grid: true, label: null },
-      color: { domain: SERVICES, range: series, legend: true },
-      marks: [
-        Plot.ruleY([0], { stroke: grid }),
-        Plot.lineY(lineData, { x: "t", y: "v", stroke: "svc", strokeWidth: 2, tip: true }),
-      ],
-    }));
-    wonkChart(document.getElementById("chart-bar"), ({ series, grid }) => ({
-      height: 200,
-      marginLeft: 90,
-      x: { grid: true, label: "errors" },
-      y: { label: null },
-      marks: [
-        Plot.ruleX([0], { stroke: grid }),
-        Plot.barX(barData, {
-          y: "svc", x: "errs", fill: series[0], rx: 2,
-          insetTop: 1, insetBottom: 1, sort: { y: "-x" }, tip: true,
-        }),
-        Plot.textX(barData, { y: "svc", x: "errs", text: (d) => d.errs, dx: 14 }),
-      ],
-    }));
-  }
-
-  function renderAll() {
-    renderSwatches();
-    renderHero();
-    renderSpark();
-    renderCharts();
-    const kv = document.getElementById("kv-pair");
-    if (kv) kv.textContent = document.documentElement.getAttribute("data-pair");
-  }
-  renderAll();
-
-  // ---- sidebar follows scroll ----
-  const links = [...document.querySelectorAll(".wonk-navlink")];
-  const byId = Object.fromEntries(links.map((l) => [l.getAttribute("href").slice(1), l]));
-  const setActive = (id) => links.forEach((l) => l.classList.toggle("active", l === byId[id]));
-  links.forEach((l) => l.addEventListener("click", () => setActive(l.getAttribute("href").slice(1))));
-  const spy = new IntersectionObserver(
-    (entries) => {
-      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (hit && byId[hit.target.id]) setActive(hit.target.id);
-    },
-    { rootMargin: "-20% 0px -60% 0px" }
-  );
-  document.querySelectorAll(".demo-section[id]").forEach((s) => spy.observe(s));
-});
-</script>
 </body>
 </html>

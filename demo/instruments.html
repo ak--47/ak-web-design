@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WONK instruments · precision controls for data tools</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%233fc9c9'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/wonk-tokens.css">
+<link rel="stylesheet" href="../assets/wonk.css">
+<link rel="stylesheet" href="../assets/wonk-controls.css">
+<link rel="stylesheet" href="../assets/wonk-code.css">
+<script defer src="../assets/wonk.js"></script>
+<script defer src="../assets/wonk-controls.js"></script>
+<script defer src="controls-checks.js"></script>
+<!-- code pack vendor: Prism 1.29.0, must load in this exact order
+     (see ../references/code.md), deferred and before wonk-code.js. -->
+<script defer src="../assets/vendor/prism/prism-core.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-markup.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-css.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-clike.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-javascript.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-json.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-sql.min.js"></script>
+<script defer src="../assets/vendor/prism/prism-bash.min.js"></script>
+<script defer src="../assets/wonk-code.js"></script>
+<!-- browser-callable checks for wonk-code, not run automatically --
+     see ../references/code.md, "browser checks" -->
+<script defer src="code-checks.js"></script>
+<style>
+  body { margin: 0; }
+  .demo-main { padding: var(--ak-s8); max-width: 72rem; margin: 0 auto; }
+  .demo-section { margin-bottom: var(--ak-s12); scroll-margin-top: var(--ak-s6); }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: var(--ak-s4); }
+  .demo-row { display: flex; flex-wrap: wrap; gap: var(--ak-s3); align-items: center; }
+  .demo-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--ak-s4) var(--ak-s6);
+    border-bottom: var(--ak-hairline-w) solid var(--ak-hairline);
+    position: sticky; top: 0; background: var(--ak-ground); z-index: 5;
+  }
+  .demo-back { font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); letter-spacing: var(--ak-track-label); }
+  .readout { display: flex; align-items: center; gap: var(--ak-s2); }
+  .readout .wonk-num { min-width: 4ch; text-align: right; }
+  .fixture-note {
+    font-size: var(--ak-text-sm); color: var(--ak-ink-3);
+    border-left: 2px solid var(--ak-hairline-strong);
+    padding-left: var(--ak-s3); margin: var(--ak-s4) 0 0;
+  }
+  .event-log {
+    font-family: var(--ak-font-mono); font-size: var(--ak-text-xs);
+    background: var(--ak-surface-2); border: var(--ak-hairline-w) solid var(--ak-hairline);
+    border-radius: var(--ak-radius); padding: var(--ak-s3);
+    max-height: 8rem; overflow-y: auto;
+  }
+  .event-log .change { color: var(--ak-a1-text); }
+  .event-log .input { color: var(--ak-ink-3); }
+  /* expandable log entries, same idiom as demo/catalog.css: padded
+     summary always shows timestamp + type; body is a real
+     wonkCode.render'd JSON payload, collapsed except the newest. */
+  .event-log-entry { border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); }
+  .event-log-entry:last-child { border-bottom: none; }
+  .event-log-entry summary { display: flex; gap: var(--ak-s2); align-items: baseline; padding: var(--ak-s2) var(--ak-s1); cursor: pointer; list-style: none; }
+  .event-log-entry summary::-webkit-details-marker { display: none; }
+  .event-log-entry .wonk-pre { margin: 0 var(--ak-s1) var(--ak-s2); font-size: var(--ak-text-xs); }
+  .event-log-entry.change summary { color: var(--ak-a1-text); }
+  .event-log-entry.input summary { color: var(--ak-ink-3); }
+  .event-log-entry.ok summary { color: var(--ak-ok); }
+  .event-log-entry.err summary { color: var(--ak-err); }
+  @media (max-width: 640px) {
+    .demo-main { padding: var(--ak-s4); }
+    .wonk-title { overflow-wrap: anywhere; }
+    .wonk-window-row { flex-direction: column; align-items: stretch; }
+    .wonk-window-sep { padding-bottom: 0; }
+    .demo-topbar { flex-direction: column; gap: var(--ak-s2); align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="demo-topbar">
+  <a class="demo-back wonk-btn wonk-btn--quiet" href="index.html">&larr; back to WONK</a>
+  <div class="demo-row">
+    <span class="wonk-label" id="pair-name">pair: metathesis</span>
+    <button class="wonk-btn" id="theme-toggle">Paper</button>
+  </div>
+</header>
+
+<main class="demo-main">
+
+  <section class="demo-section wonk-reveal">
+    <div class="wonk-label">wonk / instruments</div>
+    <h1 class="wonk-title" style="font-size:var(--ak-text-3xl)" data-wonk-scatter>Instruments</h1>
+    <p style="max-width:52ch">
+      precision controls for data tools: rotary knobs, faders, bounded windows,
+      segmented selectors, steppers. every value here is fixture data, wired
+      to a readout and an event log on this page. wire the
+      <code>change</code> events to your own state, never the reverse.
+    </p>
+    <p class="fixture-note">
+      fixtures: every starting value below is a fixed number chosen for this
+      page (a threshold, a date range, a page size). nothing on this page
+      polls, streams, or fakes live data. see
+      <a href="../references/instruments.md">references/instruments.md</a>
+      for the full contract, including why <code>input</code> and
+      <code>change</code> are wired to different things.
+    </p>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <section class="demo-section wonk-reveal" id="knob">
+    <div class="wonk-label">01 &middot; knob</div>
+    <h3>Rotary, exact by keyboard or by number</h3>
+    <p>Drag vertically, use arrow / Home / End / Page keys, or click the number to type an exact value.</p>
+    <div class="demo-grid">
+      <div class="wonk-card">
+        <div class="wonk-label" style="margin-bottom:var(--ak-s3)">confidence threshold</div>
+        <div data-wonk-knob data-label="confidence threshold" data-min="0" data-max="1" data-step="0.05" data-value="0.8" data-unit=""></div>
+      </div>
+      <div class="wonk-card">
+        <div class="wonk-label" style="margin-bottom:var(--ak-s3)">event sampling rate</div>
+        <div data-wonk-knob data-label="event sampling rate" data-min="1" data-max="100" data-step="1" data-value="25" data-unit="%"></div>
+      </div>
+      <div class="wonk-card">
+        <div class="wonk-label" style="margin-bottom:var(--ak-s3)">retry budget (disabled)</div>
+        <div data-wonk-knob data-label="retry budget" data-min="0" data-max="10" data-step="1" data-value="3" data-unit="tries" disabled></div>
+      </div>
+    </div>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="wonk-label" style="margin-bottom:var(--ak-s2)">event log &middot; confidence threshold knob</div>
+      <div class="event-log" id="knob-log"></div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section wonk-reveal" id="fader">
+    <div class="wonk-label">02 &middot; fader</div>
+    <h3>Native range, exact number alongside it</h3>
+    <p>The slider is a real <code>&lt;input type=range&gt;</code> under WONK styling. The number is always in sync, in both directions.</p>
+    <div class="demo-grid" style="grid-template-columns: 1fr">
+      <fieldset class="wonk-fader" data-min="0" data-max="500" data-step="10" data-value="120">
+        <legend class="wonk-label">p95 latency alert</legend>
+        <div class="wonk-fader-row">
+          <input type="range" class="wonk-range">
+          <input type="number" class="wonk-fader-exact">
+          <span class="wonk-fader-unit">ms</span>
+        </div>
+      </fieldset>
+    </div>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="wonk-label" style="margin-bottom:var(--ak-s2)">event log &middot; p95 fader</div>
+      <div class="event-log" id="fader-log"></div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section wonk-reveal" id="window">
+    <div class="wonk-label">03 &middot; bounded window</div>
+    <h3>Two ends, always ordered</h3>
+    <p>Typing "from" past "to" (or back) retains the crossed draft and shows a validation error on both. <code>change</code> commits once both ends hold a valid, ordered value; it commits a draft, it does not run a query.</p>
+    <fieldset class="wonk-window" data-min="2026-01-01" data-max="2026-12-31">
+      <legend class="wonk-label">comparison window</legend>
+      <div class="wonk-window-row">
+        <div class="wonk-field">
+          <label class="wonk-label" for="w-from">from</label>
+          <input class="wonk-input" type="date" id="w-from" value="2026-08-01">
+        </div>
+        <span class="wonk-window-sep">&rarr;</span>
+        <div class="wonk-field">
+          <label class="wonk-label" for="w-to">to</label>
+          <input class="wonk-input" type="date" id="w-to" value="2026-09-01">
+        </div>
+      </div>
+    </fieldset>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="wonk-label" style="margin-bottom:var(--ak-s2)">event log &middot; comparison window (change only, no input event exists to log)</div>
+      <div class="event-log" id="window-log"></div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section wonk-reveal" id="segmented">
+    <div class="wonk-label">04 &middot; segmented selector</div>
+    <h3>Native radios, one glide bar</h3>
+    <p>Keyboard arrow-key roving and form submission work with zero JS. The glide bar is the only enhancement, and it degrades to a solid fill with no JS or reduced motion.</p>
+    <fieldset class="wonk-segmented">
+      <legend class="wonk-label">granularity</legend>
+      <div class="wonk-segmented-track">
+        <label><input type="radio" name="granularity" value="hour" checked><span>hour</span></label>
+        <label><input type="radio" name="granularity" value="day"><span>day</span></label>
+        <label><input type="radio" name="granularity" value="week"><span>week</span></label>
+      </div>
+    </fieldset>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="wonk-label" style="margin-bottom:var(--ak-s2)">event log &middot; granularity</div>
+      <div class="event-log" id="segmented-log"></div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section wonk-reveal" id="stepper">
+    <div class="wonk-label">05 &middot; stepper</div>
+    <h3>A number input, with bigger buttons</h3>
+    <p>The input alone is already a stepper. The buttons here just give it bigger touch targets and disable themselves at the bounds.</p>
+    <div class="demo-grid">
+      <div class="wonk-card">
+        <fieldset class="wonk-stepper" data-min="1" data-max="100" data-step="1" data-value="20">
+          <legend class="wonk-label">rows per page</legend>
+          <div class="wonk-stepper-row">
+            <button type="button" class="wonk-stepper-btn" data-dir="-1" aria-label="decrease rows per page">&minus;</button>
+            <input type="number" class="wonk-stepper-input" aria-label="rows per page">
+            <button type="button" class="wonk-stepper-btn" data-dir="1" aria-label="increase rows per page">+</button>
+          </div>
+          <span class="wonk-stepper-unit">rows</span>
+        </fieldset>
+      </div>
+      <div class="wonk-card">
+        <fieldset class="wonk-stepper" data-min="0" data-max="5" data-step="1" data-value="0" disabled>
+          <legend class="wonk-label">decimal precision (disabled fieldset)</legend>
+          <div class="wonk-stepper-row">
+            <button type="button" class="wonk-stepper-btn" data-dir="-1" aria-label="decrease decimal precision">&minus;</button>
+            <input type="number" class="wonk-stepper-input" aria-label="decimal precision">
+            <button type="button" class="wonk-stepper-btn" data-dir="1" aria-label="increase decimal precision">+</button>
+          </div>
+          <span class="wonk-stepper-unit">digits</span>
+        </fieldset>
+      </div>
+    </div>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="wonk-label" style="margin-bottom:var(--ak-s2)">event log &middot; rows per page</div>
+      <div class="event-log" id="stepper-log"></div>
+    </div>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <section class="demo-section wonk-reveal" id="lifecycle">
+    <div class="wonk-label">06 &middot; init / destroy lifecycle</div>
+    <h3>Inject, wire, and tear down</h3>
+    <p>
+      <code>wonkControls.init(scope)</code> wires instruments inside injected
+      DOM (and <code>scope</code> itself, wiring a knob directly via
+      <code>wonk.knob()</code> rather than calling the broader
+      <code>wonk.init()</code>, which would re-wire unrelated legacy
+      widgets). <code>wonkControls.destroy(scope)</code> clears each
+      control's cached handle and removes the segmented selector's
+      window-level resize listener before you discard the subtree. Try it:
+    </p>
+    <div class="demo-row">
+      <button class="wonk-btn wonk-btn--primary" id="inject-btn">Inject a knob</button>
+      <button class="wonk-btn wonk-btn--danger" id="destroy-btn">Destroy it</button>
+    </div>
+    <div id="inject-target" class="wonk-card" style="margin-top:var(--ak-s4); min-height:120px"></div>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <section class="demo-section wonk-reveal" id="contract">
+    <div class="wonk-label">07 &middot; contract</div>
+    <h3>Instrument &rarr; data tool mapping</h3>
+    <table class="wonk-table">
+      <thead><tr><th>need</th><th>instrument</th><th>commits a draft on</th></tr></thead>
+      <tbody>
+        <tr><td>threshold that gates an alert</td><td>knob or fader</td><td><code>change</code></td></tr>
+        <tr><td>lookback window, comparison period</td><td>bounded window</td><td><code>change</code>, both ends ordered</td></tr>
+        <tr><td>chart granularity, view mode</td><td>segmented selector</td><td><code>change</code></td></tr>
+        <tr><td>page size, retry count, precision</td><td>stepper</td><td><code>change</code></td></tr>
+      </tbody>
+    </table>
+    <p class="fixture-note">
+      full reference, copy recipes, and the "change commits a draft, it
+      never runs a query" rule: <a href="../references/instruments.md">references/instruments.md</a>.
+    </p>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <section class="demo-section wonk-reveal" id="checks">
+    <div class="wonk-label">08 &middot; reproducible checks</div>
+    <h3>Run the regression checks in this browser</h3>
+    <p>
+      <code>demo/controls-checks.js</code> builds its own hidden fixtures and
+      tears them down after each check. It never touches the gallery
+      above. Runnable from any devtools console on this page via
+      <code>wonkControlsChecks.run()</code>, or by an automated browser
+      session calling the same function. Click to run it here:
+    </p>
+    <div class="demo-row">
+      <button class="wonk-btn wonk-btn--primary" id="run-checks-btn">Run checks</button>
+      <span class="wonk-label" id="checks-summary"></span>
+    </div>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="event-log" id="checks-log" style="max-height:16rem"></div>
+    </div>
+    <p style="margin-top:var(--ak-s6)">
+      <code>demo/code-checks.js</code> covers the syntax-highlighting and
+      JSON-editor pack (<code>wonk-code.js</code>) the same way, building and
+      tearing down its own hidden fixtures. Runnable via
+      <code>wonkCodeChecks.run()</code>. Click to run it here:
+    </p>
+    <div class="demo-row">
+      <button class="wonk-btn wonk-btn--primary" id="run-code-checks-btn" type="button">Run code checks</button>
+      <span class="wonk-label" id="code-checks-summary"></span>
+    </div>
+    <div class="wonk-card" style="margin-top:var(--ak-s4)">
+      <div class="event-log" id="code-checks-log" style="max-height:16rem"></div>
+    </div>
+  </section>
+
+  <footer style="text-align:center; padding:var(--ak-s8) 0">
+    <span class="wonk-label">wonk instruments &middot; precision, not decoration</span>
+  </footer>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ---- theme toggle (dark/paper) ----
+  const toggle = document.getElementById("theme-toggle");
+  toggle.addEventListener("click", () => {
+    const paper = document.documentElement.getAttribute("data-theme") === "paper";
+    wonk.setTheme(paper ? "dark" : "paper");
+    toggle.textContent = paper ? "Paper" : "Dark";
+  });
+
+  // ---- event logger shared by every section: each entry is a
+  // padded, expandable <details> holding a real wonkCode.render'd
+  // JSON payload (label, kind, detail), not a flattened string. The
+  // timestamp and type stay visible in the summary whether open or
+  // closed; only the newest entry defaults open. Falls back to a
+  // plain-text <pre> if wonkCode never loaded (Prism vendor missing
+  // in this checkout) -- the payload stays fully readable either way. ----
+  function logTo(hostId, label) {
+    const host = document.getElementById(hostId);
+    return (kind, detail) => {
+      const entry = document.createElement("details");
+      entry.className = `event-log-entry ${kind}`;
+      const summary = document.createElement("summary");
+      const t = new Date().toISOString().slice(11, 23);
+      summary.textContent = `${t}  ${kind.padEnd(6)}`;
+      const body = document.createElement("pre");
+      body.className = "wonk-pre";
+      const code = document.createElement("code");
+      code.dataset.language = "json";
+      body.appendChild(code);
+      entry.append(summary, body);
+      [...host.children].forEach((child) => (child.open = false));
+      host.appendChild(entry);
+      entry.open = true;
+      const payload = { label, kind, detail };
+      if (window.wonkCode) wonkCode.render(code, payload, "json");
+      else code.textContent = JSON.stringify(payload, null, 2); // Prism vendor not present in this checkout; still safe, unhighlighted
+      host.scrollTop = host.scrollHeight;
+      while (host.children.length > 40) host.removeChild(host.firstChild);
+    };
+  }
+
+  // ---- knob log (only the first, enabled knob) ----
+  const knobEl = document.querySelector('[data-wonk-knob][data-label="confidence threshold"]');
+  const knobLog = logTo("knob-log", "confidence threshold");
+  knobEl.addEventListener("input", (e) => knobLog("input", e.detail));
+  knobEl.addEventListener("change", (e) => knobLog("change", e.detail));
+
+  // ---- fader log ----
+  const faderEl = document.querySelector(".wonk-fader");
+  const faderRange = faderEl.querySelector(".wonk-range");
+  const faderLog = logTo("fader-log", "p95 alert");
+  faderRange.addEventListener("input", () => faderLog("input", { value: faderRange.value }));
+  faderRange.addEventListener("change", () => faderLog("change", { value: faderRange.value }));
+
+  // ---- window log ----
+  const windowEl = document.querySelector(".wonk-window");
+  const windowLog = logTo("window-log", "comparison window");
+  windowEl.addEventListener("change", (e) => windowLog("change", e.detail));
+
+  // ---- segmented log ----
+  const segmentedEl = document.querySelector(".wonk-segmented");
+  const segmentedLog = logTo("segmented-log", "granularity");
+  segmentedEl.addEventListener("change", (e) => segmentedLog("change", { value: e.target.value }));
+
+  // ---- stepper log (rows per page) ----
+  const stepperInput = document.querySelectorAll(".wonk-stepper-input")[0];
+  const stepperLog = logTo("stepper-log", "rows per page");
+  stepperInput.addEventListener("input", () => stepperLog("input", { value: stepperInput.value }));
+  stepperInput.addEventListener("change", () => stepperLog("change", { value: stepperInput.value }));
+
+  // ---- lifecycle demo: inject + destroy ----
+  const injectTarget = document.getElementById("inject-target");
+  document.getElementById("inject-btn").addEventListener("click", () => {
+    if (injectTarget.children.length) return;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div class="wonk-label" style="margin-bottom:var(--ak-s3)">injected: mix</div>
+      <div data-wonk-knob data-label="mix" data-min="0" data-max="100" data-value="50" data-unit="%"></div>
+    `;
+    injectTarget.appendChild(wrap);
+    wonkControls.init(injectTarget); // wires the new knob directly, does not re-run wonk.init()
+  });
+  document.getElementById("destroy-btn").addEventListener("click", () => {
+    wonkControls.destroy(injectTarget);
+    injectTarget.replaceChildren();
+  });
+
+  // ---- reproducible checks (demo/controls-checks.js) ----
+  const checksBtn = document.getElementById("run-checks-btn");
+  const checksLog = document.getElementById("checks-log");
+  const checksSummary = document.getElementById("checks-summary");
+  checksBtn.addEventListener("click", async () => {
+    checksBtn.disabled = true;
+    checksSummary.textContent = "running...";
+    checksLog.replaceChildren();
+    const results = await wonkControlsChecks.run();
+    results.forEach((r) => {
+      const line = document.createElement("div");
+      line.className = r.pass ? "change" : "input";
+      line.style.color = r.pass ? "var(--ak-ok)" : "var(--ak-err)";
+      line.textContent = `${r.pass ? "PASS" : "FAIL"}  ${r.name}${r.pass ? "" : "  -- " + r.message}`;
+      checksLog.appendChild(line);
+    });
+    const failed = results.filter((r) => !r.pass).length;
+    checksSummary.textContent = `${results.length - failed}/${results.length} passed`;
+    checksBtn.disabled = false;
+  });
+
+  // ---- reproducible checks (demo/code-checks.js) ----
+  const codeChecksBtn = document.getElementById("run-code-checks-btn");
+  const codeChecksLog = document.getElementById("code-checks-log");
+  const codeChecksSummary = document.getElementById("code-checks-summary");
+  const logCodeCheck = logTo("code-checks-log", "code check");
+  codeChecksBtn.addEventListener("click", async () => {
+    if (!window.wonkCodeChecks) {
+      codeChecksSummary.textContent = "wonkCodeChecks did not load (see code-checks.js script tag)";
+      return;
+    }
+    codeChecksBtn.disabled = true;
+    codeChecksSummary.textContent = "running...";
+    codeChecksLog.replaceChildren();
+    const { passed, failed, results } = await wonkCodeChecks.run();
+    results.forEach((r) => logCodeCheck(r.pass ? "ok" : "err", r));
+    codeChecksSummary.textContent = `${passed}/${passed + failed} passed`;
+    codeChecksBtn.disabled = false;
+  });
+
+  // ---- scroll reveal + pair name already handled by wonk.js ----
+  const nameEl = document.getElementById("pair-name");
+  nameEl.textContent = "pair: " + document.documentElement.getAttribute("data-pair");
+});
+</script>
+</body>
+</html>

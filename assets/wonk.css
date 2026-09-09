@@ -1,7 +1,7 @@
 /* ============================================================
    WONK components · requires wonk-tokens.css
    Class prefix: .wonk-
-   Fonts: load Space Grotesk (400,500,700) + JetBrains Mono (400,700)
+   Fonts: load Space Grotesk (400,500,700) + IBM Plex Mono (400,500,600,700)
    ============================================================ */
 
 /* ---- base ---- */
@@ -52,10 +52,10 @@
 .wonk-label {
   font-family: var(--ak-font-mono);
   font-size: var(--ak-text-xs);
-  font-weight: 400;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: var(--ak-track-label);
-  color: var(--ak-ink-3);
+  color: var(--ak-ink-2);
 }
 .wonk-num {
   font-family: var(--ak-font-mono);

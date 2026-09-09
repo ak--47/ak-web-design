@@ -13,125 +13,50 @@ description: >
   customer-facing work products.
 ---
 
-# ak-web-design · the WONK design system
+# ak-web-design · WONK
 
-WONK is AK's design language: **minimal structure, maximal color and texture,
-in defined slots.** The thesis comes from his music project ("the aesthetic of
-maximalism — cram as much content as possible into each musical moment") and
-his album art: few colors per piece, one loud accent, hand-marks against
-strict geometry, never soft. UIs built with WONK should be unmistakably not
-another default AI app.
+minimal structure, maximal color and texture, in defined slots. dark-first,
+paper is the real light mode, one poster pair per app, mono for data and
+labels. read only the relevant sections of [README.md](README.md).
 
-Announce the mode you are in: **reskin**, **build**, **audit**, or **demo**.
-If the request doesn't name one, infer it (new UI -> build; existing app ->
-reskin; "check/review" -> audit) and say so.
+announce the mode: **reskin**, **build**, **audit**, or **demo**. infer it if
+unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
 
-## The assets are the contract
+## hard rules
 
-`assets/wonk-tokens.css` (all values — the source of truth),
-`assets/wonk.css` (components, `.wonk-` prefix), `assets/wonk.js` (behaviors:
-live jitter, glyph morph, toasts, tabs, secrets). Read the token file before
-styling anything; never invent a color, radius, or duration that has a token.
-Wiring instructions per stack: [adapters.md](references/adapters.md).
+1. install, load order, packs: [README § install](README.md#install),
+   [§ optional packs](README.md#optional-packs).
+2. one poster pair per app, root only, never mixed, never a raw accent as
+   text: [README § color](README.md#color-and-pairs), [pairs.md](references/pairs.md).
+3. type: Space Grotesk (UI), IBM Plex Mono (data/code/numbers/labels).
+   uppercase + tracking only on `.wonk-label`/`.wonk-title`, never both on
+   one element: [README § typography](README.md#typography).
+4. geometry/motion: 4px radius, hairlines, jitter only on live/loading:
+   [README § geometry](README.md#geometry-and-motion).
+5. charts never stock, read first: [charts.md](references/charts.md). every
+   app hides something: [easter-eggs.md](references/easter-eggs.md).
+6. accessibility: `-text` variants pass 4.5:1, no color-only status, focus
+   rings visible, reduced motion respected.
+7. data tools/instruments: read [data-tools.md](references/data-tools.md),
+   [instruments.md](references/instruments.md) first. `input` previews
+   locally, `change` commits a draft, an explicit Run/Apply action runs the
+   query: [README § instruments](README.md#instruments-and-draft-state).
+   never fabricate activity, VU/scope helpers are decorative only.
 
-## Hard rules (every mode, every time)
+## modes
 
-1. **Dark-first.** Ground `#0f1214`. Light mode is "paper": warm bone
-   `#ece4d4`, ink text — the printed record to dark's stage. Both are real;
-   never ship a light mode that is plain white.
-2. **One poster pair per app**, set once at the root
-   (`<html data-pair="metathesis" class="wonk">`). Five pairs exist:
-   metathesis (default), glorpla, demogorgon, ancient, flourish. Choosing and
-   tuning: [pairs.md](references/pairs.md). Never mix pairs in one app; never
-   use a raw accent as text when a `-text` variant exists.
-3. **Type:** Space Grotesk (400/500/700) for UI, JetBrains Mono (400/700) for
-   data, code, numbers, and labels. Headings are mixed-case grotesk with tight
-   tracking. Navigation and tabs are mixed-case grotesk too — mono uppercase
-   there reads as noise. Uppercase + 0.2rem tracking is reserved for labels
-   (`.wonk-label`) and mono microcopy; uppercase + 0.3rem for page titles
-   (`.wonk-title`) only. Numbers always mono, tabular.
-4. **Geometry:** 4px radius, full circles for avatars/status dots, 1px
-   hairline borders everywhere, connective vertical hairlines between stacked
-   blocks (`.wonk-stack`). The square-wave divider (`.wonk-divider`) is the
-   section separator; plain `.wonk-rule` when the wave would be noise.
-5. **Motion is expressive but purposeful.** Springy easing
-   (`--ak-ease`), 150/250/400ms. The **irregular jitter** (100–180ms bursts,
-   then rest) is the signature and lives ONLY on live/loading states
-   (`data-wonk-live`, `.wonk-spectrum`). Smooth motion everywhere else.
-   Everything respects `prefers-reduced-motion` — wonk.js already checks.
-6. **Waveform motifs are the decoration language.** Square-wave dividers,
-   spectrum-bar loaders, oscilloscope-style empty states. No gratuitous
-   gradients, no glassmorphism, no glow-on-everything.
-7. **Charts are first-class and never stock.** Observable Plot, themed from
-   `--ak-chart-1..6` (machine-validated per pair per theme). Rules and the
-   `wonkChart` helper: [charts.md](references/charts.md). Read it before
-   writing any chart.
-8. **Every app hides something.** Console greeting, one hidden interaction,
-   playful microcopy. Conventions and the line not to cross:
-   [easter-eggs.md](references/easter-eggs.md).
-9. **Accessibility is not optional maximalism.** `-text` variants pass 4.5:1;
-   status never appears as color alone; focus rings visible
-   (`--ak-a1-text`); reduced motion respected.
+reskin: adapter in [adapters.md](references/adapters.md), confirm the pair,
+bridge old tokens first. build: copy markup from
+[components.md](references/components.md) and `demo/index.html`, a new
+component earns a pack + reference + gallery entry, same change. audit:
+report drift, don't fix silently, [README § validation](README.md#validation).
+demo: `demo/index.html` uses `SECTION:name` markers, read [README §
+galleries](README.md#galleries-and-section-markers) before editing it end to end.
 
-## Modes
+before claiming done: run the [README self-audit
+checklist](README.md#validation), screenshot both themes, run each pack's
+browser checks. don't commit unless asked.
 
-### reskin — apply WONK to an existing app
+## deeper reference
 
-1. Survey the app's stack (framework? Tailwind? build step?) and its current
-   CSS entry points. Pick the adapter from
-   [adapters.md](references/adapters.md).
-2. Ask AK which pair the app gets (or recommend one from the table in
-   pairs.md). One pair, at the root.
-3. Install the three asset files; wire fonts, tokens, components.
-4. Map the app's existing variables/utilities to WONK tokens in one bridge
-   layer first — get the whole app on tokens before touching components.
-5. Restyle components toward the `.wonk-` idioms; replace chart palettes
-   immediately (stock chart colors are the loudest tell).
-6. Add the easter-egg slots.
-7. Screenshot dark AND paper at desktop + mobile widths; run the audit
-   checklist below before calling it done.
-
-### build — new UI in WONK
-
-Copy markup from the catalog ([components.md](references/components.md)) and
-the demo page (`demo/index.html`), not from scratch. Root gets
-`class="wonk" data-pair="..."`. Compose from `.wonk-` components; write new
-CSS only for what the system lacks — and when a new component earns its
-place, add it to `assets/wonk.css`, the catalog, and the demo page in the
-same commit, so the system grows instead of forking.
-
-### audit — check an app against WONK
-
-Report drift, don't fix silently. Grep for: hex values not in the tokens
-file; `border-radius` other than 4px/999px; font families outside the two;
-Tailwind default grays (`gray-`, `slate-`, `zinc-`); chart libraries or
-palettes off-contract; missing `data-theme="paper"` support; uppercase
-tracking on headings (reserved for titles/labels); animation on non-live
-elements using irregular timing. Output a labeled findings list (F1, F2, ...)
-with file:line references.
-
-### demo — serve or extend the component gallery
-
-`demo/index.html` is the living proof that the system holds together, and the
-reference agents copy from. Serve it with any static server from the skill
-directory root (assets are referenced relatively). When components change,
-the demo page changes in the same commit.
-
-## Self-audit before claiming done
-
-- [ ] Zero colors outside wonk-tokens.css (grep hex values in changed files)
-- [ ] Both themes screenshotted; nothing unreadable in either
-- [ ] Labels mono/uppercase/tracked; headings mixed-case; numbers tabular mono
-- [ ] Charts themed from chart tokens, legend + tooltip present
-- [ ] One pair only; `-text` variants used for all colored text
-- [ ] Jitter only on live/loading; reduced-motion respected
-- [ ] At least one easter egg present
-- [ ] Console shows the greeting and no errors
-
-## Deeper reference (read on demand)
-
-- [components.md](references/components.md) — the full catalog: copy-paste markup for every component and the JS API
-- [pairs.md](references/pairs.md) — the five pairs, token roles, tuning rules
-- [charts.md](references/charts.md) — Plot theming, validated palettes, the validator command
-- [adapters.md](references/adapters.md) — Tailwind, shadcn/Radix, vanilla wiring
-- [easter-eggs.md](references/easter-eggs.md) — hidden things, microcopy voice
+[components.md](references/components.md) · [instruments.md](references/instruments.md) · [data-tools.md](references/data-tools.md) · [motion.md](references/motion.md) · [code.md](references/code.md) · [charts.md](references/charts.md) · [pairs.md](references/pairs.md) · [adapters.md](references/adapters.md) · [easter-eggs.md](references/easter-eggs.md)

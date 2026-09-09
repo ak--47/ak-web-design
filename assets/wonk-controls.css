@@ -1,0 +1,259 @@
+/* ============================================================
+   WONK instrument controls · requires wonk-tokens.css + wonk.css
+   Precision inputs for data tools: knob refinements, fader, dual-input
+   window, segmented selector, stepper. Load after wonk.css.
+
+   Tokens only: every color/radius/duration here comes from
+   wonk-tokens.css. No new hex values, no new easing curves.
+   See references/instruments.md for markup + JS wiring.
+   ============================================================ */
+
+/* ---- shared: fieldset reset ----
+   fader / window / segmented / stepper are all native <fieldset>s so
+   [disabled] on the fieldset disables every descendant control for free. */
+.wonk-fader,
+.wonk-window,
+.wonk-segmented,
+.wonk-stepper {
+  border: none;
+  margin: 0 0 var(--ak-s4);
+  padding: 0;
+  min-width: 0;
+}
+.wonk-fader legend,
+.wonk-window legend,
+.wonk-segmented legend,
+.wonk-stepper legend {
+  padding: 0;
+  margin-bottom: var(--ak-s2);
+  width: 100%;
+}
+.wonk-fader[disabled],
+.wonk-window[disabled],
+.wonk-segmented[disabled],
+.wonk-stepper[disabled] {
+  opacity: 0.45;
+}
+.wonk-fader[disabled] *,
+.wonk-window[disabled] *,
+.wonk-segmented[disabled] *,
+.wonk-stepper[disabled] * {
+  cursor: not-allowed;
+}
+
+/* ---- knob refinements (base .wonk-knob lives in wonk.css) ---- */
+.wonk-knob .val-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+.wonk-knob .unit {
+  font-size: var(--ak-text-xs);
+  color: var(--ak-ink-3);
+}
+.wonk-knob svg[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.wonk-knob.is-disabled {
+  opacity: 0.45;
+}
+.wonk-knob.is-disabled .val {
+  cursor: default;
+}
+.wonk-knob .val {
+  cursor: text;
+  border-radius: var(--ak-radius);
+  padding: 0 0.15rem;
+  transition: background var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-knob .val:hover,
+.wonk-knob .val:focus-visible {
+  background: var(--ak-hover);
+  outline: none;
+}
+.wonk-knob input.val-edit {
+  width: 4.5em;
+  font-family: var(--ak-font-mono);
+  font-weight: 700;
+  font-size: var(--ak-text-sm);
+  text-align: center;
+  background: var(--ak-surface);
+  color: var(--ak-ink);
+  border: var(--ak-hairline-w) solid var(--ak-a1-text);
+  border-radius: var(--ak-radius);
+  padding: 0.05rem 0.2rem;
+}
+.wonk-knob input.val-edit::-webkit-inner-spin-button,
+.wonk-knob input.val-edit::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.wonk-knob input.val-edit {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ---- fader: native range + exact numeric input ---- */
+.wonk-fader-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-s3);
+}
+/* invalid/out-of-range/crossed-bounds text is retained, never silently
+   reverted or clamped -- this is the only visible signal, on top of the
+   browser's own validity UI (e.g. a red native tooltip on submit). */
+.wonk-fader-exact:invalid,
+.wonk-window-row .wonk-input:invalid {
+  border-color: var(--ak-err);
+}
+.wonk-fader-row .wonk-range {
+  flex: 1 1 auto;
+  min-width: 6rem;
+}
+.wonk-fader-exact {
+  width: 5.5em;
+  flex: 0 0 auto;
+  font-family: var(--ak-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  padding: 0.35rem 0.5rem;
+}
+.wonk-fader-exact::-webkit-inner-spin-button,
+.wonk-fader-exact::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.wonk-fader-exact {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.wonk-fader-unit {
+  flex: 0 0 auto;
+  color: var(--ak-ink-3);
+}
+
+/* ---- dual-input bounded window ---- */
+.wonk-window-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ak-s3);
+  flex-wrap: wrap;
+}
+.wonk-window-row .wonk-input {
+  min-width: 9rem;
+}
+.wonk-window-sep {
+  color: var(--ak-ink-3);
+  font-family: var(--ak-font-mono);
+  padding-bottom: 0.6rem;
+}
+
+/* ---- native radio segmented selector ---- */
+.wonk-segmented {
+  position: relative;
+  display: inline-flex;
+}
+.wonk-segmented-track {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  background: var(--ak-surface);
+}
+.wonk-segmented-track label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.wonk-segmented-track input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.wonk-segmented-track input:focus-visible ~ span {
+  outline: 2px solid var(--ak-a1-text);
+  outline-offset: 2px;
+}
+.wonk-segmented-track span {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border-radius: calc(var(--ak-radius) - 1px);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  letter-spacing: var(--ak-track-btn);
+  color: var(--ak-ink-2);
+  transition: color var(--ak-t-fast) var(--ak-ease);
+}
+/* no-JS / reduced-motion fallback: each option paints its own fill */
+.wonk-segmented-track:not(.has-glide) input:checked + span {
+  background: var(--ak-a1);
+  color: var(--ak-a1-ink);
+}
+/* JS-enhanced: one glide bar slides under the checked option instead */
+.wonk-segmented-glide {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background: var(--ak-a1);
+  border-radius: calc(var(--ak-radius) - 1px);
+  z-index: 0;
+  transition: transform var(--ak-t-fast) var(--ak-ease), width var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-segmented-track.has-glide input:checked + span {
+  color: var(--ak-a1-ink);
+}
+
+/* ---- stepper: number input + buttons ---- */
+.wonk-stepper-row {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  overflow: hidden;
+}
+.wonk-stepper-btn {
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-md);
+  line-height: 1;
+  width: 2.25rem;
+  border: none;
+  background: var(--ak-surface);
+  color: var(--ak-ink);
+  cursor: pointer;
+  transition: background var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-stepper-btn:hover:not(:disabled) { background: var(--ak-hover); }
+.wonk-stepper-btn:active:not(:disabled) { background: var(--ak-active); }
+.wonk-stepper-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.wonk-stepper-input {
+  width: 3.5rem;
+  text-align: center;
+  border: none;
+  border-left: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-right: var(--ak-hairline-w) solid var(--ak-hairline);
+  background: var(--ak-surface-2);
+  color: var(--ak-ink);
+  font-family: var(--ak-font-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 0.4rem 0.25rem;
+}
+.wonk-stepper-input:focus-visible { outline: 2px solid var(--ak-a1-text); outline-offset: 2px; }
+.wonk-stepper-input::-webkit-inner-spin-button,
+.wonk-stepper-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.wonk-stepper-input { -moz-appearance: textfield; appearance: textfield; }
+.wonk-stepper-unit {
+  margin-left: var(--ak-s2);
+  align-self: center;
+  color: var(--ak-ink-3);
+}

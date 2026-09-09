@@ -1,0 +1,151 @@
+/* ============================================================
+   wonk-motion.css · purposeful motion pack for the WONK system
+   Requires wonk-tokens.css (durations, easing, color tokens).
+   Works alongside wonk.css but does not require it.
+
+   Classes here are added/removed only by assets/wonk-motion.js, in
+   response to a real user action or data change. Nothing autoplays,
+   nothing loops. See references/motion.md for the full contract.
+
+   Durations only ever come from tokens: --ak-t-fast (150ms),
+   --ak-t-med (250ms), --ak-t-slow (400ms). Do not add new ones here.
+   ============================================================ */
+
+/* 1. panel enter: a panel/drawer/modal/dropdown appears. */
+@keyframes wonk-panel-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.wonk-anim-panel-enter {
+  animation: wonk-panel-enter var(--ak-t-med) var(--ak-ease-out) both;
+}
+
+/* 2. panel exit: quicker than the entrance on purpose. pointer-events
+   is cut immediately so a closing panel can't eat a second click. */
+@keyframes wonk-panel-exit {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+.wonk-anim-panel-exit {
+  animation: wonk-panel-exit var(--ak-t-fast) var(--ak-ease) both;
+  pointer-events: none;
+}
+
+/* 3. value changed: accents a number that already updated. Swap the
+   text yourself before playing this; never tween the digits. */
+@keyframes wonk-value-changed {
+  0%   { background-color: transparent; transform: scale(1); }
+  30%  { background-color: var(--ak-wash); transform: scale(1.06); }
+  100% { background-color: transparent; transform: scale(1); }
+}
+.wonk-anim-value-changed {
+  display: inline-block;
+  border-radius: var(--ak-radius);
+  animation: wonk-value-changed var(--ak-t-med) var(--ak-ease-out) both;
+}
+
+/* 4. row inserted: a new row/list item lands. Target the row itself. */
+@keyframes wonk-row-inserted {
+  0%   { opacity: 0; transform: translateY(-6px); background-color: var(--ak-wash); }
+  60%  { opacity: 1; transform: none; }
+  100% { background-color: transparent; }
+}
+.wonk-anim-row-inserted {
+  animation: wonk-row-inserted var(--ak-t-med) var(--ak-ease-out) both;
+}
+
+/* 5. filter applied: brief dip on the container, never per-row. */
+@keyframes wonk-filter-applied {
+  0%   { opacity: 1; }
+  40%  { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+.wonk-anim-filter-applied {
+  animation: wonk-filter-applied var(--ak-t-fast) var(--ak-ease-out) both;
+}
+
+/* 6. progress completion: punctuation for a fill reaching 100%. Not
+   the fill itself (.wonk-progress > span already transitions width
+   in wonk.css). Play this on the same <span> once width finishes. */
+@keyframes wonk-progress-complete {
+  0%   { box-shadow: 0 0 0 0 var(--ak-wash); background-color: var(--ak-a1); }
+  50%  { box-shadow: 0 0 0 7px var(--ak-wash); }
+  100% { box-shadow: 0 0 0 0 transparent; background-color: var(--ak-ok); }
+}
+.wonk-anim-progress-complete {
+  animation: wonk-progress-complete var(--ak-t-slow) var(--ak-ease-out) both;
+}
+
+/* 7. trace draw: draws an SVG stroke on. Requires pathLength="1" on
+   each data-wonk-trace target so dash math is size-independent.
+   Apply the class to the SVG (or any ancestor). */
+@keyframes wonk-trace-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.wonk-anim-trace-draw [data-wonk-trace] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: wonk-trace-draw var(--ak-t-slow) var(--ak-ease-out) both;
+}
+
+/* 8. confirm check: a check draws on, then the icon pops once. Draw
+   target(s): data-wonk-trace, same pathLength="1" contract as trace
+   draw. Pop target: data-wonk-pop, usually the wrapping <g>. The pop
+   is delayed by --ak-t-med so it starts as the draw finishes.
+   transform-box: fill-box scales the pop around the icon's own
+   center instead of the SVG viewport's corner. */
+@keyframes wonk-confirm-check-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes wonk-confirm-pop {
+  0%   { transform: scale(0.85); }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.wonk-anim-confirm-check [data-wonk-trace] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: wonk-confirm-check-draw var(--ak-t-med) var(--ak-ease-out) both;
+}
+.wonk-anim-confirm-check [data-wonk-pop] {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: wonk-confirm-pop var(--ak-t-fast) var(--ak-ease) both;
+  animation-delay: var(--ak-t-med);
+}
+
+/* Named state: wonk-motion.js sets data-wonk-motion-state="running"
+   for the life of an effect. Optional hook; only default rule is
+   below, keeping a closing panel from taking clicks while it fades. */
+.wonk-anim-panel-exit[data-wonk-motion-state="running"] { cursor: default; }
+
+/* Persisted state: wonk-motion.js adds this once progress-complete
+   settles successfully (or immediately, under reduced motion), and
+   it is NOT removed when the transient animation class comes off.
+   Without it the fill would revert to wonk.css's base --ak-a1 the
+   moment the effect ends. Cleared automatically at the start of the
+   next progress-complete run on the same element. */
+.wonk-progress > span.wonk-motion-done {
+  background-color: var(--ak-ok);
+}
+
+/* Reduced motion: collapse to near-zero, not "none", so `both`
+   keyframes still land on their end state. wonk-motion.js also skips
+   adding these classes at all when reduced motion is already on
+   (see motion.md), so this mainly guards a mid-flight OS toggle. */
+@media (prefers-reduced-motion: reduce) {
+  .wonk-anim-panel-enter,
+  .wonk-anim-panel-exit,
+  .wonk-anim-value-changed,
+  .wonk-anim-row-inserted,
+  .wonk-anim-filter-applied,
+  .wonk-anim-progress-complete,
+  .wonk-anim-trace-draw [data-wonk-trace],
+  .wonk-anim-confirm-check [data-wonk-trace],
+  .wonk-anim-confirm-check [data-wonk-pop] {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+}

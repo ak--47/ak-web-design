@@ -13,10 +13,10 @@
 :root {
   /* ---- type ---- */
   --ak-font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
-  --ak-font-mono: "JetBrains Mono", ui-monospace, "Courier New", monospace;
+  --ak-font-mono: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
 
-  --ak-text-xs: 0.7rem;
-  --ak-text-sm: 0.8rem;
+  --ak-text-xs: 0.8rem;
+  --ak-text-sm: 0.875rem;
   --ak-text-md: 1rem;
   --ak-text-lg: 1.25rem;
   --ak-text-xl: 1.6rem;
@@ -24,7 +24,7 @@
   --ak-text-3xl: 2.75rem;
 
   /* labels are mono, uppercase, tracked. titles may go wide. */
-  --ak-track-label: 0.2rem;
+  --ak-track-label: 0.06em;
   --ak-track-title: 0.3rem;
   --ak-track-btn: 0.08rem; /* buttons stay mono/uppercase but read as words */
 

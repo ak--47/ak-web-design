@@ -13,7 +13,7 @@ This file covers wiring them into common stacks.
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/wonk-tokens.css">
 <link rel="stylesheet" href="/wonk.css">
 <script defer src="/wonk.js"></script>
@@ -54,7 +54,7 @@ export default {
       },
       fontFamily: {
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+        mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
       },
       borderRadius: { DEFAULT: "4px", full: "999px" },
     },
@@ -109,6 +109,38 @@ headings mixed-case grotesk).
 The base recipe is the whole story: three files, classic script/link tags.
 Replace the app's own token file usage gradually — map its old variable names
 to WONK tokens in one bridge block rather than editing every rule.
+
+## optional packs and framework lifecycle
+
+load `wonk-controls.css` after `wonk.css`, then `wonk-controls.js` after `wonk.js`
+for instruments. load `wonk-data.css` for data layouts. load `wonk-motion.css`
+and `wonk-motion.js` for explicit one-shot effects. load `wonk-code.css` and
+the vendored Prism files, then `wonk-code.js`, for syntax highlighting and
+the JSON editor (see [code.md](code.md) for the grammar load order). none of
+these add a package dependency.
+
+in React/Vue/Svelte, prefer the framework's native controlled inputs and reuse
+the CSS. when using the imperative controls, give them a dedicated DOM node the
+framework does not reconcile internally. wire after mount and destroy before
+unmount. strict-mode remounts must not duplicate listeners.
+
+```js
+// inside an effect/mount hook; panel is the dedicated DOM subtree
+wonkControls.init(panel);
+return () => wonkControls.destroy(panel);
+```
+
+`wonkControls.init(panel)` initializes only instrument controls. it includes the
+panel itself if it matches. don't repeatedly call base `wonk.init(panel)` on the
+same subtree: legacy decorative helpers do not all have idempotent wiring.
+
+motion is explicit: `wonkMotion.play(element, 'value-changed')`. cancel before
+unmount with `wonkMotion.cancel(element)`. don't use effects to own framework
+visibility state. the component owns whether it exists and where focus returns.
+
+self-host fonts in production. the new galleries request fonts from Google;
+they send no fixture records to a service. the base chart gallery also loads
+Plot and d3 from jsDelivr. keep the app's existing pinned dependency versions.
 
 ## Charts
 

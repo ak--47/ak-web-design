@@ -5,6 +5,19 @@ The demo page (`demo/index.html`) shows all of them live. The root needs
 `class="wonk"` and a `data-pair`; wonk.js auto-wires every `data-wonk-*`
 attribute on DOMContentLoaded (call `wonk.init(scope)` for injected DOM).
 
+## specialized packs
+
+| pack | catalog | gallery |
+|---|---|---|
+| precision knob, fader, bounded window, segmented selector, stepper | [instruments.md](instruments.md) | `demo/instruments.html` |
+| source channels, query toolbar, applied filters, selectable table, inspector, jobs, result states | [data-tools.md](data-tools.md) | `demo/workbench.html` |
+| eight state-change effects, cancellation, live reduced-motion handling | [motion.md](motion.md) | `demo/motion.html` |
+
+load each optional pack after the base assets. `wonkControls.init(scope)` wires
+instruments, including the scope itself. `wonkMotion.play(el, name)` plays one
+explicit effect. data layouts are CSS compositions; their application behavior
+lives in the workbench example.
+
 ## Contents
 
 1. [Typography](#typography) · 2. [Layout & dividers](#layout--dividers) ·
@@ -18,10 +31,13 @@ attribute on DOMContentLoaded (call `wonk.init(scope)` for injected DOM).
 <h1>Mixed-case grotesk headings</h1>            <!-- h1-h4 styled -->
 <p>Body. Links look like <a href="#">this</a>. <small>small print</small></p>
 <div class="wonk-title">Page title</div>         <!-- uppercase, 0.3rem tracked; page titles ONLY -->
-<span class="wonk-label">section label</span>    <!-- mono, uppercase, 0.2rem tracked -->
+<span class="wonk-label">section label</span>    <!-- mono, weight 500, uppercase, 0.06em tracked -->
 <span class="wonk-num">48,112</span>             <!-- tabular mono; ALL numbers -->
 <kbd>⌘</kbd> <kbd>K</kbd>
 ```
+
+`--ak-font-mono` is IBM Plex Mono (400/500/600/700). `--ak-track-label` is
+`0.06em`, relative to the element's own font-size, not a fixed rem value.
 
 ## Layout & dividers
 
@@ -182,14 +198,16 @@ moves smoothly.
 
 ## Exotic
 
-The hardware rack. Use sparingly — one exotic widget per view is plenty.
+group related parameters in one instrument area per view. read
+[instruments.md](instruments.md) for production control contracts. VU and scope
+helpers below generate decorative data; never present them as measured telemetry.
 
 ```html
 <div data-wonk-vu="14"></div>
 <!-- animated VU meter. Drive with real data: el.wonkVu.set([0..100, …]) -->
 
 <div data-wonk-knob data-label="drive" data-min="0" data-max="11" data-value="7"></div>
-<!-- rotary knob: vertical drag or arrow keys; fires "input" with detail.value -->
+<!-- precision knob: drag, keys, exact entry; input previews, change commits draft -->
 
 <div data-wonk-scope></div>
 <!-- animated oscilloscope trace; brand corners and loading walls -->

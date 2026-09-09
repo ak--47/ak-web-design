@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WONK motion · purposeful motion pack</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%233fc9c9'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- base files -->
+<link rel="stylesheet" href="../assets/wonk-tokens.css">
+<link rel="stylesheet" href="../assets/wonk.css">
+<script defer src="../assets/wonk.js"></script>
+<!-- motion pack: what this page demos -->
+<link rel="stylesheet" href="../assets/wonk-motion.css">
+<script defer src="../assets/wonk-motion.js"></script>
+<!-- automated checks: defines window.wonkMotionChecks, does not run
+     anything on load. Open the console and call: await wonkMotionChecks.run() -->
+<script defer src="motion-checks.js"></script>
+<style>
+  /* demo-page-only layout, same idiom as demo/index.html */
+  body { margin: 0; }
+  .demo-main { padding: var(--ak-s8); max-width: 60rem; margin: 0 auto; }
+  .demo-section { margin-bottom: var(--ak-s12); scroll-margin-top: var(--ak-s6); }
+  .demo-row { display: flex; flex-wrap: wrap; gap: var(--ak-s3); align-items: center; }
+  .demo-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--ak-s3); flex-wrap: wrap;
+    padding: var(--ak-s4) var(--ak-s8);
+    border-bottom: var(--ak-hairline-w) solid var(--ak-hairline);
+  }
+  .fixture-note {
+    font-family: var(--ak-font-mono);
+    font-size: var(--ak-text-xs);
+    color: var(--ak-ink-3);
+    letter-spacing: 0.05rem;
+    margin: var(--ak-s2) 0 var(--ak-s4);
+  }
+  .fixture-note::before { content: "fixture · "; color: var(--ak-a2-text); }
+  .demo-card { background: var(--ak-surface); border: 1px solid var(--ak-hairline); border-radius: var(--ak-radius); padding: var(--ak-s6); }
+  .drawer-demo { position: relative; min-height: 140px; }
+  .drawer-demo .panel {
+    background: var(--ak-surface-2);
+    border: 1px solid var(--ak-hairline-strong);
+    border-radius: var(--ak-radius);
+    padding: var(--ak-s4);
+    margin-top: var(--ak-s4);
+  }
+  .event-name { font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); color: var(--ak-a1-text); }
+  .confirm-icon, .trace-icon { display: block; }
+  @media (max-width: 700px) {
+    .demo-main { padding: var(--ak-s4); }
+    .demo-topbar { padding: var(--ak-s3) var(--ak-s4); }
+  }
+</style>
+</head>
+<body>
+
+<header class="demo-topbar">
+  <div class="demo-row">
+    <a class="wonk-navlink" href="index.html">&larr; index</a>
+    <span class="wonk-label">motion pack</span>
+  </div>
+  <div class="demo-row">
+    <span class="wonk-label" id="reduced-flag"></span>
+    <button class="wonk-btn" id="theme-toggle">Paper</button>
+  </div>
+</header>
+
+<main class="demo-main">
+
+  <section class="demo-section">
+    <div class="wonk-label">wonk motion</div>
+    <h1 class="wonk-title" style="font-size:var(--ak-text-2xl)">8 effects, one shot each</h1>
+    <p style="max-width:52ch">
+      every button below fires a real <code>wonkMotion.play(el, name)</code>
+      call. nothing here plays on load, nothing loops, nothing fakes
+      activity. click a button, watch the effect, click it again.
+      turn on "reduce motion" in your OS to see every effect resolve
+      to its end state immediately, even mid-animation.
+    </p>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <!-- 1 + 2: panel enter / exit -->
+  <section class="demo-section" id="panel">
+    <div class="wonk-label">01 &middot; 02 &middot; panel enter / panel exit</div>
+    <h3>Drawer opens on <span class="event-name">panel-enter</span>, closes on <span class="event-name">panel-exit</span></h3>
+    <div class="fixture-note">static drawer copy below, not live data</div>
+    <div class="demo-card drawer-demo">
+      <div class="demo-row">
+        <button class="wonk-btn wonk-btn--primary" id="panel-open">Open drawer</button>
+        <button class="wonk-btn" id="panel-close">Close drawer</button>
+      </div>
+      <div class="panel" id="panel-el" hidden>
+        <h4>Export settings</h4>
+        <p style="margin-bottom:0">Format: CSV. Range: last 30 days. This panel
+          is a static fixture; nothing here is wired to a real export.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <!-- 3: value changed -->
+  <section class="demo-section" id="value">
+    <div class="wonk-label">03 &middot; value changed</div>
+    <h3><span class="event-name">value-changed</span> accents a number that just updated</h3>
+    <div class="fixture-note">value below is a static fixture, bumped by the button only</div>
+    <div class="demo-card">
+      <div class="wonk-stat">
+        <span class="wonk-label">events / sec</span>
+        <span class="wonk-num" id="value-num">48,112</span>
+      </div>
+      <div class="demo-row" style="margin-top:var(--ak-s4)">
+        <button class="wonk-btn" id="value-bump">Bump value</button>
+      </div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <!-- 4: row inserted -->
+  <section class="demo-section" id="row">
+    <div class="wonk-label">04 &middot; row inserted</div>
+    <h3><span class="event-name">row-inserted</span> marks a new table row</h3>
+    <div class="fixture-note">table seeded with 2 static rows; "add row" appends a fixture row</div>
+    <div class="demo-card">
+      <table class="wonk-table" id="row-table">
+        <thead><tr><th>service</th><th class="num">req/s</th></tr></thead>
+        <tbody id="row-body">
+          <tr><td>ingest-api</td><td class="num">18,204</td></tr>
+          <tr><td>identity-merge</td><td class="num">9,551</td></tr>
+        </tbody>
+      </table>
+      <div class="demo-row" style="margin-top:var(--ak-s4)">
+        <button class="wonk-btn" id="row-add">Add row</button>
+      </div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <!-- 5: filter applied -->
+  <section class="demo-section" id="filter">
+    <div class="wonk-label">05 &middot; filter applied</div>
+    <h3><span class="event-name">filter-applied</span> dips the container, not each row</h3>
+    <div class="fixture-note">4 static fixture rows, filtered client-side by status</div>
+    <div class="demo-card">
+      <div class="demo-row" style="margin-bottom:var(--ak-s4)">
+        <button class="wonk-btn" data-filter="all">All</button>
+        <button class="wonk-btn" data-filter="ok">OK only</button>
+        <button class="wonk-btn" data-filter="warn">Degraded only</button>
+      </div>
+      <table class="wonk-table" id="filter-table">
+        <thead><tr><th>service</th><th>status</th></tr></thead>
+        <tbody id="filter-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <!-- 6: progress completion -->
+  <section class="demo-section" id="progress">
+    <div class="wonk-label">06 &middot; progress completion</div>
+    <h3><span class="event-name">progress-complete</span> punctuates a fill reaching 100%</h3>
+    <div class="fixture-note">simulated render job, resets after each run</div>
+    <div class="demo-card">
+      <div class="wonk-progress"><span id="progress-fill" style="width:0%"></span></div>
+      <div class="demo-row" style="margin-top:var(--ak-s4)">
+        <button class="wonk-btn" id="progress-run">Run to 100%</button>
+      </div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <!-- 7: trace draw -->
+  <section class="demo-section" id="trace">
+    <div class="wonk-label">07 &middot; trace draw</div>
+    <h3><span class="event-name">trace-draw</span> plots an SVG path instead of pasting it</h3>
+    <div class="fixture-note">static mark, not a live chart &mdash; see references/motion.md before using this on a chart</div>
+    <div class="demo-card">
+      <svg id="trace-svg" class="trace-icon" viewBox="0 0 160 50" width="160" height="50" aria-hidden="true">
+        <path data-wonk-trace pathLength="1" d="M4,40 L40,12 L76,34 L112,8 L156,26"
+              fill="none" stroke="var(--ak-a1-text)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="demo-row" style="margin-top:var(--ak-s4)">
+        <button class="wonk-btn" id="trace-replay">Replay draw</button>
+      </div>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <!-- 8: confirm check -->
+  <section class="demo-section" id="confirm">
+    <div class="wonk-label">08 &middot; confirm check</div>
+    <h3><span class="event-name">confirm-check</span> draws a check, then pops it once</h3>
+    <div class="fixture-note">fires on click, not on any real save</div>
+    <div class="demo-card">
+      <svg id="confirm-svg" class="confirm-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+        <g data-wonk-pop>
+          <circle cx="12" cy="12" r="10" fill="none" stroke="var(--ak-ok)" stroke-width="2"
+                  data-wonk-trace pathLength="1"/>
+          <path d="M7,12 L10.5,15.5 L17,8" fill="none" stroke="var(--ak-ok)" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" data-wonk-trace pathLength="1"/>
+        </g>
+      </svg>
+      <div class="demo-row" style="margin-top:var(--ak-s4)">
+        <button class="wonk-btn wonk-btn--primary" id="confirm-run">Confirm save</button>
+      </div>
+    </div>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <section class="demo-section">
+    <div class="wonk-label">cancel + overlap</div>
+    <h3>Click fast. Nothing races.</h3>
+    <p style="max-width:52ch">
+      each button above calls <code>wonkMotion.play()</code> again on the
+      same element if you click before the last effect settled &mdash;
+      <code>play()</code> cancels the prior run first, so effects never
+      stack or fight. try mashing "Open drawer" / "Close drawer" above.
+    </p>
+  </section>
+
+  <footer style="text-align:center; padding:var(--ak-s8) 0">
+    <span class="wonk-label">wonk motion &middot; one shot, on request, never a loop</span>
+  </footer>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ---- reduced motion flag (read-only status, reflects OS/devtools) ----
+  const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const flag = document.getElementById("reduced-flag");
+  function paintFlag() {
+    flag.textContent = mql.matches ? "reduce motion: on" : "reduce motion: off";
+  }
+  paintFlag();
+  mql.addEventListener("change", paintFlag);
+
+  // ---- theme toggle ----
+  const toggle = document.getElementById("theme-toggle");
+  toggle.addEventListener("click", () => {
+    const paper = document.documentElement.getAttribute("data-theme") === "paper";
+    wonk.setTheme(paper ? "dark" : "paper");
+    toggle.textContent = paper ? "Paper" : "Dark";
+  });
+
+  // ---- 1 + 2: panel enter / exit ----
+  const panelEl = document.getElementById("panel-el");
+  document.getElementById("panel-open").addEventListener("click", () => {
+    panelEl.hidden = false;
+    wonkMotion.play(panelEl, "panel-enter");
+  });
+  document.getElementById("panel-close").addEventListener("click", async () => {
+    if (panelEl.hidden) return;
+    const result = await wonkMotion.play(panelEl, "panel-exit");
+    if (result.status !== "cancelled") panelEl.hidden = true;
+  });
+
+  // ---- 3: value changed ----
+  const valueNum = document.getElementById("value-num");
+  const fixtureValues = [48112, 49830, 47220, 52045, 50390];
+  let vi = 0;
+  document.getElementById("value-bump").addEventListener("click", () => {
+    vi = (vi + 1) % fixtureValues.length;
+    valueNum.textContent = fixtureValues[vi].toLocaleString();
+    wonkMotion.play(valueNum, "value-changed");
+  });
+
+  // ---- 4: row inserted ----
+  const rowBody = document.getElementById("row-body");
+  const fixtureRows = [
+    ["export-worker", "2,140"],
+    ["webhook-fanout", "6,004"],
+    ["cdc-relay", "1,225"],
+  ];
+  let ri = 0;
+  document.getElementById("row-add").addEventListener("click", () => {
+    const [name, rate] = fixtureRows[ri % fixtureRows.length];
+    ri++;
+    const tr = rowBody.insertRow();
+    tr.innerHTML = `<td>${name}</td><td class="num">${rate}</td>`;
+    wonkMotion.play(tr, "row-inserted");
+  });
+
+  // ---- 5: filter applied ----
+  const filterFixture = [
+    { name: "ingest-api", status: "ok" },
+    { name: "identity-merge", status: "ok" },
+    { name: "export-worker", status: "warn" },
+    { name: "webhook-fanout", status: "warn" },
+  ];
+  const filterBody = document.getElementById("filter-body");
+  function renderFilter(kind, animate) {
+    const rows = kind === "all" ? filterFixture : filterFixture.filter((r) => r.status === kind);
+    filterBody.innerHTML = rows
+      .map((r) => {
+        const badge = r.status === "ok"
+          ? `<span class="wonk-badge wonk-badge--ok">&#10003; ok</span>`
+          : `<span class="wonk-badge wonk-badge--warn">&#9651; degraded</span>`;
+        return `<tr><td>${r.name}</td><td>${badge}</td></tr>`;
+      })
+      .join("");
+    // first paint is not a user action, so it never plays a motion
+    // effect; only a real filter click below does.
+    if (animate) wonkMotion.play(filterBody.closest("table"), "filter-applied");
+  }
+  renderFilter("all", false);
+  document.querySelectorAll("[data-filter]").forEach((btn) =>
+    btn.addEventListener("click", () => renderFilter(btn.dataset.filter, true))
+  );
+
+  // ---- 6: progress completion ----
+  const fill = document.getElementById("progress-fill");
+  document.getElementById("progress-run").addEventListener("click", () => {
+    fill.style.width = "100%";
+    wonkMotion.play(fill, "progress-complete");
+  });
+
+  // ---- 7: trace draw ----
+  document.getElementById("trace-replay").addEventListener("click", () => {
+    wonkMotion.play(document.getElementById("trace-svg"), "trace-draw");
+  });
+
+  // ---- 8: confirm check ----
+  document.getElementById("confirm-run").addEventListener("click", () => {
+    wonkMotion.play(document.getElementById("confirm-svg"), "confirm-check");
+  });
+});
+</script>
+</body>
+</html>

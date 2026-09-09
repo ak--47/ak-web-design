@@ -1,0 +1,168 @@
+/* ============================================================
+   WONK code pack · syntax highlighting + JSON editor
+   Requires wonk-tokens.css + wonk.css. Load after wonk.css, before
+   or after wonk-code.js (order between the two doesn't matter).
+   Tokens only: every color/radius/spacing here comes from
+   wonk-tokens.css. No new hex values, no separate "status" palette
+   for syntax -- token colors reuse the same a1-text/a2-text/ink
+   roles already used everywhere else in WONK.
+   See references/code.md for markup, vendor load order, and the
+   full wonkCode JS API.
+   ============================================================ */
+
+/* ---- readable code block ----
+   .wonk-pre already sets font-family, background, border, padding
+   (wonk.css). These rules tune it for longer highlighted blocks and
+   add color for the <span class="token ..."> markup Prism.highlight()
+   produces; they never change .wonk-pre's border/background. */
+.wonk-pre {
+  font-size: var(--ak-text-sm);
+  line-height: 1.7;
+  overflow: auto;
+}
+.wonk-pre code { min-width: 0; font-size: inherit; }
+.wonk-json-editor-row > * { min-width: 0; }
+.wonk-json-editor textarea { width: 100%; padding: var(--ak-s4); line-height: 1.7; }
+
+.wonk-pre .token.comment,
+.wonk-pre .token.prolog,
+.wonk-pre .token.doctype,
+.wonk-pre .token.cdata {
+  color: var(--ak-ink-2);
+  font-style: italic;
+}
+.wonk-pre .token.property,
+.wonk-pre .token.tag,
+.wonk-pre .token.keyword,
+.wonk-pre .token.builtin,
+.wonk-pre .token.selector,
+.wonk-pre .token.attr-name,
+.wonk-pre .token.function,
+.wonk-pre .token.class-name {
+  color: var(--ak-a1-text);
+}
+.wonk-pre .token.string,
+.wonk-pre .token.attr-value,
+.wonk-pre .token.char,
+.wonk-pre .token.url,
+.wonk-pre .token.boolean,
+.wonk-pre .token.number,
+.wonk-pre .token.constant,
+.wonk-pre .token.variable {
+  color: var(--ak-a2-text);
+}
+.wonk-pre .token.null.keyword {
+  color: var(--ak-ink-2);
+  font-style: normal;
+}
+.wonk-pre .token.operator,
+.wonk-pre .token.punctuation,
+.wonk-pre .token.entity {
+  color: var(--ak-ink);
+}
+.wonk-pre .token.important,
+.wonk-pre .token.regex,
+.wonk-pre .token.deleted {
+  color: var(--ak-a1-text);
+}
+.wonk-pre .token.inserted {
+  color: var(--ak-a2-text);
+}
+.wonk-pre .token.bold { font-weight: 700; }
+.wonk-pre .token.italic { font-style: italic; }
+
+/* size-limited or vendor-unavailable blocks: still readable plain
+   text (see wonk-code.js markUnavailable), with a small visible note
+   instead of a silently missing feature. */
+.wonk-pre code[data-wonk-code-error]::before,
+.wonk-pre code[data-wonk-code-skipped]::before {
+  content: "highlighting unavailable. showing plain source";
+  display: block;
+  margin-bottom: var(--ak-s2);
+  color: var(--ak-warn);
+  font-style: normal;
+  font-size: var(--ak-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ak-track-label);
+}
+.wonk-pre code[data-wonk-code-skipped]::before {
+  content: "block exceeds the highlighting size limit. showing plain source";
+}
+
+/* ---- JSON editor ----
+   Grid, not flex-basis: a flex-basis of 20rem on a column stack (the
+   mobile breakpoint below) forces each item to try to keep its row
+   width as its column height, producing a huge blank area under short
+   content. Grid with a wrapping minmax track has no such artifact at
+   any width. */
+.wonk-json-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-s3);
+}
+.wonk-json-editor-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--ak-s3);
+  align-items: start;
+}
+.wonk-json-editor textarea {
+  min-width: 0;
+  min-height: 12rem;
+  resize: vertical;
+  tab-size: 2;
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-sm);
+  white-space: pre;
+}
+.wonk-json-editor textarea[aria-invalid="true"] {
+  border-color: var(--ak-err);
+}
+.wonk-json-editor textarea:disabled,
+.wonk-json-editor-format:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.wonk-json-editor-preview {
+  min-width: 0;
+}
+.wonk-json-editor-preview .wonk-pre {
+  margin: 0;
+  max-height: 24rem;
+}
+/* stale: the preview no longer reflects the current draft (typed
+   since the last format, or the last format attempt failed). Shown
+   as a visible label, never left ambiguous which state it's in.
+   Attribute selector alone (not scoped to .wonk-json-editor-preview)
+   so this still renders even when no dedicated preview container
+   exists and wonk-code.js fell back to the editor root itself. */
+[data-wonk-json-preview-state="stale"] .wonk-pre {
+  border-color: var(--ak-warn);
+  opacity: 0.7;
+}
+[data-wonk-json-preview-state="stale"]::before {
+  content: "stale. preview does not match the current draft";
+  display: block;
+  margin-bottom: var(--ak-s2);
+  color: var(--ak-warn);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ak-track-label);
+}
+.wonk-json-editor-actions {
+  display: flex;
+  gap: var(--ak-s2);
+  align-items: center;
+}
+.wonk-json-editor-error {
+  border: var(--ak-hairline-w) solid var(--ak-err);
+  border-left: 3px solid var(--ak-err);
+  border-radius: var(--ak-radius);
+  background: var(--ak-surface);
+  padding: var(--ak-s3) var(--ak-s4);
+  color: var(--ak-err);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-sm);
+}
+.wonk-json-editor-error[hidden] { display: none; }
