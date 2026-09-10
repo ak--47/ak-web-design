@@ -249,6 +249,35 @@
     }
   });
 
+  // -- fader: an in-range, off-grid exact value is valid and gets snapped, not rejected --
+  check("fader: an off-grid exact value within range is accepted and snapped, not painted invalid", () => {
+    const { host, cleanup } = withFixture(`
+      <fieldset class="wonk-fader" data-min="0" data-max="100" data-step="10" data-value="50">
+        <legend>stepped fader</legend>
+        <div class="wonk-fader-row">
+          <input type="range" class="wonk-range">
+          <input type="number" class="wonk-fader-exact">
+        </div>
+      </fieldset>
+    `);
+    try {
+      const el = host.querySelector(".wonk-fader");
+      const range = el.querySelector(".wonk-range");
+      const exact = el.querySelector(".wonk-fader-exact");
+      const api = wonkControls.fader(el);
+
+      exact.value = "23";
+      assert(exact.checkValidity(), "an in-range off-grid value must not be natively :invalid (step must not constrain exact entry)");
+      exact.dispatchEvent(new Event("change", { bubbles: true }));
+
+      assert(range.value === "20", `off-grid exact entry should snap to the nearest step on commit, got range.value ${range.value}`);
+      assert(exact.value === "20", `exact input should sync back to the snapped value, got ${exact.value}`);
+      assert(api.valid === true, "api.valid should be true after a snapped commit");
+    } finally {
+      cleanup();
+    }
+  });
+
   // -- fader: aria-label on BOTH inputs, derived from the legend --
   check("fader: both range and exact inputs get an aria-label derived from the legend", () => {
     const { host, cleanup } = withFixture(`

@@ -81,7 +81,12 @@
     if (exact) {
       exact.min = String(min);
       exact.max = String(max);
-      exact.step = String(step);
+      // "any", not the fader step: onExactCommit already snaps a typed
+      // off-grid value via snap() below. A native step attribute would
+      // make the browser flag that same value stepMismatch and paint it
+      // :invalid before snap() ever runs, rejecting input the spec
+      // treats as valid (see references/instruments.md).
+      exact.step = "any";
       exact.required = true;
       exact.value = range.value;
     }
