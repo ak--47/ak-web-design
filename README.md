@@ -5,9 +5,13 @@ instrument controls, syntax highlighting, and data-tool layouts. lives in
 `~/.agents/skills/ak-web-design`. this file is the full usage doc; `SKILL.md`
 is the short version agents read first and links back here.
 
+live demo: **[ak--47.github.io/ak-web-design](https://ak--47.github.io/ak-web-design/)**
+(deploys from `main` via [.github/workflows/pages.yml](.github/workflows/pages.yml)).
+
 ## open a working example
 
-serve this directory with a static server, then open `/demo/index.html`.
+visit the live demo above, or serve this directory locally and open
+`/demo/index.html`.
 
 ```sh
 python3 -m http.server 4748 --bind 127.0.0.1
