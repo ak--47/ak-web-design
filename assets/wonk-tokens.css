@@ -79,7 +79,7 @@
   --ak-overlay: rgba(236, 228, 212, 0.92);
   --ak-ink: #1b1f22;
   --ak-ink-2: rgba(27, 31, 34, 0.75);
-  --ak-ink-3: rgba(27, 31, 34, 0.55);
+  --ak-ink-3: rgba(27, 31, 34, 0.64);
   --ak-hairline: rgba(27, 31, 34, 0.28);
   --ak-hairline-strong: rgba(27, 31, 34, 0.5);
   --ak-hover: rgba(27, 31, 34, 0.06);
@@ -122,14 +122,14 @@
 }
 [data-theme="paper"],
 [data-theme="paper"][data-pair="metathesis"] {
-  --ak-a1: #148787;
+  --ak-a1: #148484;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #0f6f6f;
   --ak-a2: #b83236;
   --ak-a2-text: #a02b2f;
   --ak-wash: rgba(20, 135, 135, 0.1);
-  --ak-ok: #2e7d43;
-  --ak-warn: #a66a0e;
+  --ak-ok: #2b743e;
+  --ak-warn: #8f5b0c;
   --ak-err: #a02b2f;
   --ak-info: #0f6f6f;
   --ak-chart-1: #009090; --ak-chart-2: #b83236; --ak-chart-3: #4453c4;
@@ -158,9 +158,9 @@
   --ak-a2: #a827c9;
   --ak-a2-text: #8f1fae;
   --ak-wash: rgba(106, 61, 219, 0.1);
-  --ak-ok: #2e7d43;
-  --ak-warn: #a66a0e;
-  --ak-err: #c22f2f;
+  --ak-ok: #2b743e;
+  --ak-warn: #8f5b0c;
+  --ak-err: #c02f2f;
   --ak-info: #5527c9;
   --ak-chart-1: #7440ad; --ak-chart-2: #2e7d43; --ak-chart-3: #963a80;
   --ak-chart-4: #4453c4; --ak-chart-5: #b83236; --ak-chart-6: #009090;
@@ -188,9 +188,9 @@
   --ak-a2: #1e2f78;
   --ak-a2-text: #1e2f78;
   --ak-wash: rgba(47, 92, 176, 0.1);
-  --ak-ok: #2e7d43;
-  --ak-warn: #a66a0e;
-  --ak-err: #c22f2f;
+  --ak-ok: #2b743e;
+  --ak-warn: #8f5b0c;
+  --ak-err: #c02f2f;
   --ak-info: #29509c;
   --ak-chart-1: #2f5cb0; --ak-chart-2: #b83236; --ak-chart-3: #009090;
   --ak-chart-4: #7440ad; --ak-chart-5: #2e7d43; --ak-chart-6: #963a80;
@@ -218,8 +218,8 @@
   --ak-a2: #8a8c60;
   --ak-a2-text: #63653f;
   --ak-wash: rgba(207, 58, 18, 0.08);
-  --ak-ok: #55702d;
-  --ak-warn: #a66a0e;
+  --ak-ok: #546f2d;
+  --ak-warn: #8f5b0c;
   --ak-err: #b03210;
   --ak-info: #63653f;
   --ak-chart-1: #b5461c; --ak-chart-2: #009090; --ak-chart-3: #7440ad;
@@ -242,15 +242,15 @@
   --ak-chart-4: #12a5a5; --ak-chart-5: #9a5fd6; --ak-chart-6: #3f9e5a;
 }
 [data-theme="paper"][data-pair="flourish"] {
-  --ak-a1: #7d7d0e;
+  --ak-a1: #7a7a0e;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #62620b;
   --ak-a2: #3949c9;
   --ak-a2-text: #2c3ab5;
   --ak-wash: rgba(125, 125, 14, 0.1);
-  --ak-ok: #55702d;
-  --ak-warn: #a66a0e;
-  --ak-err: #c22f2f;
+  --ak-ok: #546f2d;
+  --ak-warn: #8f5b0c;
+  --ak-err: #c02f2f;
   --ak-info: #2c3ab5;
   --ak-chart-1: #6b6b0c; --ak-chart-2: #4453c4; --ak-chart-3: #b83236;
   --ak-chart-4: #009090; --ak-chart-5: #7440ad; --ak-chart-6: #2e7d43;

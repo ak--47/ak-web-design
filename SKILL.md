@@ -29,8 +29,10 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
 2. one poster pair per app, root only, never mixed, never a raw accent as
    text: [README § color](README.md#color-and-pairs), [pairs.md](references/pairs.md).
 3. type: Space Grotesk (UI), IBM Plex Mono (data/code/numbers/labels).
-   uppercase + tracking only on `.wonk-label`/`.wonk-title`, never both on
-   one element: [README § typography](README.md#typography).
+   uppercase + tracking belongs to labels and UI chrome (`.wonk-label`,
+   buttons, badges, table headers, kv terms, brand) and page titles
+   (`.wonk-title`). body, headings, nav, tabs stay mixed case, never
+   uppercase prose: [README § typography](README.md#typography).
 4. geometry/motion: 4px radius, hairlines, jitter only on live/loading:
    [README § geometry](README.md#geometry-and-motion).
 5. charts never stock, read first: [charts.md](references/charts.md). every

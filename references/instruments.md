@@ -47,7 +47,7 @@ button, even if that button just reads the draft state these controls
 already hold. disable the trigger while the call is in flight so mashing
 it can't fire the same query twice.
 
-## knob (`assets/wonk.js`)
+## knob (`assets/wonk.js` + `assets/wonk.css`)
 
 same markup as before, same `data-wonk-knob` attribute, new capabilities.
 
@@ -247,11 +247,10 @@ wonkControls.destroy(somePanel);  // tear down every wired instrument inside (an
 `init(scope)` wires fader/window/segmented/stepper inside `scope`, plus
 `scope` itself if it matches, plus any `[data-wonk-knob]` inside or as
 `scope` via `wonk.knob()` directly. it does not call the broader
-`wonk.init(scope)`, that would re-run wonk.js's live/glyph/scatter/vu/
-tabs/secret wiring, none of which guard against re-attachment, so a
-second call on an already-wired scope would double listeners and restart
-intervals. wire any non-instrument `data-wonk-*` widgets yourself, one
-`wonk.*` call each.
+`wonk.init(scope)`, instruments and base behaviors stay separate. if the
+injected DOM also holds base widgets (live dots, glyphs, tabs, menus,
+reveals), call `wonk.init(scope)` too: it is idempotent per element, so a
+second call on an already-wired scope is safe.
 
 call `destroy(scope)` before removing a subtree containing a segmented
 selector, its window resize listener is anchored outside the subtree and

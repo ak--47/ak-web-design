@@ -1,7 +1,8 @@
 /* ============================================================
    WONK instrument controls · requires wonk-tokens.css + wonk.css
-   Precision inputs for data tools: knob refinements, fader, dual-input
-   window, segmented selector, stepper. Load after wonk.css.
+   Precision inputs for data tools: fader, dual-input window, segmented
+   selector, stepper (the knob is fully styled by wonk.css). Load after
+   wonk.css.
 
    Tokens only: every color/radius/duration here comes from
    wonk-tokens.css. No new hex values, no new easing curves.
@@ -41,58 +42,9 @@
   cursor: not-allowed;
 }
 
-/* ---- knob refinements (base .wonk-knob lives in wonk.css) ---- */
-.wonk-knob .val-wrap {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.2rem;
-  white-space: nowrap;
-}
-.wonk-knob .unit {
-  font-size: var(--ak-text-xs);
-  color: var(--ak-ink-3);
-}
-.wonk-knob svg[aria-disabled="true"] {
-  cursor: not-allowed;
-}
-.wonk-knob.is-disabled {
-  opacity: 0.45;
-}
-.wonk-knob.is-disabled .val {
-  cursor: default;
-}
-.wonk-knob .val {
-  cursor: text;
-  border-radius: var(--ak-radius);
-  padding: 0 0.15rem;
-  transition: background var(--ak-t-fast) var(--ak-ease);
-}
-.wonk-knob .val:hover,
-.wonk-knob .val:focus-visible {
-  background: var(--ak-hover);
-  outline: none;
-}
-.wonk-knob input.val-edit {
-  width: 4.5em;
-  font-family: var(--ak-font-mono);
-  font-weight: 700;
-  font-size: var(--ak-text-sm);
-  text-align: center;
-  background: var(--ak-surface);
-  color: var(--ak-ink);
-  border: var(--ak-hairline-w) solid var(--ak-a1-text);
-  border-radius: var(--ak-radius);
-  padding: 0.05rem 0.2rem;
-}
-.wonk-knob input.val-edit::-webkit-inner-spin-button,
-.wonk-knob input.val-edit::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.wonk-knob input.val-edit {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
+/* ---- knob: all knob CSS (base + value editor, unit, disabled) lives
+   in wonk.css, next to the knob JS in wonk.js, so a base-only page
+   styles it fully ---- */
 
 /* ---- fader: native range + exact numeric input ---- */
 .wonk-fader-row {
@@ -209,6 +161,8 @@
 .wonk-segmented-track.has-glide input:checked + span {
   color: var(--ak-a1-ink);
 }
+/* glide not measured yet (wired while hidden): per-option fill instead */
+.wonk-segmented-track:not(.has-glide) .wonk-segmented-glide { display: none; }
 
 /* ---- stepper: number input + buttons ---- */
 .wonk-stepper-row {
@@ -245,7 +199,11 @@
   font-variant-numeric: tabular-nums;
   padding: 0.4rem 0.25rem;
 }
-.wonk-stepper-input:focus-visible { outline: 2px solid var(--ak-a1-text); outline-offset: 2px; }
+/* inset rings: .wonk-stepper-row clips its children (overflow: hidden
+   keeps the end buttons inside its rounded border), so an outset ring
+   would be cut off */
+.wonk-stepper-input:focus-visible,
+.wonk-stepper-btn:focus-visible { outline: 2px solid var(--ak-a1-text); outline-offset: -2px; }
 .wonk-stepper-input::-webkit-inner-spin-button,
 .wonk-stepper-input::-webkit-outer-spin-button {
   -webkit-appearance: none;

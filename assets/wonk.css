@@ -138,6 +138,11 @@
   outline: none;
   border-color: var(--ak-a1-text);
 }
+/* a 1px border color shift alone is not a focus indicator: add the ring */
+.wonk-input:focus-visible, .wonk-select:focus-visible, .wonk-textarea:focus-visible {
+  outline: 2px solid var(--ak-a1-text);
+  outline-offset: 2px;
+}
 .wonk-input::placeholder, .wonk-textarea::placeholder { color: var(--ak-ink-3); }
 .wonk-input--error { border-color: var(--ak-err); }
 .wonk-help { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
@@ -215,6 +220,8 @@
 }
 .wonk-toggle input:checked + .track { background: var(--ak-wash); border-color: var(--ak-a1); }
 .wonk-toggle input:checked + .track::before { transform: translateX(18px); background: var(--ak-a1); }
+/* the real checkbox is invisible, so the track carries its focus ring */
+.wonk-toggle input:focus-visible + .track { outline: 2px solid var(--ak-a1-text); outline-offset: 2px; }
 
 /* ---- avatar ---- */
 .wonk-avatar {
@@ -298,6 +305,9 @@
 .wonk-menu .menu .danger { color: var(--ak-err); }
 .wonk-menu .menu .danger:hover { background: color-mix(in srgb, var(--ak-err) 12%, transparent); color: var(--ak-err); }
 .wonk-menu .menu hr { border: none; border-top: var(--ak-hairline-w) solid var(--ak-hairline); margin: var(--ak-s1) 0; }
+/* right-aligned panel: author-set, or added by wonk.js when a menu
+   would run off the viewport's right edge */
+.wonk-menu--end .menu { right: 0; left: auto; }
 
 /* ---- alerts / callouts ---- */
 .wonk-alert {
@@ -497,6 +507,21 @@
 .wonk-toast--ok   { border-left-color: var(--ak-ok); }
 .wonk-toast--warn { border-left-color: var(--ak-warn); }
 .wonk-toast--err  { border-left-color: var(--ak-err); }
+.wonk-toast-x {
+  margin-left: auto;
+  padding: 0 var(--ak-s1);
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-md);
+  line-height: 1;
+  color: var(--ak-ink-3);
+  background: none;
+  border: none;
+  border-radius: var(--ak-radius);
+  cursor: pointer;
+  transition: color var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-toast-x::before { content: "\00d7"; } /* the x lives in CSS so toast.textContent stays the message */
+.wonk-toast-x:hover { color: var(--ak-ink); }
 @keyframes wonk-slide-in {
   from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: none; }
@@ -663,6 +688,61 @@
 .wonk-knob svg { cursor: ns-resize; display: block; }
 .wonk-knob svg:focus-visible { outline: 2px solid var(--ak-a1-text); outline-offset: 3px; border-radius: var(--ak-radius-full); }
 .wonk-knob .val { font-size: var(--ak-text-sm); }
+/* knob value editor, unit, disabled state */
+.wonk-knob .val-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+.wonk-knob .unit {
+  font-size: var(--ak-text-xs);
+  color: var(--ak-ink-3);
+}
+.wonk-knob svg[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.wonk-knob.is-disabled {
+  opacity: 0.45;
+}
+.wonk-knob.is-disabled .val {
+  cursor: default;
+}
+.wonk-knob .val {
+  cursor: text;
+  border-radius: var(--ak-radius);
+  padding: 0 0.15rem;
+  transition: background var(--ak-t-fast) var(--ak-ease);
+}
+.wonk-knob .val:hover,
+.wonk-knob .val:focus-visible {
+  background: var(--ak-hover);
+}
+.wonk-knob .val:focus-visible {
+  outline: 2px solid var(--ak-a1-text);
+  outline-offset: 2px;
+}
+.wonk-knob input.val-edit {
+  width: 4.5em;
+  font-family: var(--ak-font-mono);
+  font-weight: 700;
+  font-size: var(--ak-text-sm);
+  text-align: center;
+  background: var(--ak-surface);
+  color: var(--ak-ink);
+  border: var(--ak-hairline-w) solid var(--ak-a1-text);
+  border-radius: var(--ak-radius);
+  padding: 0.05rem 0.2rem;
+}
+.wonk-knob input.val-edit::-webkit-inner-spin-button,
+.wonk-knob input.val-edit::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.wonk-knob input.val-edit {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 
 /* ---- exotic: oscilloscope (JS animates; [data-wonk-scope]) ---- */
 .wonk-scope {
@@ -684,15 +764,19 @@
 .wonk-empty .glyph { font-size: 2.5rem; color: var(--ak-a2-text); margin-bottom: var(--ak-s3); }
 
 /* ---- scroll reveal ----
-   hidden only when JS is present (wonk.js adds .wonk-js to the root),
-   so a no-JS page never hides content */
-.wonk-js .wonk-reveal {
+   hidden only when JS is present (wonk.js adds .wonk-js to the root)
+   AND wonk.js has armed the element (.is-armed, right before it starts
+   watching it), so a no-JS page, or an element JS never saw, stays
+   visible */
+.wonk-js .wonk-reveal.is-armed:not(.is-in) {
   opacity: 0;
   transform: translateY(14px);
+}
+/* transition only on the way in: arming hides instantly, no fade-out */
+.wonk-js .wonk-reveal.is-armed.is-in {
   transition: opacity var(--ak-t-slow) var(--ak-ease-out),
               transform var(--ak-t-slow) var(--ak-ease-out);
 }
-.wonk-js .wonk-reveal.is-in { opacity: 1; transform: none; }
 
 /* ---- scrollbars ---- */
 .wonk::-webkit-scrollbar, .wonk *::-webkit-scrollbar { width: 10px; height: 10px; }

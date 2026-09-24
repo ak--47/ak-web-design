@@ -6,7 +6,9 @@
 (() => {
   "use strict";
 
-  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // live, not read once: the OS preference can flip mid-session
+  const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const reduced = () => mql.matches;
   const rand = (min, max) => min + Math.random() * (max - min);
   const token = (name) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -26,20 +28,73 @@
     "font-family: monospace; letter-spacing: 0.2em; color: #00eeff;"
   );
 
+  // ---- idempotent wiring + reduced-motion registry ----
+  // Every helper wires an element at most once (per-helper WeakMap/
+  // WeakSet), so wonk.init(scope) is safe to call repeatedly on the same
+  // subtree. Every decorative loop registers {el, start, stop} here;
+  // when reduced motion turns on mid-session the running loops stop,
+  // and when it turns off the still-connected ones resume. start() and
+  // stop() are themselves idempotent.
+  const WIRED = {
+    live: new WeakMap(),
+    glyph: new WeakMap(),
+    scatter: new WeakSet(),
+    vu: new WeakMap(),
+    scope: new WeakMap(),
+    secret: new WeakSet(),
+    menu: new WeakSet(),
+  };
+  const decorations = new Set();
+  // register a decoration and start it unless reduced motion is on. Also
+  // used on a repeat call for an already-wired element: a loop drops
+  // itself from the registry when its element leaves the DOM, so this
+  // re-registers it; a still-running loop ignores start().
+  function engage(d) {
+    decorations.add(d);
+    if (!reduced()) d.start();
+  }
+  // a loop whose element left the DOM stops and leaves the registry
+  const retire = (d) => { d.stop(); decorations.delete(d); };
+  mql.addEventListener("change", () => {
+    decorations.forEach((d) => {
+      if (!d.el.isConnected) retire(d);
+      else if (reduced()) d.stop();
+      else d.start();
+    });
+  });
+
   // ---- irregular live jitter ----
   // The WONK signature: bursts of 100-180ms blinks, then a rest.
   // Apply to any element with [data-wonk-live].
   function live(el) {
-    if (REDUCED) return;
-    el.style.animation = "none"; // take over from the CSS fallback
-    let on = true;
-    (function tick() {
-      if (!el.isConnected) return;
-      on = !on;
-      el.style.opacity = on ? 1 : 0.15;
-      const burst = Math.random() < 0.7;
-      setTimeout(tick, burst ? rand(100, 180) : rand(600, 1500));
-    })();
+    const known = WIRED.live.get(el);
+    if (known) { engage(known); return; }
+    let on = true, timer = null, running = false;
+    const d = {
+      el,
+      start() {
+        if (running) return;
+        running = true;
+        el.style.animation = "none"; // take over from the CSS fallback
+        (function tick() {
+          if (!running) return;
+          if (!el.isConnected) { retire(d); return; }
+          on = !on;
+          el.style.opacity = on ? 1 : 0.15;
+          const burst = Math.random() < 0.7;
+          timer = setTimeout(tick, burst ? rand(100, 180) : rand(600, 1500));
+        })();
+      },
+      stop() {
+        if (!running) return;
+        running = false;
+        clearTimeout(timer);
+        el.style.opacity = "";
+        el.style.animation = ""; // hand back to the CSS fallback
+      },
+    };
+    WIRED.live.set(el, d);
+    engage(d);
   }
 
   // ---- glyph morph ----
@@ -47,29 +102,55 @@
   // Apply to any element with [data-wonk-glyph].
   const GLYPHS = ["∿", "⌁", "♪", "⚙", "λ", "⌥", "∫", "⧉", "♭", "№", "⚡", "✄"];
   function glyph(el) {
-    const swap = () => {
+    const known = WIRED.glyph.get(el);
+    if (known) { engage(known); return; }
+    let slow = null, strobe = null, running = false;
+    const paint = () => {
       // read tokens live: pair/theme can change under us
       const colors = ["--ak-a1-text", "--ak-a2-text", "--ak-ok", "--ak-warn", "--ak-info"]
         .map(token)
         .filter(Boolean);
       el.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
       if (colors.length) el.style.color = colors[Math.floor(Math.random() * colors.length)];
-      if (!REDUCED) {
+      if (!reduced()) {
         el.style.display = "inline-block";
         el.style.transition = "transform 250ms cubic-bezier(.2,.9,.25,1.05)";
         el.style.transform = `scale(${rand(0.92, 1.12)}) rotate(${rand(-8, 8)}deg)`;
         setTimeout(() => { el.style.transform = "none"; }, 260);
       }
     };
-    if (REDUCED) { swap(); return; }
-    let slow = setInterval(swap, 1500);
-    let strobe = null;
+    // timer callback: a removed element stops cycling instead of
+    // swapping forever in the background
+    const swap = () => {
+      if (!el.isConnected) { retire(d); return; }
+      paint();
+    };
+    if (reduced()) paint();
+    const d = {
+      el,
+      start() {
+        if (running) return;
+        running = true;
+        slow = setInterval(swap, 1500);
+      },
+      stop() {
+        running = false;
+        clearInterval(slow);
+        clearTimeout(strobe);
+      },
+    };
+    WIRED.glyph.set(el, d);
+    engage(d);
     el.addEventListener("mouseenter", () => {
+      if (!running) return;
       clearInterval(slow);
-      (function s() { swap(); strobe = setTimeout(s, rand(100, 180)); })();
+      clearTimeout(strobe);
+      (function s() { swap(); if (running) strobe = setTimeout(s, rand(100, 180)); })();
     });
     el.addEventListener("mouseleave", () => {
+      if (!running) return;
       clearTimeout(strobe);
+      clearInterval(slow);
       slow = setInterval(swap, 1500);
     });
   }
@@ -78,7 +159,9 @@
   // Letters spring apart on hover, spring back on leave.
   // Apply to short display text with [data-wonk-scatter]. One per view.
   function scatter(el) {
-    if (REDUCED) return;
+    if (WIRED.scatter.has(el)) return;
+    if (reduced()) return;
+    WIRED.scatter.add(el);
     const text = el.textContent;
     el.textContent = "";
     el.setAttribute("aria-label", text);
@@ -92,12 +175,13 @@
       el.appendChild(s);
       return s;
     });
-    el.addEventListener("mouseenter", () =>
+    el.addEventListener("mouseenter", () => {
+      if (reduced()) return;
       spans.forEach((s) => {
         s.style.transform =
           `translate(${rand(-6, 6)}px, ${rand(-10, 10)}px) rotate(${rand(-14, 14)}deg)`;
-      })
-    );
+      });
+    });
     el.addEventListener("mouseleave", () =>
       spans.forEach((s) => (s.style.transform = "none"))
     );
@@ -105,46 +189,83 @@
 
   // ---- scroll reveal ----
   // Elements with .wonk-reveal fade/slide in when they enter the viewport.
-  // CSS hides them only under .wonk-js, so no-JS pages stay visible.
+  // CSS hides only elements this function has armed (.is-armed), so a
+  // no-JS page, or an element JS never saw, stays visible. Each element
+  // is armed at most once. A MutationObserver (watchReveals, below) arms
+  // .wonk-reveal elements injected after init.
+  const REVEAL_SEL = ".wonk-reveal:not(.is-in):not(.is-armed)";
+  let revealIO = null;
   function reveal(scope = document) {
-    const els = [...scope.querySelectorAll(".wonk-reveal:not(.is-in)")];
+    const els = [...scope.querySelectorAll(REVEAL_SEL)];
+    if (scope.matches && scope.matches(REVEAL_SEL)) els.unshift(scope);
     if (!els.length) return;
-    if (REDUCED || !("IntersectionObserver" in window)) {
+    if (reduced() || !("IntersectionObserver" in window)) {
       els.forEach((e) => e.classList.add("is-in"));
       return;
     }
-    const io = new IntersectionObserver(
+    revealIO = revealIO || new IntersectionObserver(
       (entries) =>
         entries.forEach((e) => {
           if (e.isIntersecting) {
             e.target.classList.add("is-in");
-            io.unobserve(e.target);
+            revealIO.unobserve(e.target);
           }
         }),
       { threshold: 0.08 }
     );
-    els.forEach((e) => io.observe(e));
+    els.forEach((e) => {
+      e.classList.add("is-armed");
+      revealIO.observe(e);
+    });
+  }
+  // one observer for the page; added subtrees are batched and passed to
+  // reveal() at most once per animation frame (before that frame paints)
+  function watchReveals() {
+    if (!("MutationObserver" in window)) return;
+    const added = new Set();
+    let queued = false;
+    new MutationObserver((records) => {
+      records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) added.add(n); }));
+      if (!added.size || queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        const nodes = [...added];
+        added.clear();
+        nodes.forEach((n) => { if (n.isConnected) reveal(n); });
+      });
+    }).observe(document.body, { childList: true, subtree: true });
   }
 
   // ---- sparkline ----
   // wonk.spark(el, values, {stroke, dot, w, h}) -> inline SVG trend.
   // No axes, no labels: a spark is a shape, not a chart. For anything the
   // reader must decode precisely, use a real Plot chart (references/charts.md).
+  // Missing values (null, "", NaN, +-Infinity) are dropped, never
+  // plotted as 0. No values -> the element is emptied; one value -> a
+  // single centered dot.
   function spark(el, values, opts = {}) {
     const w = opts.w || 120, h = opts.h || 32, pad = 3;
+    const vals = Array.from(values, (v) => (v === null || v === "" ? NaN : Number(v))).filter(Number.isFinite);
+    if (!vals.length) { el.replaceChildren(); return; }
     const stroke = opts.stroke || token("--ak-chart-1") || "currentColor";
     const dot = opts.dot || token("--ak-chart-2") || stroke;
-    const min = Math.min(...values), max = Math.max(...values);
+    const min = Math.min(...vals), max = Math.max(...vals);
     const span = max - min || 1;
-    const pts = values.map((v, i) => [
-      pad + (i / (values.length - 1)) * (w - pad * 2),
-      h - pad - ((v - min) / span) * (h - pad * 2),
-    ]);
+    const pts = vals.length === 1
+      ? [[w / 2, h / 2]]
+      : vals.map((v, i) => [
+        pad + (i / (vals.length - 1)) * (w - pad * 2),
+        h - pad - ((v - min) / span) * (h - pad * 2),
+      ]);
     const last = pts[pts.length - 1];
+    const line = pts.length > 1
+      ? `<polyline points="${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join(" ")}"` +
+        ` fill="none" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`
+      : "";
     el.innerHTML =
       `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" style="display:inline-block;vertical-align:middle">` +
-      `<polyline points="${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join(" ")}"` +
-      ` fill="none" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>` +
+      line +
       `<circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3" fill="${dot}"/></svg>`;
   }
 
@@ -153,6 +274,8 @@
   // Decorative by default; call wonk.vu(el).set([0..100,...]) to drive it with
   // real values (it stops self-animating once you feed it).
   function vu(el) {
+    const known = WIRED.vu.get(el);
+    if (known) { engage(known.d); return known.api; }
     const n = parseInt(el.dataset.wonkVu, 10) || 12;
     el.classList.add("wonk-vu");
     el.setAttribute("aria-hidden", "true");
@@ -170,16 +293,30 @@
         b.classList.toggle("clip", l > 88);
         b.classList.toggle("hot", l > 68 && l <= 88);
       });
-    let auto = !REDUCED;
+    let auto = true, running = false, timer = null;
     let levels = bars.map(() => rand(10, 60));
     paint(levels);
-    (function tick() {
-      if (!el.isConnected || !auto) return;
-      levels = levels.map((l) => Math.max(4, Math.min(100, l + rand(-22, 24))));
-      paint(levels);
-      setTimeout(tick, rand(90, 160));
-    })();
-    const api = { set(vals) { auto = false; paint(vals); } };
+    const d = {
+      el,
+      start() {
+        if (running || !auto) return;
+        running = true;
+        (function tick() {
+          if (!running) return;
+          if (!el.isConnected) { retire(d); return; }
+          levels = levels.map((l) => Math.max(4, Math.min(100, l + rand(-22, 24))));
+          paint(levels);
+          timer = setTimeout(tick, rand(90, 160));
+        })();
+      },
+      stop() {
+        running = false;
+        clearTimeout(timer);
+      },
+    };
+    const api = { set(vals) { auto = false; retire(d); paint(vals); } };
+    WIRED.vu.set(el, { d, api });
+    engage(d);
     el.wonkVu = api;
     return api;
   }
@@ -453,6 +590,8 @@
   // Decoration for brand corners and loading walls; reduced motion gets one
   // static frame.
   function scopeWidget(el) {
+    const known = WIRED.scope.get(el);
+    if (known) { engage(known); return; }
     el.classList.add("wonk-scope");
     el.setAttribute("aria-hidden", "true");
     const c = document.createElement("canvas");
@@ -482,52 +621,199 @@
       }
       ctx.stroke();
     };
-    if (REDUCED) { frame(); return; }
-    (function loop() {
-      if (!el.isConnected) return;
-      t += 0.045;
-      frame();
-      requestAnimationFrame(loop);
-    })();
+    // reduced motion (now or later) gets one static frame, no loop
+    let running = false, raf = 0;
+    if (reduced()) frame();
+    const d = {
+      el,
+      start() {
+        if (running) return;
+        running = true;
+        (function loop() {
+          if (!running) return;
+          if (!el.isConnected) { retire(d); return; }
+          t += 0.045;
+          frame();
+          raf = requestAnimationFrame(loop);
+        })();
+      },
+      stop() {
+        if (!running) return;
+        running = false;
+        cancelAnimationFrame(raf);
+        if (el.isConnected) frame();
+      },
+    };
+    WIRED.scope.set(el, d);
+    engage(d);
   }
 
   // ---- toast ----
-  // wonk.toast("Deployed", "ok" | "warn" | "err" | "info")
-  function toast(msg, kind = "info", ms = 3500) {
+  // wonk.toast("Deployed", "ok" | "warn" | "err" | "info") -> the toast element
+  // The host is a polite status live region; an err toast is also
+  // role=alert. Each toast has a Dismiss button; hover or focus inside
+  // it pauses its timer. A modal <dialog> makes everything outside it
+  // inert, so while one is open the host moves inside it (and back to
+  // <body> when it closes) so the toast stays visible and announced.
+  const MODAL_SELECTOR = CSS.supports("selector(:modal)");
+  const topModal = () =>
+    MODAL_SELECTOR
+      ? [...document.querySelectorAll("dialog[open]")].filter((d) => d.matches(":modal")).pop() || null
+      : null;
+  function toastHost() {
     let host = document.querySelector(".wonk-toasts");
     if (!host) {
       host = document.createElement("div");
       host.className = "wonk-toasts";
-      document.body.appendChild(host);
     }
+    host.setAttribute("role", "status");
+    host.setAttribute("aria-live", "polite");
+    const modal = topModal();
+    const container = modal || document.body;
+    if (host.parentNode !== container) {
+      container.appendChild(host);
+      if (modal) {
+        modal.addEventListener("close", () => {
+          if (host.parentNode === modal) document.body.appendChild(host);
+        }, { once: true });
+      }
+    }
+    return host;
+  }
+  function toast(msg, kind = "info", ms = 3500) {
+    const host = toastHost();
     const t = document.createElement("div");
     t.className = `wonk-toast wonk-toast--${kind}`;
+    if (kind === "err") t.setAttribute("role", "alert");
     t.textContent = msg;
+    const x = document.createElement("button");
+    x.type = "button";
+    x.className = "wonk-toast-x";
+    x.setAttribute("aria-label", "Dismiss"); // the x glyph is CSS content
+    t.appendChild(x);
     host.appendChild(t);
-    setTimeout(() => {
+
+    let timer = null, left = ms, since = 0, hover = false, focus = false;
+    const fade = () => {
       t.style.transition = "opacity 250ms, transform 250ms";
       t.style.opacity = "0";
       t.style.transform = "translateX(20px)";
       setTimeout(() => t.remove(), 260);
-    }, ms);
+    };
+    const run = () => { since = Date.now(); timer = setTimeout(fade, left); };
+    const hold = () => { clearTimeout(timer); timer = null; left -= Date.now() - since; };
+    const sync = () => {
+      const paused = hover || focus;
+      if (paused && timer !== null) hold();
+      else if (!paused && timer === null) run();
+    };
+    t.addEventListener("mouseenter", () => { hover = true; sync(); });
+    t.addEventListener("mouseleave", () => { hover = false; sync(); });
+    t.addEventListener("focusin", () => { focus = true; sync(); });
+    t.addEventListener("focusout", (e) => { focus = t.contains(e.relatedTarget); sync(); });
+    x.addEventListener("click", () => { clearTimeout(timer); t.remove(); });
+    run();
     return t;
+  }
+
+  // ---- menu ----
+  // Markup: details.wonk-menu > summary + .menu > button|a
+  // Works without JS (native <details>). This adds: choosing an item
+  // closes the menu; Escape closes it and returns focus to the summary;
+  // on open, a menu that would run off the viewport's right edge gets
+  // .wonk-menu--end (right-aligned). An author-set .wonk-menu--end is
+  // left alone.
+  function menu(d) {
+    if (WIRED.menu.has(d)) return;
+    WIRED.menu.add(d);
+    const summary = d.querySelector(":scope > summary");
+    const panel = d.querySelector(":scope > .menu");
+    const authorEnd = d.classList.contains("wonk-menu--end");
+    d.addEventListener("click", (e) => {
+      const item = e.target.closest("button, a");
+      if (item && panel && panel.contains(item)) d.open = false;
+    });
+    d.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || !d.open) return;
+      e.preventDefault();
+      e.stopPropagation(); // Escape here closes the menu, not an enclosing dialog
+      d.open = false;
+      if (summary) summary.focus();
+    });
+    d.addEventListener("toggle", () => {
+      if (!d.open || !panel || authorEnd) return;
+      d.classList.remove("wonk-menu--end");
+      if (panel.getBoundingClientRect().right > document.documentElement.clientWidth) {
+        d.classList.add("wonk-menu--end");
+      }
+    });
   }
 
   // ---- tabs ----
   // Markup: .wonk-tabs > button.wonk-tab[data-panel="#id"]
+  // Adds the ARIA tabs pattern: tablist/tab/tabpanel roles, ids where
+  // missing, aria-controls/aria-labelledby, roving tabindex, and
+  // ArrowLeft/ArrowRight (wrapping), Home, End with automatic
+  // activation. On wiring, the tab with aria-selected="true" (else the
+  // first) is selected and only its panel is visible. A tab whose
+  // data-panel is missing or matches nothing is skipped with a warning.
+  let uid = 0;
+  const ensureId = (el, prefix) => {
+    if (el.id) return el.id;
+    let id;
+    do { id = `${prefix}-${++uid}`; } while (document.getElementById(id));
+    el.id = id;
+    return id;
+  };
+  const findPanel = (sel) => {
+    if (!sel) return null;
+    try { return document.querySelector(sel); } catch { return null; } // invalid selector: caller warns
+  };
   function tabs(root) {
     if (root.dataset.wonkWired) return;
     root.dataset.wonkWired = "1";
-    const btns = [...root.querySelectorAll(".wonk-tab")];
-    btns.forEach((b) =>
-      b.addEventListener("click", () => {
-        btns.forEach((x) => {
-          x.setAttribute("aria-selected", x === b);
-          const p = document.querySelector(x.dataset.panel || "");
-          if (p) p.hidden = x !== b;
-        });
-      })
-    );
+    root.setAttribute("role", "tablist");
+    const items = [];
+    root.querySelectorAll(".wonk-tab").forEach((tab) => {
+      const panel = findPanel(tab.dataset.panel);
+      if (!panel) {
+        console.warn(
+          `wonk.tabs: skipped tab "${tab.textContent.trim()}": data-panel ${JSON.stringify(tab.dataset.panel ?? null)} does not match an element`
+        );
+        return;
+      }
+      tab.setAttribute("role", "tab");
+      panel.setAttribute("role", "tabpanel");
+      tab.setAttribute("aria-controls", ensureId(panel, "wonk-tabpanel"));
+      panel.setAttribute("aria-labelledby", ensureId(tab, "wonk-tab"));
+      items.push({ tab, panel });
+    });
+    if (!items.length) return;
+    const select = (chosen, focus = false) => {
+      items.forEach(({ tab, panel }) => {
+        const on = tab === chosen;
+        tab.setAttribute("aria-selected", String(on));
+        tab.tabIndex = on ? 0 : -1;
+        panel.hidden = !on;
+      });
+      if (focus) chosen.focus();
+    };
+    items.forEach(({ tab }, i) => {
+      tab.addEventListener("click", () => select(tab));
+      tab.addEventListener("keydown", (e) => {
+        const last = items.length - 1;
+        const to =
+          e.key === "ArrowRight" ? (i === last ? 0 : i + 1) :
+          e.key === "ArrowLeft" ? (i === 0 ? last : i - 1) :
+          e.key === "Home" ? 0 :
+          e.key === "End" ? last : null;
+        if (to === null) return;
+        e.preventDefault();
+        select(items[to].tab, true);
+      });
+    });
+    const initial = items.find(({ tab }) => tab.getAttribute("aria-selected") === "true") || items[0];
+    select(initial.tab);
   }
 
   // ---- theme + pair helpers ----
@@ -541,6 +827,8 @@
   // Give any element [data-wonk-secret="<message>"]. Seven rapid clicks reveal it.
   // (aktunes idiom: there is always a reward for whoever bothers to look.)
   function secret(el) {
+    if (WIRED.secret.has(el)) return;
+    WIRED.secret.add(el);
     let clicks = 0, timer = null;
     el.addEventListener("click", () => {
       clicks++;
@@ -554,6 +842,8 @@
   }
 
   // ---- auto-wire ----
+  // Idempotent per element: safe to call again on the same subtree after
+  // a render (already-wired elements are skipped, new ones get wired).
   function init(scope = document) {
     scope.querySelectorAll("[data-wonk-live]").forEach(live);
     scope.querySelectorAll("[data-wonk-glyph]").forEach(glyph);
@@ -562,17 +852,19 @@
     scope.querySelectorAll("[data-wonk-knob]").forEach(knob);
     scope.querySelectorAll("[data-wonk-scope]").forEach(scopeWidget);
     scope.querySelectorAll(".wonk-tabs").forEach(tabs);
+    scope.querySelectorAll(".wonk-menu").forEach(menu);
     scope.querySelectorAll("[data-wonk-secret]").forEach(secret);
     reveal(scope);
   }
+  const boot = () => { init(); watchReveals(); };
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => init());
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    init();
+    boot();
   }
 
   window.wonk = {
-    toast, live, glyph, tabs, setPair, setTheme, init, reveal, spark, scatter,
+    toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
     vu, knob, scope: scopeWidget,
   };
 })();

@@ -297,6 +297,11 @@
   // it degrades to per-option fill (see wonk-controls.css) with no JS or
   // under prefers-reduced-motion. Fires nothing custom: listen to native
   // "change" on the radios (or the fieldset, since it bubbles).
+  // The glide re-measures whenever the track resizes (ResizeObserver) and
+  // once web fonts are ready. While the checked label measures 0 wide
+  // (wired inside a hidden tab panel, closed <details>, unopened dialog)
+  // has-glide is off, so the per-option fill shows instead of dark text
+  // on a dark track; it comes back once a real width is measured.
   function segmented(el) {
     if (el.wonkSegmented) return el.wonkSegmented;
     const track = el.querySelector(".wonk-segmented-track");
@@ -310,23 +315,29 @@
       glide.className = "wonk-segmented-glide";
       glide.setAttribute("aria-hidden", "true");
       track.prepend(glide);
-      track.classList.add("has-glide");
     }
 
+    let wired = true;
     const place = () => {
-      if (!glide) return;
+      if (!glide || !wired) return;
       const checked = radios.find((r) => r.checked);
       const label = checked ? checked.closest("label") : null;
       if (!label) { glide.style.width = "0"; return; }
-      glide.style.width = label.offsetWidth + "px";
+      const width = label.offsetWidth;
+      if (width === 0) { track.classList.remove("has-glide"); return; }
+      glide.style.width = width + "px";
       glide.style.height = label.offsetHeight + "px";
       glide.style.transform = `translateX(${label.offsetLeft - 2}px)`;
+      track.classList.add("has-glide");
     };
     place();
 
     const onChange = () => place();
     radios.forEach((r) => r.addEventListener("change", onChange));
     window.addEventListener("resize", place);
+    const ro = glide && "ResizeObserver" in window ? new ResizeObserver(place) : null;
+    if (ro) ro.observe(track);
+    if (glide && document.fonts) document.fonts.ready.then(place);
 
     const api = {
       get value() { return radios.find((r) => r.checked)?.value ?? null; },
@@ -337,8 +348,10 @@
         place();
       },
       destroy() {
+        wired = false;
         radios.forEach((r) => r.removeEventListener("change", onChange));
         window.removeEventListener("resize", place);
+        if (ro) ro.disconnect();
         if (glide) glide.remove();
         track.classList.remove("has-glide"); // restore the no-JS solid-fill fallback
         delete el.wonkSegmented;
@@ -471,10 +484,9 @@
     // Only the knob from wonk.js is ours to (re)wire here, and only the
     // knob itself -- wonk.knob() is idempotent (it no-ops if el.wonkKnob
     // already exists). We deliberately do NOT call the broader
-    // wonk.init(scope): that also re-runs wonk.js's live/glyph/scatter/vu/
-    // tabs/secret wiring, none of which guard against being re-wired, so
-    // calling it a second time on a scope that already has those widgets
-    // would attach duplicate listeners and restart intervals.
+    // wonk.init(scope): instruments and base behaviors stay separate, and
+    // the caller decides whether the scope also holds base widgets
+    // (wonk.init is idempotent per element, so calling it too is safe).
     if (window.wonk?.knob) {
       if (scope.nodeType === 1 && scope.matches?.("[data-wonk-knob]")) window.wonk.knob(scope);
       scope.querySelectorAll?.("[data-wonk-knob]").forEach(window.wonk.knob);

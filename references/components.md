@@ -3,7 +3,11 @@
 Copy-paste markup for every component in `assets/wonk.css` / `assets/wonk.js`.
 The demo page (`demo/index.html`) shows all of them live. The root needs
 `class="wonk"` and a `data-pair`; wonk.js auto-wires every `data-wonk-*`
-attribute on DOMContentLoaded (call `wonk.init(scope)` for injected DOM).
+attribute, `.wonk-tabs`, and `.wonk-menu` on DOMContentLoaded. for injected
+DOM call `wonk.init(scope)`: it is idempotent per element, so calling it again
+on the same subtree after a render is safe (already-wired elements are
+skipped). wonk.js loads with `defer`, so any inline script that calls `wonk.*`
+must wait for `DOMContentLoaded`.
 
 ## specialized packs
 
@@ -54,11 +58,20 @@ lives in the workbench example.
   </div>
 </div>
 
+<section class="wonk-reveal">…</section>        <!-- fades + slides in on scroll -->
+
 <hr class="wonk-divider">                        <!-- square wave: between CHAPTERS -->
 <hr class="wonk-divider wonk-divider--accent">   <!-- accent-colored wave -->
 <hr class="wonk-rule">                           <!-- hairline: within a chapter -->
 <div class="wonk-stack">…</div>                  <!-- children joined by vertical hairlines -->
 ```
+
+`.wonk-reveal` hides only once wonk.js arms it (`.is-armed`, right before it
+starts watching the element), then shows it (`.is-in`) as it scrolls into
+view. a no-JS page, or an element wonk.js never saw, stays visible. sections
+injected after load are armed automatically (one page-wide
+`MutationObserver`), no `wonk.reveal()` call needed. reduced motion shows
+them at once.
 
 ## Buttons
 
@@ -110,7 +123,7 @@ lives in the workbench example.
 
 <span class="wonk-avatar">ak</span>              <!-- circle monogram; --sm for 28px -->
 
-<details class="wonk-menu">                      <!-- dropdown, zero JS -->
+<details class="wonk-menu">                      <!-- dropdown; add wonk-menu--end to right-align -->
   <summary class="wonk-btn">Actions ▾</summary>
   <div class="menu">
     <button>Redeploy</button>
@@ -126,6 +139,20 @@ lives in the workbench example.
 </div>
 <div id="p1">…</div><div id="p2" hidden>…</div>
 ```
+
+menu: the dropdown works with zero JS (native `<details>`). wonk.js adds:
+choosing an item closes it, Escape closes it and returns focus to the
+`summary`, and a menu that would run off the viewport's right edge gets
+`.wonk-menu--end` when it opens. set `.wonk-menu--end` yourself to always
+right-align; wonk.js leaves an author-set one alone.
+
+tabs: wonk.js adds the ARIA tabs pattern: `role="tablist"`/`"tab"`/`"tabpanel"`,
+ids where missing, `aria-controls` and `aria-labelledby`, and a roving
+`tabindex` (only the selected tab is in the Tab order). ArrowLeft/ArrowRight
+(wrapping), Home, and End move focus and select (automatic activation). on
+wiring, the tab with `aria-selected="true"` (else the first) is selected and
+only its panel is visible, whatever `hidden` said in the markup. a tab whose
+`data-panel` is missing or matches nothing is skipped with a `console.warn`.
 
 ## Data display
 
@@ -174,9 +201,20 @@ Charts: see [charts.md](charts.md). Sparklines: `wonk.spark(el, values)`.
 
 <span class="wonk-tip" data-tip="mono, inverted">hover target</span>
 
-<!-- toasts are JS-only: -->
-<script>wonk.toast("Deployed", "ok")</script>    <!-- ok | warn | err | info -->
+<!-- toasts are JS-only. wonk.js loads with defer, so wait for it: -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    wonk.toast("Deployed", "ok");                // ok | warn | err | info
+  });
+</script>
 ```
+
+toasts: the host (`.wonk-toasts`) is a `role="status"` `aria-live="polite"`
+region, and an `err` toast is also `role="alert"`. every toast has a Dismiss
+button (`aria-label="Dismiss"`); hovering or focusing a toast pauses its
+timer. a modal `<dialog>` (`showModal()`) makes the rest of the page inert,
+so while one is open the host moves inside it (and back to `<body>` when it
+closes): a toast fired from a modal stays visible and announced.
 
 Plot chart tooltips are auto-styled by wonk.css — never restyle per chart.
 
@@ -213,18 +251,28 @@ helpers below generate decorative data; never present them as measured telemetry
 <!-- animated oscilloscope trace; brand corners and loading walls -->
 ```
 
-All three respect `prefers-reduced-motion` (static frame, no animation).
+All three respect `prefers-reduced-motion` (static frame, no animation),
+including a change mid-session: running loops stop when it turns on and
+resume when it turns off.
 
 ## JS API
 
 | Call | What it does |
 |---|---|
-| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + reveal in injected DOM |
-| `wonk.toast(msg, kind?, ms?)` | show a toast (ok/warn/err/info) |
-| `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline |
+| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal in injected DOM; idempotent per element |
+| `wonk.toast(msg, kind?, ms?)` | show a toast (ok/warn/err/info); returns the toast element |
+| `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline; drops missing values, `[]` empties `el`, one value draws a dot |
 | `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
+| `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |
+| `wonk.glyph(el)` | glyph morph (`[data-wonk-glyph]`) |
+| `wonk.scatter(el)` | hover type scatter (`[data-wonk-scatter]`) |
+| `wonk.tabs(root)` | wire one `.wonk-tabs` (ARIA + keyboard) |
+| `wonk.menu(details)` | wire one `.wonk-menu` (close on choose, Escape, edge flip) |
 | `wonk.vu(el)`, `wonk.knob(el)`, `wonk.scope(el)` | wire an exotic widget manually |
-| `wonk.reveal(scope?)` | re-arm scroll reveals |
+| `wonk.reveal(scope?)` | arm scroll reveals not yet armed |
+
+every wiring call is idempotent per element: a second call on the same
+element does nothing (`vu` and `knob` return the existing handle).
 
 After a `setPair`/`setTheme`, re-render charts and any canvas widgets; token
 reads inside wonk.js utilities are already live.

@@ -461,6 +461,42 @@
     }
   });
 
+  // -- segmented: wired while hidden, it falls back to the per-option
+  //    fill; once shown, the glide measures a real width and returns --
+  check("segmented: wired inside a hidden container shows the per-option fill, then the glide once unhidden", async () => {
+    const { host, cleanup } = withFixture(`
+      <div hidden>
+        <fieldset class="wonk-segmented">
+          <legend>view</legend>
+          <div class="wonk-segmented-track">
+            <label><input type="radio" name="ccheck-hidden-view" value="a" checked><span>alpha</span></label>
+            <label><input type="radio" name="ccheck-hidden-view" value="b"><span>beta</span></label>
+          </div>
+        </fieldset>
+      </div>
+    `);
+    try {
+      const el = host.querySelector(".wonk-segmented");
+      const track = el.querySelector(".wonk-segmented-track");
+      const checkedSpan = el.querySelector("input:checked + span");
+      wonkControls.segmented(el);
+      const bg = getComputedStyle(checkedSpan).backgroundColor;
+      assert(bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent", `hidden-wired checked option should keep its fallback fill, got background ${bg}`);
+      assert(!track.classList.contains("has-glide"), "has-glide must be off while the glide measures 0 width");
+      host.querySelector("[hidden]").hidden = false;
+      const glide = track.querySelector(".wonk-segmented-glide");
+      assert(!!glide, "a glide element should exist (motion is not reduced in this run)");
+      for (let i = 0; i < 10 && !track.classList.contains("has-glide"); i++) {
+        await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      }
+      assert(track.classList.contains("has-glide"), "has-glide should return once the control is visible");
+      assert(glide.getBoundingClientRect().width > 0, `glide should have a measured width > 0, got ${glide.getBoundingClientRect().width}`);
+      el.wonkSegmented.destroy();
+    } finally {
+      cleanup();
+    }
+  });
+
   // -- knob: validates finite min < max, step > 0, finite value --
   check("knob: throws on min >= max, on step <= 0, and on a non-finite value", () => {
     const cases = [

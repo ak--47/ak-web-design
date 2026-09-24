@@ -131,8 +131,9 @@ return () => wonkControls.destroy(panel);
 ```
 
 `wonkControls.init(panel)` initializes only instrument controls. it includes the
-panel itself if it matches. don't repeatedly call base `wonk.init(panel)` on the
-same subtree: legacy decorative helpers do not all have idempotent wiring.
+panel itself if it matches. base `wonk.init(panel)` is idempotent per element:
+calling it again on the same subtree after a re-render wires only the elements
+it has not seen.
 
 motion is explicit: `wonkMotion.play(element, 'value-changed')`. cancel before
 unmount with `wonkMotion.cancel(element)`. don't use effects to own framework

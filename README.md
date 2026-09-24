@@ -120,9 +120,13 @@ rules:
 
 - headings (`h1`-`h4`) are mixed-case Space Grotesk with tight tracking.
   navigation and tabs are mixed-case too, mono uppercase there reads as noise.
-- uppercase + tracking is reserved for `.wonk-label` (mono, weight 500, color
-  ink-2, tracked `--ak-track-label`) and `.wonk-title` (sans, tracked
-  `--ak-track-title`, page titles only). don't put both treatments on the
+- uppercase + tracking belongs to labels and UI chrome, and to page titles.
+  labels and chrome: `.wonk-label` (mono, weight 500, color ink-2, tracked
+  `--ak-track-label`), buttons (`.wonk-btn`, tracked `--ak-track-btn`),
+  badges, table headers, kv terms (`.wonk-kv dt`), the sidebar brand, and
+  avatar monograms. page titles: `.wonk-title` (sans, tracked
+  `--ak-track-title`). body text, headings, nav, and tabs stay mixed case.
+  never uppercase prose. don't put the label and title treatments on the
   same element.
 - numbers are always mono and tabular (`.wonk-num`, `font-variant-numeric:
   tabular-nums` where it applies).
@@ -168,7 +172,7 @@ choosing and tuning a pair, the semantic tokens, and the chart series: see
 | family | key classes | gallery section | reference |
 |---|---|---|---|
 | typography | `.wonk-title`, `.wonk-label`, `.wonk-num`, `<kbd>` | `#type` | components.md |
-| layout | `.wonk-shell`, `.wonk-divider`, `.wonk-rule`, `.wonk-stack` | `#chrome` | components.md |
+| layout | `.wonk-shell`, `.wonk-divider`, `.wonk-rule`, `.wonk-stack` | `#wonk-side` | components.md |
 | buttons | `.wonk-btn` + `--primary`/`--danger`/`--quiet` | `#buttons` | components.md |
 | forms | `.wonk-field`, `.wonk-input`, `.wonk-select`, `.wonk-textarea`, `.wonk-check`, `.wonk-toggle`, `.wonk-range` | `#forms` | components.md |
 | navigation | `.wonk-crumbs`, `.wonk-pages`, `.wonk-avatar`, `.wonk-menu`, `.wonk-tabs` | `#nav`, `#tabs` | components.md |
@@ -186,7 +190,7 @@ base JS API (`window.wonk`), full list in components.md:
 
 | call | what it does |
 |---|---|
-| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + reveal in injected DOM |
+| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal in injected DOM; idempotent per element |
 | `wonk.toast(msg, kind?, ms?)` | show a toast (ok/warn/err/info) |
 | `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
 
@@ -286,8 +290,9 @@ useEffect(() => {
 strict-mode remounts must not duplicate listeners, each pack's `init()` is
 idempotent per element, calling it twice on the same node is safe.
 
-- `wonk.init(scope)`: base behaviors (jitter, glyph morph, tabs, secrets),
-  not idempotent for every legacy helper, avoid repeated calls on one subtree.
+- `wonk.init(scope)`: base behaviors (jitter, glyph morph, tabs, menus,
+  secrets, reveals), idempotent per element: calling it again on the same
+  subtree after a render wires only the elements it has not seen.
 - `wonkControls.init(scope)` / `.destroy(scope)`: instruments.
 - `wonkMotion.play(el, name)` / `.cancel(el)`: one-shot effects, cancel
   before removing the target, the app owns DOM removal and focus.
