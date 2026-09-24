@@ -19,8 +19,8 @@
 
   Section names, in document order: chrome, hero, type, color,
   buttons, forms, badges, cards, table, tabs, overlays, code, charts,
-  live, nav, alerts, exotic, empty, instruments, datatools, motion,
-  footer, boot. footer has no script section. boot runs every
+  live, nav, alerts, disclosure, exotic, empty, instruments, datatools,
+  motion, footer, boot. footer has no script section. boot runs every
   render*() function once and wires the sidebar scrollspy.
 
   Validate the markers before committing: the count of "SECTION:"
@@ -99,6 +99,7 @@
     <a class="wonk-navlink" href="#live">Live</a>
     <a class="wonk-navlink" href="#nav">Nav</a>
     <a class="wonk-navlink" href="#alerts">Alerts</a>
+    <a class="wonk-navlink" href="#disclosure">Disclosure</a>
     <a class="wonk-navlink" href="#exotic">Exotic</a>
     <a class="wonk-navlink" href="#empty">Empty</a>
     <a class="wonk-navlink" href="#instruments">Instruments</a>
@@ -595,6 +596,100 @@ order by latency desc;</code></pre>
         </div>
       </section>
       <!-- SECTION:alerts END -->
+
+      <hr class="wonk-rule">
+
+      <!-- SECTION:disclosure START (no script section: wonk.js delegates row toggles and fold-all) -->
+      <section class="demo-section wonk-reveal" id="disclosure">
+        <div class="wonk-label">14b &middot; disclosure &mdash; headline first, detail behind a fold</div>
+        <h3>Lead with the answer</h3>
+        <div class="wonk-stat">
+          <span class="wonk-label">open pipeline &middot; this quarter &middot; fixture</span>
+          <span class="wonk-num">$4.2M</span>
+          <small>11 deals close this quarter.</small>
+        </div>
+        <details class="wonk-fold" style="margin-top:var(--ak-s3)">
+          <summary>How this works</summary>
+          <div class="body">
+            <p>Open pipeline is the sum of every open deal with a close date in this quarter. Won and lost deals are not counted. Amounts are list price, before discounts.</p>
+            <p>The number updates after the nightly sync at 02:00 UTC.</p>
+          </div>
+        </details>
+
+        <div class="demo-row" style="justify-content:space-between; margin-top:var(--ak-s8)">
+          <h4 style="margin:0">Largest deals</h4>
+          <div class="wonk-fold-all" role="group" aria-label="Fold controls for largest deals">
+            <button type="button" class="wonk-btn wonk-btn--quiet" data-wonk-fold-all="open" data-target="#disclosure-deals">Unfold all</button>
+            <button type="button" class="wonk-btn wonk-btn--quiet" data-wonk-fold-all="close" data-target="#disclosure-deals">Fold all</button>
+          </div>
+        </div>
+        <div id="disclosure-deals" style="display:flex; flex-direction:column; gap:var(--ak-s2); margin-top:var(--ak-s3)">
+          <details class="wonk-card wonk-card--fold" data-fold-key="demo-deal-acme">
+            <summary>
+              <span class="headline">Acme renewal &middot; $820k</span>
+              <span class="facts">AE Dana &middot; CE Lee &middot; closes Oct 31</span>
+            </summary>
+            <div class="body">
+              <dl class="wonk-kv">
+                <dt>stage</dt><dd>Negotiation</dd>
+                <dt>next step</dt><dd>Legal review of the order form, due Oct 12.</dd>
+                <dt>risk</dt><dd>Security review is still open.</dd>
+              </dl>
+            </div>
+          </details>
+          <details class="wonk-card wonk-card--fold" data-fold-key="demo-deal-globex">
+            <summary>
+              <span class="headline">Globex expansion &middot; $640k</span>
+              <span class="facts">AE Sam &middot; CE Ortiz &middot; closes Nov 14</span>
+            </summary>
+            <div class="body">
+              <dl class="wonk-kv">
+                <dt>stage</dt><dd>Proposal</dd>
+                <dt>next step</dt><dd>Pricing call with the buyer, Oct 9.</dd>
+                <dt>risk</dt><dd>None logged.</dd>
+              </dl>
+            </div>
+          </details>
+          <details class="wonk-card wonk-card--fold" data-fold-key="demo-deal-initech">
+            <summary>
+              <span class="headline">Initech seats &middot; $440k</span>
+              <span class="facts">AE Dana &middot; CE Park &middot; closes Dec 2</span>
+            </summary>
+            <div class="body">
+              <dl class="wonk-kv">
+                <dt>stage</dt><dd>Discovery</dd>
+                <dt>next step</dt><dd>Technical demo, Oct 16.</dd>
+                <dt>risk</dt><dd>No executive sponsor yet.</dd>
+              </dl>
+            </div>
+          </details>
+        </div>
+        <p class="wonk-more" style="margin-top:var(--ak-s3)">Showing <span class="wonk-num">3</span> of <span class="wonk-num">11</span> deals <button type="button" class="wonk-btn wonk-btn--quiet" onclick="wonk.toast('Fixture: the app renders the rest of the list.', 'info')">Show all</button></p>
+
+        <h4 style="margin-top:var(--ak-s8)">Open reviews</h4>
+        <div>
+          <table class="wonk-table">
+            <thead><tr><th>review</th><th class="num">open</th><th class="num">oldest</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="disclosure-row-security">Security review</button></td>
+                <td class="num">12</td><td class="num">9d</td>
+              </tr>
+              <tr class="wonk-row-detail" id="disclosure-row-security" hidden>
+                <td colspan="3">7 wait on a questionnaire, 5 wait on a pen test report. The oldest is Acme renewal.</td>
+              </tr>
+              <tr>
+                <td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="disclosure-row-legal">Legal review</button></td>
+                <td class="num">5</td><td class="num">4d</td>
+              </tr>
+              <tr class="wonk-row-detail" id="disclosure-row-legal" hidden>
+                <td colspan="3">All 5 wait on redlines from the customer. The oldest is Globex expansion.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <!-- SECTION:disclosure END -->
 
       <hr class="wonk-divider">
 

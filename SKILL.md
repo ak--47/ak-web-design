@@ -36,7 +36,8 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
 4. geometry/motion: 4px radius, hairlines, jitter only on live/loading:
    [README § geometry](README.md#geometry-and-motion).
 5. charts never stock, read first: [charts.md](references/charts.md). every
-   app hides something: [easter-eggs.md](references/easter-eggs.md).
+   app hides an egg (hidden only, visible copy stays plain):
+   [easter-eggs.md](references/easter-eggs.md).
 6. accessibility: `-text` variants pass 4.5:1, no color-only status, focus
    rings visible, reduced motion respected.
 7. data tools/instruments: read [data-tools.md](references/data-tools.md),
@@ -46,6 +47,8 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
    never fabricate activity, VU/scope helpers are decorative only.
 8. help text and term definitions use `data-tip` / `.wonk-term`, never
    native `title=`: [components.md § hints](references/components.md#hints-and-terms).
+9. hierarchy: lead with the answer, detail behind `.wonk-fold`, plain copy:
+   [hierarchy.md](references/hierarchy.md).
 
 ## modes
 
@@ -63,4 +66,4 @@ browser checks. don't commit unless asked.
 
 ## deeper reference
 
-[components.md](references/components.md) · [instruments.md](references/instruments.md) · [data-tools.md](references/data-tools.md) · [motion.md](references/motion.md) · [code.md](references/code.md) · [charts.md](references/charts.md) · [pairs.md](references/pairs.md) · [adapters.md](references/adapters.md) · [easter-eggs.md](references/easter-eggs.md)
+[components.md](references/components.md) · [hierarchy.md](references/hierarchy.md) · [instruments.md](references/instruments.md) · [data-tools.md](references/data-tools.md) · [motion.md](references/motion.md) · [code.md](references/code.md) · [charts.md](references/charts.md) · [pairs.md](references/pairs.md) · [adapters.md](references/adapters.md) · [easter-eggs.md](references/easter-eggs.md)

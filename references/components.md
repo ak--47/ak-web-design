@@ -27,7 +27,8 @@ lives in the workbench example.
 1. [Typography](#typography) · 2. [Layout & dividers](#layout--dividers) ·
 3. [Buttons](#buttons) · 4. [Forms](#forms) · 5. [Navigation](#navigation) ·
 6. [Data display](#data-display) · 7. [Feedback & overlays](#feedback--overlays) ·
-8. [Live & loading](#live--loading) · 9. [Exotic](#exotic) · 10. [JS API](#js-api)
+8. [Disclosure](#disclosure) · 9. [Live & loading](#live--loading) · 10. [Exotic](#exotic) ·
+11. [JS API](#js-api)
 
 ## Typography
 
@@ -193,9 +194,12 @@ Charts: see [charts.md](charts.md). Sparklines: `wonk.spark(el, values)`.
   <span><strong>Degrading.</strong> p95 doubled since 09:00.</span>
 </div>
 
-<div class="wonk-acc">                           <!-- accordion: native details -->
+<div class="wonk-acc">                           <!-- accordion list: native details -->
   <details><summary>Question</summary><div class="body">Answer.</div></details>
 </div>
+<details class="wonk-acc">                       <!-- single accordion item -->
+  <summary>Question</summary><div class="body">Answer.</div>
+</details>
 
 <dialog class="wonk-modal" id="m">…</dialog>     <!-- open with .showModal() -->
 
@@ -287,6 +291,58 @@ keyboard users need them.
 
 Plot chart tooltips are auto-styled by wonk.css — never restyle per chart.
 
+## Disclosure
+
+headline first, detail behind a fold. which one to use, and the copy rules:
+[hierarchy.md](hierarchy.md).
+
+```html
+<!-- prose: an inline "How this works" unfold -->
+<details class="wonk-fold">
+  <summary>How this works</summary>
+  <div class="body"><p>Open pipeline is the sum of every open deal…</p></div>
+</details>
+
+<!-- a record: the summary keeps the headline and key facts -->
+<details class="wonk-card wonk-card--fold" data-fold-key="deal-123">
+  <summary>
+    <span class="headline">Acme renewal · $820k</span>
+    <span class="facts">AE Dana · CE Lee · closes Oct 31</span>
+  </summary>
+  <div class="body">…</div>
+</details>
+
+<!-- an expandable table row: wonk.js flips aria-expanded and hidden -->
+<tr>
+  <td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="r1-detail">Security review</button></td>
+  <td class="num">12</td>
+</tr>
+<tr class="wonk-row-detail" id="r1-detail" hidden><td colspan="2">…</td></tr>
+
+<!-- a truncated list: CSS only, the app owns the list -->
+<p class="wonk-more">Showing <span class="wonk-num">20</span> of <span class="wonk-num">143</span> <button type="button" class="wonk-btn wonk-btn--quiet">Show all</button></p>
+
+<!-- unfold all / fold all, in the section header -->
+<div class="wonk-fold-all" role="group" aria-label="Fold controls">
+  <button type="button" class="wonk-btn wonk-btn--quiet" data-wonk-fold-all="open" data-target="#deals">Unfold all</button>
+  <button type="button" class="wonk-btn wonk-btn--quiet" data-wonk-fold-all="close" data-target="#deals">Fold all</button>
+</div>
+```
+
+- no wiring. wonk.js listens on the document, so rows and buttons rendered
+  later work at once. Enter and Space work because the toggles are buttons.
+- a row toggle whose `aria-controls` target is missing warns once in the
+  console and does nothing.
+- a fold-all button folds its `data-target`. with no `data-target` it folds
+  its closest `section`, `article`, or `[data-fold-scope]`. a `data-target`
+  that matches nothing warns and does nothing.
+- `wonk.foldAll(root, open)` sets every `<details>` (all depths) and every
+  row toggle in `root`. it skips `.wonk-menu` popups.
+- `data-fold-key` on a `<details>` or a row toggle keeps its open state
+  across re-renders, in memory only (`wonk.foldState`, a `Map`). a keyed
+  element inserted later, or passed through `wonk.init(scope)`, gets its
+  state back. `wonk.foldState.clear()` forgets every key.
+
 ## Live & loading
 
 ```html
@@ -328,11 +384,13 @@ resume when it turns off.
 
 | Call | What it does |
 |---|---|
-| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal + hint `tabindex` in injected DOM; idempotent per element |
+| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal + hint `tabindex`, and restore `data-fold-key` states, in injected DOM; idempotent per element |
 | `wonk.toast(msg, kind?, ms?)` | show a toast (ok/warn/err/info); returns the toast element |
 | `wonk.glossary(map?)` | merge term definitions for `data-term`; returns the current map |
 | `wonk.tip(root, selector, render)` | rich hint for matches inside `root`; `render(el)` returns a Node or a string (shown as text); returns `{destroy}` |
 | `wonk.hint.show(el)` / `wonk.hint.hide()` | show `el`'s hint now (returns `false` if it has none) / hide the box |
+| `wonk.foldAll(root, open)` | open (`true`) or close (`false`) every `<details>` and `.wonk-row-toggle` in `root`, `.wonk-menu` excluded; returns how many changed |
+| `wonk.foldState` | the `Map` of remembered `data-fold-key` -> open states; `.clear()` forgets them |
 | `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline; drops missing values, `[]` empties `el`, one value draws a dot |
 | `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |

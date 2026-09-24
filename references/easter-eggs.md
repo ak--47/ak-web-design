@@ -3,8 +3,8 @@
 WONK apps hide things. The aktunes site put a base64 puzzle behind a hover
 overlay reading "Oh... interesting" and logged "you're getting warmer..." to
 the console. That habit is an official part of the system: every WONK app
-ships at least one hidden thing and one piece of playful microcopy. Serious
-tools earn the right to be playful by being excellent everywhere else — the
+ships at least one hidden thing. Visible copy stays plain by default (slot 3).
+Serious tools earn the right to be playful by being excellent everywhere else — the
 eggs never sit in the critical path, never block a task, and never fire during
 an incident view.
 
@@ -18,7 +18,12 @@ an incident view.
    clicks. Better: replace it with something bespoke to the app (a konami
    code, a glyph that unlocks "performance mode", a datamosh flash on a
    version number). Reward whoever bothers to look.
-3. **Microcopy voice** (mandatory). AK's register:
+3. **Microcopy voice** (plain by default). Visible copy is plain, concise,
+   and imperative, with no jokes: [hierarchy.md § copy](hierarchy.md#copy).
+   An empty state names the cause: "No deals match these filters."
+   Playful visible copy belongs only in AK's personal projects (portfolio,
+   music, toys). Never use it in work tools or data apps. In a personal
+   project, AK's register:
    - Field labels can be human: "Thoughts", not "Message".
    - Buttons can talk: "Knock, knock..." for contact/invite actions.
    - Empty states are plainspoken, slightly self-deprecating, never corporate:

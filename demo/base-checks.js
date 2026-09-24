@@ -2,7 +2,8 @@
    demo/base-checks.js · browser-callable checks for wonk.js base
    behaviors (window.wonk: idempotent init, reduced motion, toast,
    setTheme, setPair, tabs, spark, menu, reveal, hints: data-tip /
-   data-hint / data-term, glossary, wonk.tip), token contrast, and
+   data-hint / data-term, glossary, wonk.tip, disclosure: .wonk-acc,
+   .wonk-fold, row toggles, foldAll, fold keys), token contrast, and
    focus rings.
    Runs headless via `npm test` (or `npm test -- base`). By hand:
    load it on any page that already has wonk.js loaded (e.g.
@@ -978,6 +979,212 @@
       dlg.remove();
       host.remove();
       resetHint();
+    }
+  });
+
+  // ---- disclosure: .wonk-acc, .wonk-fold, row toggles, foldAll, fold keys ----
+  // Fixtures are created with their final open state (no transition to
+  // wait out), so computed pseudo-element transforms are settled values.
+  const uid = (prefix) => `${prefix}-${Math.random().toString(36).slice(2)}`;
+  const pseudoTransform = (el, pseudo) => getComputedStyle(el, pseudo).transform;
+  // a row toggle is "open" when aria-expanded is true and its target is shown
+  const rowOpen = (btn) => {
+    const target = document.getElementById(btn.getAttribute("aria-controls"));
+    return btn.getAttribute("aria-expanded") === "true" && !!target && !target.hidden;
+  };
+
+  check("disclosure: details.wonk-acc (single) open rotates its summary's + and colors it; the nested list form still does", () => {
+    const host = withFixture(`
+      <details class="wonk-acc single" open><summary>single</summary><div class="body">a</div></details>
+      <details class="wonk-acc closed"><summary>closed</summary><div class="body">a</div></details>
+      <div class="wonk-acc"><details class="nested" open><summary>nested</summary><div class="body">b</div></details></div>
+      <span class="probe" style="color:var(--ak-a1-text)">p</span>`);
+    try {
+      const single = host.querySelector(".single > summary");
+      const closed = host.querySelector(".closed > summary");
+      const nested = host.querySelector(".nested > summary");
+      const accent = getComputedStyle(host.querySelector(".probe")).color;
+      assert(pseudoTransform(single, "::after") !== "none", `open details.wonk-acc summary::after should be rotated, transform was "none"`);
+      assert(getComputedStyle(single).color === accent, `open details.wonk-acc summary color should be --ak-a1-text (${accent}), got ${getComputedStyle(single).color}`);
+      assert(pseudoTransform(closed, "::after") === "none", `closed details.wonk-acc summary::after should not rotate, got ${pseudoTransform(closed, "::after")}`);
+      assert(pseudoTransform(nested, "::after") !== "none", "open .wonk-acc > details summary::after should still be rotated");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("disclosure: .wonk-fold open rotates the + in its summary's ::before; closed does not", () => {
+    const host = withFixture(`
+      <details class="wonk-fold open" open><summary>How this works</summary><div class="body"><p>x</p></div></details>
+      <details class="wonk-fold closed"><summary>How this works</summary><div class="body"><p>x</p></div></details>`);
+    try {
+      const open = host.querySelector(".open > summary");
+      const closed = host.querySelector(".closed > summary");
+      const content = getComputedStyle(open, "::before").content;
+      assert(content === '"+"', `.wonk-fold summary::before should hold "+", got ${content}`);
+      assert(pseudoTransform(open, "::before") !== "none", "open .wonk-fold summary::before should be rotated, transform was \"none\"");
+      assert(pseudoTransform(closed, "::before") === "none", `closed .wonk-fold summary::before should not rotate, got ${pseudoTransform(closed, "::before")}`);
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("disclosure: clicking a .wonk-row-toggle sets aria-expanded=true and shows its aria-controls row; a second click reverses both", () => {
+    const id = uid("wonk-row");
+    const host = withFixture(`
+      <table class="wonk-table"><tbody>
+        <tr><td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="${id}">Security review</button></td><td class="num">12</td></tr>
+        <tr class="wonk-row-detail" id="${id}" hidden><td colspan="2">detail</td></tr>
+      </tbody></table>`);
+    try {
+      const btn = host.querySelector(".wonk-row-toggle");
+      const detail = host.querySelector(".wonk-row-detail");
+      btn.click();
+      assert(btn.getAttribute("aria-expanded") === "true", `first click: aria-expanded should be "true", got ${JSON.stringify(btn.getAttribute("aria-expanded"))}`);
+      assert(detail.hidden === false, "first click: the detail row should not be hidden");
+      btn.click();
+      assert(btn.getAttribute("aria-expanded") === "false", `second click: aria-expanded should be "false", got ${JSON.stringify(btn.getAttribute("aria-expanded"))}`);
+      assert(detail.hidden === true, "second click: the detail row should be hidden again");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("disclosure: a .wonk-row-toggle whose aria-controls target is missing does not throw and warns once", () => {
+    const host = withFixture(`<button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="${uid("wonk-missing")}">orphan</button>`);
+    const realWarn = console.warn;
+    let warned = 0;
+    const errors = [];
+    const onError = (e) => { errors.push(e.message); e.preventDefault(); };
+    console.warn = () => { warned++; };
+    window.addEventListener("error", onError);
+    try {
+      const btn = host.querySelector(".wonk-row-toggle");
+      btn.click();
+      btn.click();
+      assert(errors.length === 0, `clicking an orphan row toggle threw: ${errors.join("; ")}`);
+      assert(warned === 1, `expected exactly one console.warn for the missing target, got ${warned}`);
+      assert(btn.getAttribute("aria-expanded") === "false", `an orphan toggle should not claim to be expanded, got ${JSON.stringify(btn.getAttribute("aria-expanded"))}`);
+    } finally {
+      window.removeEventListener("error", onError);
+      console.warn = realWarn;
+      host.remove();
+    }
+  });
+
+  check("disclosure: wonk.foldAll(root, true) opens nested details (2 levels) and row toggles and returns the count changed; false closes all", () => {
+    const id = uid("wonk-row");
+    const host = withFixture(`
+      <details class="a"><summary>a</summary>
+        <details class="b"><summary>b</summary>inner</details>
+      </details>
+      <details class="c" open><summary>c</summary>c</details>
+      <table><tbody>
+        <tr><td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="${id}">r</button></td></tr>
+        <tr class="wonk-row-detail" id="${id}" hidden><td>d</td></tr>
+      </tbody></table>`);
+    try {
+      assert(typeof wonk.foldAll === "function", "wonk.foldAll should be a function");
+      const all = [...host.querySelectorAll("details")];
+      const btn = host.querySelector(".wonk-row-toggle");
+      const opened = wonk.foldAll(host, true);
+      assert(all.every((d) => d.open), `every details should be open, got ${all.map((d) => d.open)}`);
+      assert(rowOpen(btn), "the row toggle should be expanded with its detail row shown");
+      assert(opened === 3, `foldAll(root, true) should return 3 (a, b, the row; c was already open), got ${opened}`);
+      const closed = wonk.foldAll(host, false);
+      assert(all.every((d) => !d.open), `every details should be closed, got ${all.map((d) => d.open)}`);
+      assert(btn.getAttribute("aria-expanded") === "false" && document.getElementById(id).hidden, "the row toggle should be collapsed with its detail row hidden");
+      assert(closed === 4, `foldAll(root, false) should return 4, got ${closed}`);
+      assert(wonk.foldAll(host, false) === 0, "a second foldAll(root, false) should change nothing and return 0");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("disclosure: a [data-wonk-fold-all=open][data-target] click opens everything in the target; a close button with no data-target folds its section", () => {
+    const target = uid("wonk-scope");
+    const id = uid("wonk-row");
+    const host = withFixture(`
+      <button type="button" class="opener" data-wonk-fold-all="open" data-target="#${target}">Unfold all</button>
+      <section id="${target}">
+        <button type="button" class="closer" data-wonk-fold-all="close">Fold all</button>
+        <details><summary>one</summary><details><summary>deep</summary>x</details></details>
+        <details><summary>two</summary>y</details>
+        <table><tbody>
+          <tr><td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="${id}">r</button></td></tr>
+          <tr class="wonk-row-detail" id="${id}" hidden><td>d</td></tr>
+        </tbody></table>
+      </section>
+      <details class="outside"><summary>outside</summary>z</details>`);
+    try {
+      const inside = [...host.querySelectorAll("section details")];
+      const btn = host.querySelector(".wonk-row-toggle");
+      host.querySelector(".opener").click();
+      assert(inside.every((d) => d.open), `every details in the target should be open, got ${inside.map((d) => d.open)}`);
+      assert(rowOpen(btn), "the row toggle in the target should be expanded");
+      assert(!host.querySelector(".outside").open, "a details outside the target must stay closed");
+      host.querySelector(".closer").click();
+      assert(inside.every((d) => !d.open), `the close button should fold its own section, got ${inside.map((d) => d.open)}`);
+      assert(btn.getAttribute("aria-expanded") === "false", "the close button should collapse the row toggle");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("disclosure: data-fold-key remembers open state across re-renders; wonk.init(scope) restores it; wonk.foldState.clear() forgets", async () => {
+    const key = uid("deal");
+    const rowKey = uid("row");
+    const host = withFixture("");
+    const make = (html) => {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = html;
+      return wrap;
+    };
+    const detailsHTML = `<details data-fold-key="${key}"><summary>deal</summary>body</details>`;
+    const rowHTML = (id) => `<table><tbody>
+        <tr><td><button type="button" class="wonk-row-toggle" data-fold-key="${rowKey}" aria-expanded="false" aria-controls="${id}">r</button></td></tr>
+        <tr class="wonk-row-detail" id="${id}" hidden><td>d</td></tr>
+      </tbody></table>`;
+    const settle = async (done) => { for (let i = 0; i < 3 && !done(); i++) await frame(); };
+    try {
+      assert(wonk.foldState && typeof wonk.foldState.clear === "function", "wonk.foldState.clear should be a function");
+      let render = make(detailsHTML + rowHTML(uid("wonk-row")));
+      host.appendChild(render);
+      const first = render.querySelector("details");
+      first.querySelector("summary").click();
+      await toggled(first);
+      assert(first.open, "clicking the summary should open the keyed details");
+      render.querySelector(".wonk-row-toggle").click();
+
+      // re-render: remove, insert fresh closed copies with the same keys
+      render.remove();
+      render = make(detailsHTML + rowHTML(uid("wonk-row")));
+      host.appendChild(render);
+      const fresh = render.querySelector("details");
+      const freshRow = render.querySelector(".wonk-row-toggle");
+      await settle(() => fresh.open && rowOpen(freshRow));
+      assert(fresh.open, "a fresh details with the same data-fold-key should be open within a frame");
+      assert(rowOpen(freshRow), "a fresh row toggle with the same data-fold-key should be expanded within a frame");
+
+      // wonk.init(scope) restores on a subtree the observer never saw
+      const detached = make(detailsHTML);
+      wonk.init(detached);
+      assert(detached.querySelector("details").open, "wonk.init(scope) should restore a keyed details' remembered state");
+
+      wonk.foldState.clear();
+      render.remove();
+      render = make(detailsHTML + rowHTML(uid("wonk-row")));
+      host.appendChild(render);
+      const cleared = render.querySelector("details");
+      const clearedRow = render.querySelector(".wonk-row-toggle");
+      await frame();
+      await frame();
+      await frame();
+      assert(!cleared.open, "after wonk.foldState.clear() a fresh keyed details should stay closed");
+      assert(!rowOpen(clearedRow), "after wonk.foldState.clear() a fresh keyed row toggle should stay collapsed");
+    } finally {
+      if (window.wonk && wonk.foldState && typeof wonk.foldState.clear === "function") wonk.foldState.clear();
+      host.remove();
     }
   });
 

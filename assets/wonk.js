@@ -221,12 +221,17 @@
   // one observer for the page; added subtrees are batched and passed to
   // reveal() and focusTips() at most once per animation frame (before
   // that frame paints). Removals drop a hint whose target left the DOM.
+  // Keyed folds are restored at once, in the observer callback: a
+  // <details open> inserted by a render queues a toggle event, and that
+  // event must see the remembered state, not the rendered default.
   function watchInjected() {
     if (!("MutationObserver" in window)) return;
     const added = new Set();
     let queued = false;
     new MutationObserver((records) => {
-      records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) added.add(n); }));
+      const fresh = [];
+      records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) { added.add(n); fresh.push(n); } }));
+      if (foldState.size) fresh.forEach((n) => { if (n.isConnected) restoreFolds(n); });
       pruneHint();
       if (!added.size || queued) return;
       queued = true;
@@ -1172,6 +1177,121 @@
     select(initial.tab);
   }
 
+  // ---- disclosure: row toggles, foldAll, fold-all buttons, fold keys ----
+  // Markup: button.wonk-row-toggle[aria-expanded][aria-controls="id"]
+  // (the id names a tr.wonk-row-detail), [data-wonk-fold-all="open" |
+  // "close"][data-target], and data-fold-key="..." on a <details> or a
+  // row toggle. Document-level delegation, no per-element wiring:
+  //  - a click on a row toggle flips its aria-expanded and the hidden
+  //    attribute of the element(s) its aria-controls names. A missing
+  //    target warns once per toggle and changes nothing.
+  //  - wonk.foldAll(root, open) sets every <details> in root (root
+  //    included, .wonk-menu popups excluded) and every row toggle in
+  //    root. Returns how many changed.
+  //  - a fold-all button folds document.querySelector(data-target), or,
+  //    with no data-target, its closest section, article, or
+  //    [data-fold-scope]. No match warns and changes nothing.
+  //  - wonk.foldState is a Map (memory only) of data-fold-key -> open.
+  //    A keyed <details> is recorded on toggle (capture phase: toggle
+  //    does not bubble), a keyed row toggle on click and by foldAll.
+  //    Keyed elements inserted later (the body observer) and those in
+  //    wonk.init(scope) get their remembered state back.
+  const foldState = new Map();
+  const warnedRows = new WeakSet();
+  const FOLD_KEY_SEL = "details[data-fold-key], .wonk-row-toggle[data-fold-key]";
+
+  const remember = (el, open) => {
+    const key = el.getAttribute("data-fold-key");
+    if (key !== null) foldState.set(key, open);
+  };
+
+  // the element(s) a row toggle controls, or null (warned once per
+  // toggle) when aria-controls is empty or names a missing id
+  function rowTargets(btn) {
+    const ids = (btn.getAttribute("aria-controls") || "").split(/\s+/).filter(Boolean);
+    const home = btn.getRootNode();
+    const byId = (id) => (home.getElementById ? home.getElementById(id) : home.querySelector(`#${CSS.escape(id)}`));
+    const targets = ids.map(byId);
+    if (ids.length && targets.every(Boolean)) return targets;
+    if (!warnedRows.has(btn)) {
+      warnedRows.add(btn);
+      console.warn(`wonk.rowToggle: aria-controls=${JSON.stringify(btn.getAttribute("aria-controls"))} on "${btn.textContent.trim()}" does not name an element; the toggle does nothing`);
+    }
+    return null;
+  }
+
+  // set one row toggle; returns true when anything changed
+  function setRow(btn, open) {
+    const targets = rowTargets(btn);
+    if (!targets) return false;
+    const changed = btn.getAttribute("aria-expanded") !== String(open) || targets.some((t) => t.hidden === open);
+    btn.setAttribute("aria-expanded", String(open));
+    targets.forEach((t) => { t.hidden = !open; });
+    remember(btn, open);
+    return changed;
+  }
+
+  function setDetails(d, open) {
+    remember(d, open);
+    if (d.open === open) return false;
+    d.open = open;
+    return true;
+  }
+
+  function foldAll(root, open) {
+    if (!root || typeof root.querySelectorAll !== "function") {
+      throw new TypeError("wonk.foldAll(root, open): root must be an element or a document");
+    }
+    if (typeof open !== "boolean") {
+      throw new TypeError("wonk.foldAll(root, open): open must be true or false");
+    }
+    const details = [...root.querySelectorAll("details")];
+    if (root.matches && root.matches("details")) details.unshift(root);
+    let changed = 0;
+    details.forEach((d) => { if (!d.closest(".wonk-menu") && setDetails(d, open)) changed++; });
+    root.querySelectorAll(".wonk-row-toggle").forEach((b) => { if (setRow(b, open)) changed++; });
+    return changed;
+  }
+
+  // give keyed elements in scope (scope included) their remembered state
+  function restoreFolds(scope) {
+    if (!foldState.size) return;
+    const els = [...scope.querySelectorAll(FOLD_KEY_SEL)];
+    if (scope.matches && scope.matches(FOLD_KEY_SEL)) els.unshift(scope);
+    els.forEach((el) => {
+      const key = el.getAttribute("data-fold-key");
+      if (!foldState.has(key)) return;
+      const open = foldState.get(key);
+      if (el.localName === "details") { if (el.open !== open) el.open = open; }
+      else setRow(el, open);
+    });
+  }
+
+  document.addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (d.localName === "details" && d.hasAttribute("data-fold-key")) remember(d, d.open);
+  }, true);
+
+  document.addEventListener("click", (e) => {
+    if (!(e.target instanceof Element)) return;
+    const row = e.target.closest(".wonk-row-toggle");
+    if (row) {
+      setRow(row, row.getAttribute("aria-expanded") !== "true");
+      return;
+    }
+    const btn = e.target.closest("[data-wonk-fold-all]");
+    if (!btn) return;
+    const sel = btn.getAttribute("data-target");
+    const target = sel ? document.querySelector(sel) : btn.closest("section, article, [data-fold-scope]");
+    if (!target) {
+      console.warn(sel
+        ? `wonk.foldAll: data-target ${JSON.stringify(sel)} matches no element`
+        : "wonk.foldAll: a [data-wonk-fold-all] button needs a data-target or an enclosing section, article, or [data-fold-scope]");
+      return;
+    }
+    foldAll(target, btn.getAttribute("data-wonk-fold-all") === "open");
+  });
+
   // ---- theme + pair helpers ----
   const setPair = (name) => document.documentElement.setAttribute("data-pair", name);
   const setTheme = (name) =>
@@ -1210,6 +1330,7 @@
     scope.querySelectorAll(".wonk-tabs").forEach(tabs);
     scope.querySelectorAll(".wonk-menu").forEach(menu);
     scope.querySelectorAll("[data-wonk-secret]").forEach(secret);
+    restoreFolds(scope);
     focusTips(scope);
     reveal(scope);
   }
@@ -1222,6 +1343,6 @@
 
   window.wonk = {
     toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
-    vu, knob, scope: scopeWidget, glossary, tip, hint,
+    vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState,
   };
 })();

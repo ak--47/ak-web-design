@@ -183,6 +183,7 @@ choosing and tuning a pair, the semantic tokens, and the chart series: see
 | navigation | `.wonk-crumbs`, `.wonk-pages`, `.wonk-avatar`, `.wonk-menu`, `.wonk-tabs` | `#nav`, `#tabs` | components.md |
 | data display | `.wonk-card`, `.wonk-stat`, `.wonk-badge`, `.wonk-table`, `.wonk-kv`, `.wonk-pre`, `.wonk-log` | `#cards`, `#table` | components.md |
 | feedback | `.wonk-alert`, `.wonk-acc`, `.wonk-modal`, `data-tip`, `.wonk-term`, `.wonk-hint-btn`, `wonk.toast()`, `wonk.tip()` | `#overlays` | components.md |
+| disclosure | `.wonk-fold`, `.wonk-card--fold`, `.wonk-row-toggle`, `.wonk-more`, `.wonk-fold-all`, `data-fold-key`, `wonk.foldAll()` | `#disclosure` | components.md, hierarchy.md |
 | live/loading | `.wonk-dot--live`, `.wonk-spectrum`, `.wonk-skeleton`, `.wonk-empty` | `#live` | components.md |
 | exotic | VU meter, precision knob, oscilloscope | `#exotic` | components.md |
 | instruments | knob, fader, bounded window, segmented selector, stepper | `demo/instruments.html` | instruments.md |
@@ -321,7 +322,7 @@ grep -n "SECTION:instruments" demo/index.html demo/catalog.js
 
 then read only between the START and END lines. section names, in document
 order: chrome, hero, type, color, buttons, forms, badges, cards, table,
-tabs, overlays, code, charts, live, nav, alerts, exotic, empty,
+tabs, overlays, code, charts, live, nav, alerts, disclosure, exotic, empty,
 instruments, datatools, motion, footer. `boot` is script-only. before committing a change to either file, confirm the count
 of `SECTION:` lines with the START word equals the count with the END word:
 
@@ -410,6 +411,7 @@ all galleries now request IBM Plex Mono. no code-section font override is needed
 |---|---|
 | [references/pairs.md](references/pairs.md) | the five poster pairs, token roles, tuning rules |
 | [references/components.md](references/components.md) | copy-paste markup for every base component, JS API |
+| [references/hierarchy.md](references/hierarchy.md) | lead with the answer, detail behind a fold, plain copy |
 | [references/instruments.md](references/instruments.md) | knob, fader, bounded window, segmented selector, stepper |
 | [references/data-tools.md](references/data-tools.md) | source channels, query state, filters, tables, selection, jobs |
 | [references/motion.md](references/motion.md) | eight one-shot effects, cancellation, reduced motion |
