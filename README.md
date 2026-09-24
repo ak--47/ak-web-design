@@ -321,17 +321,29 @@ grep -c "SECTION:.* START" demo/index.html; grep -c "SECTION:.* END" demo/index.
 
 ## validation
 
-serve the skill directory with any static server, then open a gallery and
-run its checks in the browser console:
+run `npm install` once, then run every check suite headless:
 
-```js
-await wonkControlsChecks.run();   // demo/instruments.html
-await wonkMotionChecks.run();     // demo/motion.html
-await wonkCodeChecks.run();       // demo/index.html#code
+```sh
+npm test                    # all suites
+npm test -- controls        # one suite by name (list several to run several)
 ```
 
-each returns named pass/fail results for its pack's behavior. separately
-check keyboard interaction, dark/paper readability, mobile overflow, and
+`npm test` serves the repo root, opens each suite's gallery in headless
+Chromium, prints one `PASS`/`FAIL` line per check, and exits non-zero on
+any failure or uncaught page error. the GitHub Pages deploy runs it first.
+
+| suite | page | global |
+|---|---|---|
+| `base` | `demo/index.html` | `wonkBaseChecks` |
+| `code` | `demo/index.html` | `wonkCodeChecks` |
+| `controls` | `demo/instruments.html` | `wonkControlsChecks` |
+| `motion` | `demo/motion.html` | `wonkMotionChecks` |
+
+the console path still works: serve the repo, open the page, and run
+`await wonkControlsChecks.run()` (or any global above); it returns
+`{passed, failed, results}`.
+
+separately check keyboard interaction, dark/paper readability, mobile overflow, and
 actual OS reduced motion. these reference implementations still need
 validation in the consuming app.
 

@@ -415,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
     checksBtn.disabled = true;
     checksSummary.textContent = "running...";
     checksLog.replaceChildren();
-    const results = await wonkControlsChecks.run();
+    const { results } = await wonkControlsChecks.run();
     results.forEach((r) => {
       const line = document.createElement("div");
       line.className = r.pass ? "change" : "input";

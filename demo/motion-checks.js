@@ -1,14 +1,16 @@
 /* ============================================================
    motion-checks.js · browser-callable checks for wonk-motion
-   Not loaded automatically. Open demo/motion.html, then in the
-   console:
+   Runs headless via `npm test` (or `npm test -- motion`). By hand:
+   open demo/motion.html, then in the console:
 
      await wonkMotionChecks.run();
 
    Builds its own off-screen scratch DOM (not the visible gallery),
    runs every check, logs pass/fail, and returns
-   { passed, failed, results }. No dependencies beyond wonk-motion.js
-   already being loaded on the page. No network calls.
+   { passed, failed, results } where each result is
+   { name, pass, message } (message is "ok" on pass). No dependencies
+   beyond wonk-motion.js already being loaded on the page. No network
+   calls.
    ============================================================ */
 (() => {
   "use strict";
@@ -350,10 +352,10 @@
     for (const c of checks) {
       try {
         await c.fn();
-        results.push({ name: c.name, pass: true });
+        results.push({ name: c.name, pass: true, message: "ok" });
         console.log("PASS " + c.name);
       } catch (err) {
-        results.push({ name: c.name, pass: false, error: (err && err.message) || String(err) });
+        results.push({ name: c.name, pass: false, message: (err && err.message) || String(err) });
         console.error("FAIL " + c.name + ": " + ((err && err.message) || err));
       }
     }

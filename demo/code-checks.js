@@ -1,15 +1,17 @@
 /* ============================================================
    demo/code-checks.js · browser-callable checks for wonk-code
-   Not loaded automatically. Load it on any page that already has
-   wonk-code.js AND the vendored Prism core + grammars loaded (see
-   references/code.md for the exact script order), then call:
+   Runs headless via `npm test` (or `npm test -- code`). By hand:
+   load it on any page that already has wonk-code.js AND the
+   vendored Prism core + grammars loaded (see references/code.md for
+   the exact script order), then call:
 
      await wonkCodeChecks.run();
 
    Every check builds its own hidden fixture DOM and tears it down
    after itself. No dependency on any specific host page's markup,
-   no network calls. Returns { passed, failed, results } and also
-   prints a console.table().
+   no network calls. Returns { passed, failed, results } where each
+   result is { name, pass, message } (message is "ok" on pass), and
+   also prints a console.table().
 
    Covers: every supported grammar; hostile-markup and JSON-data
    safety; dynamic rehighlight; init/destroy lifecycle idempotency;
@@ -721,7 +723,7 @@
     for (const { name, fn } of checks) {
       try {
         await fn();
-        results.push({ name, pass: true });
+        results.push({ name, pass: true, message: "ok" });
         console.log("PASS " + name);
       } catch (err) {
         results.push({ name, pass: false, message: (err && err.message) || String(err) });

@@ -2,19 +2,21 @@
    demo/controls-checks.js · reproducible browser checks for the
    instrument controls pack (wonk-controls.css/.js + wonk.js's knob).
 
-   NOT a build-time test runner -- there is none in this skill. This is a
-   browser-callable module: load it on any page that already has
+   Runs headless via `npm test` (or `npm test -- controls`), which
+   serves the repo and calls run() through scripts/check.mjs. It is also
+   a browser-callable module: load it on any page that already has
    wonk.js + wonk-controls.js loaded (e.g. demo/instruments.html, or a
    blank page with just the two scripts), then call:
 
      window.wonkControlsChecks.run()
 
    from devtools or from an automated browser session (Playwright,
-   Puppeteer, etc.) via page.evaluate(). It returns a Promise<Array<{
-     name: string, pass: boolean, message: string
-   }>> and also prints a console.table(). Every check builds its own
-   fixture DOM in a detached, hidden container and cleans up after
-   itself -- nothing here depends on or mutates the host page's own
+   Puppeteer, etc.) via page.evaluate(). It returns a Promise<{
+     passed: number, failed: number,
+     results: Array<{ name: string, pass: boolean, message: string }>
+   }> (message is "ok" on pass) and also prints a console.table().
+   Every check builds its own fixture DOM in a detached, hidden
+   container and cleans up after itself -- nothing here depends on or mutates the host page's own
    markup, so it is safe to run against the live instruments.html gallery
    without disturbing its fixtures.
 
@@ -588,7 +590,7 @@
       results.forEach((r) => console.log(`[${r.pass ? "PASS" : "FAIL"}] ${r.name} -- ${r.message}`));
     }
     console.log(`wonkControlsChecks: ${results.length - failed.length}/${results.length} passed`);
-    return results;
+    return { passed: results.length - failed.length, failed: failed.length, results };
   }
 
   window.wonkControlsChecks = { run, checks };

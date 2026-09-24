@@ -1,0 +1,11 @@
+{
+  "name": "wonk",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/check.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
