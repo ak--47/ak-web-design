@@ -1,0 +1,201 @@
+/* ============================================================
+   wonk-radio.css · shuffle radio pack for the WONK system
+   Load after wonk-tokens.css and wonk.css. Reuses .wonk-btn,
+   .wonk-range, .wonk-label, .wonk-num and .wonk-dot unchanged;
+   this file only lays them out. Tokens only, no raw colors.
+   Markup is rendered by assets/wonk-radio.js; see
+   references/radio.md.
+   ============================================================ */
+
+.wonk-radio {
+  container: wonk-radio / inline-size;
+  display: block;
+  color: var(--ak-ink);
+  background: var(--ak-surface);
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  padding: var(--ak-s4);
+}
+.wonk-radio, .wonk-radio * { box-sizing: border-box; }
+
+/* narrow (default): now playing + transport, then scope + seek + volume */
+.wonk-radio-inner {
+  display: grid;
+  align-items: center;
+  gap: var(--ak-s3) var(--ak-s4);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "now now transport"
+    "scope progress volume";
+}
+
+/* wide: one row */
+@container wonk-radio (min-width: 50rem) {
+  .wonk-radio-inner {
+    grid-template-columns: auto minmax(9rem, 1fr) auto minmax(12rem, 1.4fr) auto;
+    grid-template-areas: "scope now transport progress volume";
+  }
+}
+
+/* ---- scope: the flat hairline is this CSS baseline; the canvas
+   draws real analyser data over it only while audio plays ---- */
+.wonk-radio-scope {
+  grid-area: scope;
+  display: block;
+  width: 96px;
+  height: 32px;
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  background: linear-gradient(var(--ak-hairline), var(--ak-hairline)) center / 100% var(--ak-hairline-w) no-repeat;
+}
+@container wonk-radio (min-width: 50rem) {
+  .wonk-radio-scope { width: 120px; height: 40px; }
+}
+
+/* ---- now playing ---- */
+.wonk-radio-now {
+  grid-area: now;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wonk-radio-station {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-s2);
+  min-width: 0;
+  white-space: nowrap;
+}
+.wonk-radio-station .wonk-dot { flex: none; }
+.wonk-radio-station-name { overflow: hidden; text-overflow: ellipsis; }
+.wonk-radio-sep, .wonk-radio-state { color: var(--ak-ink-3); }
+.wonk-radio-title {
+  font-family: var(--ak-font-sans);
+  font-size: var(--ak-text-md);
+  font-weight: 500;
+  line-height: 1.5;
+  min-height: 1.5em;
+  color: var(--ak-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wonk-radio-meta {
+  font-size: var(--ak-text-xs);
+  line-height: 1.5;
+  min-height: 1.5em;
+  color: var(--ak-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- transport + icon buttons (44px targets) ---- */
+.wonk-radio-transport {
+  grid-area: transport;
+  display: flex;
+  align-items: center;
+  gap: var(--ak-s1);
+}
+.wonk-radio .wonk-radio-btn {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  justify-content: center;
+  flex: none;
+}
+.wonk-radio-btn svg { display: block; }
+
+/* ---- seek + status ---- */
+.wonk-radio-progress {
+  grid-area: progress;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wonk-radio-seek {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-s2);
+  min-width: 0;
+}
+.wonk-radio-seek .wonk-range { flex: 1 1 0; min-width: 0; }
+.wonk-radio-time {
+  flex: none;
+  min-width: 4ch;
+  font-size: var(--ak-text-xs);
+  color: var(--ak-ink-2);
+  text-align: right;
+}
+.wonk-radio-time--total { text-align: left; }
+.wonk-radio .wonk-radio-status {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: var(--ak-text-xs);
+  line-height: 1.5;
+  color: var(--ak-ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---- volume: hidden on phones, which have hardware volume ---- */
+.wonk-radio-volume {
+  grid-area: volume;
+  display: flex;
+  align-items: center;
+  gap: var(--ak-s1);
+}
+.wonk-radio-volume .wonk-range { width: 5.5rem; }
+
+@media (max-width: 519.98px) {
+  .wonk-radio-volume { display: none; }
+  .wonk-radio-inner {
+    grid-template-areas:
+      "now now transport"
+      "scope progress progress";
+  }
+}
+
+/* ---- focus: visible on every control, with or without .wonk root ---- */
+.wonk-radio :focus-visible {
+  outline: 2px solid var(--ak-a1-text);
+  outline-offset: 2px;
+}
+
+/* ---- dock: fixed full-width bar at the bottom of the viewport ---- */
+.wonk-radio.wonk-radio--dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  border: 0;
+  border-top: var(--ak-hairline-w) solid var(--ak-a1);
+  border-radius: 0;
+  background: var(--ak-ground);
+  padding: var(--ak-s3) var(--ak-s6) calc(var(--ak-s3) + env(safe-area-inset-bottom, 0px));
+}
+/* while a dock is mounted, JS puts .wonk-has-radio-dock on <html> and
+   keeps --wonk-radio-dock-h equal to the measured dock height, so page
+   content scrolls clear of the bar and toasts sit above it */
+html.wonk-has-radio-dock body {
+  padding-bottom: calc(var(--wonk-radio-dock-h) + var(--ak-s4));
+}
+html.wonk-has-radio-dock .wonk-toasts {
+  bottom: calc(var(--wonk-radio-dock-h) + var(--ak-s4));
+}
+@media (max-width: 52rem) {
+  .wonk-radio.wonk-radio--dock {
+    padding-left: var(--ak-s4);
+    padding-right: var(--ak-s4);
+  }
+}
+
+/* ---- reduced motion: no transitions, the live dot holds still ---- */
+@media (prefers-reduced-motion: reduce) {
+  .wonk-radio, .wonk-radio * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

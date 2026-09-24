@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WONK radio · shuffle a public bucket, no server</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%233fc9c9'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/wonk-tokens.css">
+<link rel="stylesheet" href="../assets/wonk.css">
+<link rel="stylesheet" href="../assets/wonk-radio.css">
+<script defer src="../assets/wonk.js"></script>
+<script defer src="../assets/wonk-radio.js"></script>
+<!-- browser-callable checks for wonk-radio, not run automatically:
+     await wonkRadioChecks.run() -- see ../references/radio.md -->
+<script defer src="radio-checks.js"></script>
+<style>
+  body { margin: 0; }
+  .demo-main { padding: var(--ak-s8); max-width: 72rem; margin: 0 auto; }
+  .demo-section { margin-bottom: var(--ak-s12); scroll-margin-top: var(--ak-s6); }
+  .demo-row { display: flex; flex-wrap: wrap; gap: var(--ak-s3); align-items: center; }
+  .demo-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--ak-s4) var(--ak-s6);
+    border-bottom: var(--ak-hairline-w) solid var(--ak-hairline);
+    position: sticky; top: 0; background: var(--ak-ground); z-index: 5;
+  }
+  .demo-back { font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); letter-spacing: var(--ak-track-label); }
+  .demo-main .fixture-note {
+    font-size: var(--ak-text-sm); color: var(--ak-ink-3);
+    border-left: 2px solid var(--ak-hairline-strong);
+    padding-left: var(--ak-s3); margin: var(--ak-s4) 0 0;
+  }
+  .table-scroll { overflow-x: auto; }
+  @media (max-width: 640px) {
+    .demo-main { padding: var(--ak-s4); }
+    .wonk-title { overflow-wrap: anywhere; }
+    .demo-topbar { flex-direction: column; gap: var(--ak-s2); align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="demo-topbar">
+  <a class="demo-back wonk-btn wonk-btn--quiet" href="index.html">&larr; back to WONK</a>
+  <div class="demo-row">
+    <span class="wonk-label" id="pair-name">pair: metathesis</span>
+    <button class="wonk-btn" id="theme-toggle">Paper</button>
+  </div>
+</header>
+
+<main class="demo-main">
+
+  <section class="demo-section">
+    <div class="wonk-label">wonk / radio</div>
+    <h1 class="wonk-title" style="font-size:var(--ak-text-3xl)">Radio</h1>
+    <p style="max-width:56ch">
+      a shuffle player for a public bucket of songs. one line of markup, no
+      server. it lists the bucket in the browser, streams each file with
+      range requests, and draws the real waveform while it plays. nothing
+      plays until you press play.
+    </p>
+  </section>
+
+  <hr class="wonk-divider">
+
+  <section class="demo-section" id="player">
+    <div class="wonk-label">01 &middot; inline player</div>
+    <h3>Live on gs://aktunes/music/</h3>
+    <p>Shuffle plays every track once before any track repeats. Previous restarts the track after 3 seconds, else goes back one track.</p>
+    <section class="wonk-radio" data-wonk-radio data-bucket="aktunes" data-prefix="music/" aria-label="Radio"></section>
+    <p class="fixture-note">
+      live data: this player lists the real bucket when the page loads. if the
+      list does not load, the status line says so and play retries it.
+    </p>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section" id="dock">
+    <div class="wonk-label">02 &middot; dock</div>
+    <h3>A fixed bar at the bottom of the page</h3>
+    <p>Add <code>wonk-radio--dock</code> to the host. The page gets bottom padding while the dock is mounted, so no content hides under it.</p>
+    <div class="demo-row">
+      <button class="wonk-btn wonk-btn--primary" id="dock-toggle" type="button">Show dock</button>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section" id="markup">
+    <div class="wonk-label">03 &middot; markup</div>
+    <h3>One line</h3>
+<pre class="wonk-pre"><code>&lt;link rel="stylesheet" href="assets/wonk-radio.css"&gt;
+&lt;script defer src="assets/wonk-radio.js"&gt;&lt;/script&gt;
+
+&lt;section class="wonk-radio" data-wonk-radio data-bucket="aktunes" data-prefix="music/" aria-label="Radio"&gt;&lt;/section&gt;</code></pre>
+    <p class="fixture-note">
+      other sources: <code>data-manifest="tracks.json"</code> (a JSON array of
+      URLs or <code>{url, title, artist, number}</code> objects), or
+      <code>wonkRadio.mount(el, {tracks})</code>. <code>data-title</code> sets
+      the station label.
+    </p>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section" id="api">
+    <div class="wonk-label">04 &middot; api</div>
+    <h3>window.wonkRadio</h3>
+    <div class="table-scroll">
+      <table class="wonk-table">
+        <thead><tr><th>call</th><th>does</th></tr></thead>
+        <tbody>
+          <tr><td><code>wonkRadio.init(scope)</code></td><td>mounts every <code>[data-wonk-radio]</code> in scope, once per host</td></tr>
+          <tr><td><code>wonkRadio.mount(el, opts)</code></td><td>mounts one host, returns its controller</td></tr>
+          <tr><td><code>wonkRadio.get(el)</code></td><td>the controller, or <code>null</code></td></tr>
+          <tr><td><code>wonkRadio.destroy(scope)</code></td><td>stops and removes every player in scope</td></tr>
+          <tr><td><code>play() pause() toggle() next() prev()</code></td><td>transport, on the controller</td></tr>
+          <tr><td><code>seek(s) setVolume(v) setMuted(b)</code></td><td>position in seconds, volume 0 to 1, mute</td></tr>
+          <tr><td><code>wonk-radio:track</code></td><td>event on the host when the track changes</td></tr>
+          <tr><td><code>wonk-radio:state</code></td><td>event on the host when playing, loading, error, or visualizer changes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="wonk-rule">
+
+  <section class="demo-section" id="hosting">
+    <div class="wonk-label">05 &middot; hosting</div>
+    <h3>A public bucket is the whole backend</h3>
+    <p style="max-width:60ch">
+      Make the bucket public for reads (<code>allUsers</code> as
+      <code>roles/storage.objectViewer</code>). The player lists it with the
+      JSON API and plays each file from its JSON API media URL. Those URLs
+      send CORS headers, so the waveform works without a CORS config on the
+      bucket. Files on other hosts need CORS for the waveform. Without it,
+      the player falls back to plain playback and draws a flat line.
+    </p>
+    <p class="fixture-note">
+      full contract, events, and checks:
+      <a href="../references/radio.md">references/radio.md</a>. run
+      <code>await wonkRadioChecks.run()</code> in the console on this page.
+    </p>
+  </section>
+
+  <footer style="text-align:center; padding:var(--ak-s8) 0">
+    <span class="wonk-label">wonk radio &middot; press play, never autoplay</span>
+  </footer>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ---- theme toggle (dark/paper) ----
+  const toggle = document.getElementById("theme-toggle");
+  toggle.addEventListener("click", () => {
+    const paper = document.documentElement.getAttribute("data-theme") === "paper";
+    wonk.setTheme(paper ? "dark" : "paper");
+    toggle.textContent = paper ? "Paper" : "Dark";
+  });
+
+  // ---- dock: mount and destroy a second player ----
+  const dockBtn = document.getElementById("dock-toggle");
+  let dockHost = null;
+  dockBtn.addEventListener("click", () => {
+    if (dockHost) {
+      wonkRadio.destroy(dockHost);
+      dockHost.remove();
+      dockHost = null;
+    } else {
+      dockHost = document.createElement("section");
+      dockHost.className = "wonk-radio wonk-radio--dock";
+      dockHost.setAttribute("aria-label", "Radio dock");
+      document.body.appendChild(dockHost);
+      wonkRadio.mount(dockHost, { bucket: "aktunes", prefix: "music/", title: "dock" });
+    }
+    dockBtn.textContent = dockHost ? "Hide dock" : "Show dock";
+  });
+
+  const nameEl = document.getElementById("pair-name");
+  nameEl.textContent = "pair: " + document.documentElement.getAttribute("data-pair");
+});
+</script>
+</body>
+</html>
