@@ -980,9 +980,14 @@
     if (shownBy === "focus" && shown && (shown.el.contains(e.target) || shown.anchor === e.target)) hideHint();
   }, true);
 
-  // Escape closes the box; the description stays while focus stays
+  // Escape closes the box; the description stays while focus stays.
+  // While the box shows, that Escape does nothing else (WCAG 1.4.13):
+  // capture phase, so it is cancelled before a dialog, drawer, or menu
+  // sees it. A second Escape reaches them as usual.
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || !hintOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
     escaped = shown && shown.el;
     hideHint();
   }, true);

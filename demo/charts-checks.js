@@ -278,6 +278,116 @@
     }
   });
 
+  check("onClick: a click that calls onClick clears Plot's pinned tip: the chart re-renders on the next frame (a new figure, value null)", async () => {
+    const host = withHost();
+    let chart;
+    const got = [];
+    try {
+      chart = wonkCharts.plot(host, bars, { label: "Fixture pin", onClick: (d) => got.push(d) });
+      const fig = figureOf(host);
+      const bar = fig.querySelectorAll("rect")[1];
+      assert(bar, "the fixture should render bar rects");
+      const box = bar.getBoundingClientRect();
+      const at = { bubbles: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2, pointerType: "mouse" };
+      // Plot pins its tip on pointerdown while it points at a datum
+      fig.dispatchEvent(new PointerEvent("pointermove", at));
+      bar.dispatchEvent(new PointerEvent("pointerdown", { ...at, buttons: 1 }));
+      fig.dispatchEvent(new PointerEvent("pointermove", { ...at, clientX: at.clientX + 300 }));
+      assert(fig.value === DATA[1], `the pointer should pin DATA[1], got ${JSON.stringify(fig.value)}`);
+      bar.dispatchEvent(new MouseEvent("click", { ...at }));
+      assert(got.length === 1 && got[0] === DATA[1], `onClick should receive the pinned datum once, got ${JSON.stringify(got)}`);
+      await frames(2);
+      const next = figureOf(host);
+      assert(next && next !== fig, "the chart should re-render (a new figure element) after onClick");
+      assert(next.value === null, `the new figure's value should be null (no pinned tip), got ${JSON.stringify(next.value)}`);
+      assert(host.querySelectorAll(':scope > [role="img"]').length === 1, "exactly one figure after the re-render");
+    } finally {
+      if (chart) chart.destroy();
+      host.remove();
+    }
+  });
+
+  check("onClick: a click on a legend swatch does not call onClick, even with a stale figure.value", () => {
+    const host = withHost();
+    let chart;
+    const got = [];
+    try {
+      chart = wonkCharts.plot(host, (t) => ({
+        height: 160,
+        color: { domain: ["a", "b", "c"], range: t.series, legend: true },
+        marks: [Plot.barY(DATA, { x: "k", y: "v", fill: "k", tip: true })],
+      }), { label: "Fixture legend click", onClick: (d) => got.push(d) });
+      const fig = figureOf(host);
+      assert(fig && fig.tagName === "FIGURE", `a legend should render a figure, got ${fig && fig.tagName}`);
+      const swatch = fig.querySelector(':scope > div [class$="-swatch"]');
+      assert(swatch, "the legend should render swatches");
+      fig.value = DATA[1];
+      swatch.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      assert(got.length === 0, `a legend click should not call onClick, got ${JSON.stringify(got)}`);
+      const plotSvg = fig.querySelector(":scope > svg:last-of-type");
+      plotSvg.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      assert(got.length === 1 && got[0] === DATA[1], `a click on the plot svg should call onClick(figure.value), got ${JSON.stringify(got)}`);
+    } finally {
+      if (chart) chart.destroy();
+      host.remove();
+    }
+  });
+
+  // ============================================================
+  // failure leaves nothing behind
+  // ============================================================
+  check("plot: a table option that throws leaves el empty and registers nothing (a later pair switch does not call build)", async () => {
+    const host = withHost();
+    const start = root.getAttribute("data-pair");
+    const next = otherPair();
+    let builds = 0;
+    const build = (t) => { builds++; return bars(t); };
+    try {
+      let error = null;
+      try {
+        wonkCharts.plot(host, build, { label: "Fixture bad table", table: { columns: [{ key: "v", type: "bogus" }], rows: DATA } });
+      } catch (err) {
+        error = err;
+      }
+      assert(error instanceof Error, "plot() with a bogus table column type should throw");
+      assert(host.childNodes.length === 0, `el should be empty after the throw, got ${host.innerHTML.slice(0, 120)}`);
+      const after = builds;
+      root.setAttribute("data-pair", next);
+      await frames(2);
+      assert(builds === after, `build should not run after the failed plot(), ran ${builds - after} more times`);
+      assert(host.childNodes.length === 0, "el should stay empty after a pair switch");
+    } finally {
+      root.setAttribute("data-pair", start);
+      await frames(2);
+      host.remove();
+    }
+  });
+
+  check("plot: on a live chart, a table option that throws leaves the chart and its table as they were", () => {
+    const host = withHost();
+    let chart;
+    try {
+      chart = wonkCharts.plot(host, bars, { label: "Live", table: { columns: [{ key: "k" }], rows: DATA } });
+      const fig = figureOf(host);
+      const panel = host.querySelector(".wonk-chart-table");
+      const rowsBefore = panel.querySelectorAll("tbody tr").length;
+      let error = null;
+      try {
+        wonkCharts.plot(host, bars, { label: "Broken", table: { columns: [{ key: "v", type: "bogus" }], rows: DATA } });
+      } catch (err) {
+        error = err;
+      }
+      assert(error instanceof Error, "the second plot() with a bogus table column type should throw");
+      assert(figureOf(host) === fig && fig.getAttribute("aria-label") === "Live", "the live figure should stay in place with its label");
+      const panelNow = host.querySelector(".wonk-chart-table");
+      assert(panelNow && panelNow.querySelectorAll("tbody tr").length === rowsBefore, `the table should keep its ${rowsBefore} rows`);
+      assert(host.querySelectorAll(":scope > button").length === 1, "one table toggle should remain");
+    } finally {
+      if (chart) chart.destroy();
+      host.remove();
+    }
+  });
+
   // ============================================================
   // runner
   // ============================================================

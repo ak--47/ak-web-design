@@ -367,6 +367,38 @@
     }
   });
 
+  check("table: bad options (unknown sort key or dir, non-array rows, a non-object row) throw and leave the existing table working", () => {
+    const host = withHost();
+    const columns = [{ key: "name", label: "name" }, { key: "n", label: "count", type: "num" }];
+    const rows = [{ id: "a", name: "a", n: 9 }, { id: "b", name: "b", n: 10 }, { id: "c", name: "c", n: 2 }];
+    let t;
+    try {
+      t = wonkData.table(host, { columns, rows });
+      const bad = [
+        ["sort key", { columns, rows, sort: { key: "nope" } }, /nope/],
+        ["sort dir", { columns, rows, sort: { key: "n", dir: "up" } }, /dir/],
+        ["rows", { columns, rows: "x" }, /rows/],
+        ["row", { columns, rows: [{ id: "z" }, 7] }, /row 1/],
+      ];
+      for (const [what, opts, pattern] of bad) {
+        let error = null;
+        try {
+          wonkData.table(host, opts);
+        } catch (err) {
+          error = err;
+        }
+        assert(error instanceof Error && pattern.test(error.message), `a bad ${what} should throw an Error matching ${pattern}, got ${error && error.message}`);
+        assert(host.wonkDataTable === t, `after a bad ${what}, host.wonkDataTable should still be the first table`);
+        same(column(host, 0), ["a", "b", "c"], `after a bad ${what}, the first table's rows`);
+      }
+      sortButton(host, "n").click();
+      same(column(host, 1), ["10", "9", "2"], "a header click on the surviving table still sorts");
+    } finally {
+      if (t) t.destroy();
+      host.remove();
+    }
+  });
+
   // ============================================================
   // drill
   // ============================================================
@@ -430,6 +462,24 @@
     } finally {
       closeDrills();
       host.remove();
+    }
+  });
+
+  check("drill: a missing or non-array rows throws a TypeError naming rows and opens no dialog", () => {
+    const { columns } = drillOpts("x");
+    try {
+      for (const opts of [{ title: "x", columns, row: [] }, { title: "x", columns, rows: "nope" }]) {
+        let error = null;
+        try {
+          wonkData.drill(opts);
+        } catch (err) {
+          error = err;
+        }
+        assert(error instanceof TypeError && /rows/.test(error.message), `drill(${JSON.stringify(opts)}) should throw a TypeError naming rows, got ${error && error.message}`);
+        assert(!document.querySelector("dialog.wonk-drill"), "a drill that throws should open no dialog");
+      }
+    } finally {
+      closeDrills();
     }
   });
 

@@ -438,8 +438,10 @@ any failure or uncaught page error. the GitHub Pages deploy runs it first.
 | `code` | `demo/index.html` | `wonkCodeChecks` |
 | `controls` | `demo/instruments.html` | `wonkControlsChecks` |
 | `motion` | `demo/motion.html` | `wonkMotionChecks` |
+| `radio` | `demo/radio.html` | `wonkRadioChecks` |
 | `data` | `demo/index.html` | `wonkDataChecks` |
 | `charts` | `demo/index.html` | `wonkChartsChecks` |
+| `template` | `templates/app.html` | smoke: page loads with no errors and key selectors exist |
 
 the console path still works: serve the repo, open the page, and run
 `await wonkControlsChecks.run()` (or any global above); it returns

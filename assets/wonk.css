@@ -42,7 +42,8 @@
 .wonk a:hover { border-bottom-color: var(--ak-a1-text); }
 .wonk small { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
 
-.wonk-title {
+/* .wonk .wonk-title beats .wonk h1, so h1.wonk-title keeps its tracking */
+.wonk .wonk-title {
   font-family: var(--ak-font-sans);
   font-weight: 700;
   text-transform: uppercase;

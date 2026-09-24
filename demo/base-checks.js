@@ -579,6 +579,19 @@
     }
   });
 
+  check("typography: h1.wonk-title computes the same letter-spacing and font-size as div.wonk-title (the title rule beats .wonk h1)", () => {
+    const host = withFixture(`<h1 class="wonk-title">Heading title</h1><div class="wonk-title">Div title</div>`);
+    try {
+      const h1 = getComputedStyle(host.querySelector("h1"));
+      const div = getComputedStyle(host.querySelector("div"));
+      assert(h1.letterSpacing === div.letterSpacing, `h1.wonk-title letter-spacing should be ${div.letterSpacing}, got ${h1.letterSpacing}`);
+      assert(h1.fontSize === div.fontSize, `h1.wonk-title font-size should be ${div.fontSize}, got ${h1.fontSize}`);
+      assert(h1.textTransform === "uppercase", `h1.wonk-title should be uppercase, got ${h1.textTransform}`);
+    } finally {
+      host.remove();
+    }
+  });
+
   // ---- tabs ----
   check("tabs(root): clicking tab 2 hides panel 1, shows panel 2, and selects tab 2", () => {
     const id = "wonk-base-check-" + Math.random().toString(36).slice(2);
@@ -1057,6 +1070,38 @@
     } finally {
       resetHint();
       host.remove();
+    }
+  });
+
+  check("hint: in an open modal, Escape while the box shows only hides it (defaultPrevented, no bubbling); with no box it passes through", () => {
+    const dlg = document.createElement("dialog");
+    dlg.className = "wonk-modal";
+    dlg.innerHTML = `<button type="button" data-tip="modal escape">inside</button>`;
+    document.body.appendChild(dlg);
+    let bubbled = 0;
+    const onBubble = () => { bubbled++; };
+    document.addEventListener("keydown", onBubble);
+    const esc = () => new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    try {
+      dlg.showModal();
+      const btn = dlg.querySelector("button");
+      btn.focus();
+      assert(hintShown(), "focusing the button inside the modal should show the box");
+      const first = esc();
+      btn.dispatchEvent(first);
+      assert(!hintShown(), "the first Escape should hide the box");
+      assert(first.defaultPrevented === true, "the first Escape should be defaultPrevented so the dialog stays open");
+      assert(bubbled === 0, "the first Escape should not reach bubble-phase listeners (a drawer, a menu)");
+      assert(dlg.open, "the dialog should stay open");
+      const second = esc();
+      btn.dispatchEvent(second);
+      assert(second.defaultPrevented === false, "with no box showing, Escape should not be defaultPrevented");
+      assert(bubbled === 1, `with no box showing, Escape should bubble, reached bubble listeners ${bubbled} times`);
+    } finally {
+      document.removeEventListener("keydown", onBubble);
+      resetHint();
+      if (dlg.open) dlg.close();
+      dlg.remove();
     }
   });
 

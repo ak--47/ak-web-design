@@ -13,10 +13,15 @@ reads the `d3` global and defines the `Plot` global), both before
 `wonk-charts.js`:
 
 ```html
-<script defer src="assets/vendor/d3/d3.min.js"></script>
-<script defer src="assets/vendor/plot/plot.umd.min.js"></script>
-<script defer src="assets/wonk-charts.js"></script>
+<link rel="stylesheet" href="/wonk/wonk-fonts.css">
+<link rel="stylesheet" href="/wonk/wonk-tokens.css">
+<link rel="stylesheet" href="/wonk/wonk.css">
+<script defer src="/wonk/vendor/d3/d3.min.js"></script>
+<script defer src="/wonk/vendor/plot/plot.umd.min.js"></script>
+<script defer src="/wonk/wonk-charts.js"></script>
 ```
+
+Paths assume WONK's `assets/` is served at `/wonk/` (see [README § install](../README.md#install)).
 
 In a bundled app (Vite etc.), `import * as Plot from "@observablehq/plot"`
 instead (no d3 global needed) and set `window.Plot = Plot` before the first

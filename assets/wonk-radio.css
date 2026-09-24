@@ -191,6 +191,32 @@ html.wonk-has-radio-dock .wonk-toasts {
     padding-right: var(--ak-s4);
   }
 }
+/* dock on phones: one compact bar. The scope and the station line
+   hide; title + meta sit beside the transport, the seek row and a
+   one-line status (full text stays in the live region) below it */
+@media (max-width: 519.98px) {
+  .wonk-radio.wonk-radio--dock {
+    padding-top: var(--ak-s2);
+    padding-bottom: calc(var(--ak-s2) + env(safe-area-inset-bottom, 0px));
+  }
+  .wonk-radio--dock .wonk-radio-inner {
+    gap: var(--ak-s1) var(--ak-s3);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "now transport"
+      "progress progress";
+  }
+  .wonk-radio--dock .wonk-radio-scope,
+  .wonk-radio--dock .wonk-radio-station { display: none; }
+  .wonk-radio--dock .wonk-radio-now,
+  .wonk-radio--dock .wonk-radio-progress { gap: 0; }
+  .wonk-radio--dock .wonk-radio-seek .wonk-range { margin: 0; }
+  .wonk-radio--dock .wonk-radio-status {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
 
 /* ---- reduced motion: no transitions, the live dot holds still ---- */
 @media (prefers-reduced-motion: reduce) {

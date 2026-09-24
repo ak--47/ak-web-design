@@ -87,6 +87,8 @@
     if (old && old.parentNode === state.el) old.replaceWith(node);
     else state.el.prepend(node);
     state.node = node;
+    // the plot's own svg: Plot appends it after any legends
+    state.svg = node.tagName === "FIGURE" ? node.querySelector(":scope > svg:last-of-type") : node;
     state.width = width;
   }
 
@@ -155,18 +157,19 @@
     return region;
   }
 
-  function fillTable(state, table) {
-    const view = state.tableView;
-    if (view.controller) view.controller.destroy();
-    view.controller = null;
-    view.panel.replaceChildren();
+  // builds the table into a detached panel: a bad table option throws
+  // here, before plot() changes anything
+  function buildTable(table, label) {
+    const panel = make("div", "wonk-chart-table");
+    let controller = null;
     if (window.wonkData && typeof window.wonkData.table === "function") {
       // the chart's label captions the table unless the caller set one
-      const opts = table.caption === undefined ? { caption: state.label, captionHidden: true, ...table } : table;
-      view.controller = window.wonkData.table(view.panel, opts);
+      const opts = table.caption === undefined ? { caption: label, captionHidden: true, ...table } : table;
+      controller = window.wonkData.table(panel, opts);
     } else {
-      view.panel.appendChild(plainTable(table, state.label));
+      panel.appendChild(plainTable(table, label));
     }
+    return { panel, controller };
   }
 
   function setOpen(view, open) {
@@ -175,26 +178,35 @@
     view.panel.hidden = !open;
   }
 
-  // keeps the button (and its focus and open state) across plot() calls
-  function syncTable(state, table) {
-    if (!table) {
+  // keeps the button (and its focus and open state) across plot() calls;
+  // built is buildTable()'s result, or null for no table
+  function syncTable(state, built) {
+    if (!built) {
       unmountTable(state);
       return;
     }
-    if (!state.tableView) {
-      const panel = make("div", "wonk-chart-table");
-      panel.id = nextId("wonk-chart-table");
+    const view = state.tableView;
+    if (!view) {
+      built.panel.id = nextId("wonk-chart-table");
       const button = make("button", "wonk-btn wonk-btn--quiet");
       button.type = "button";
-      button.setAttribute("aria-controls", panel.id);
-      const view = { button, panel, controller: null, toggle: null };
-      view.toggle = () => setOpen(view, view.panel.hidden);
-      button.addEventListener("click", view.toggle);
-      setOpen(view, false);
-      state.el.append(button, panel);
-      state.tableView = view;
+      button.setAttribute("aria-controls", built.panel.id);
+      const fresh = { button, panel: built.panel, controller: built.controller, toggle: null };
+      fresh.toggle = () => setOpen(fresh, fresh.panel.hidden);
+      button.addEventListener("click", fresh.toggle);
+      setOpen(fresh, false);
+      state.el.append(button, built.panel);
+      state.tableView = fresh;
+      return;
     }
-    fillTable(state, table);
+    // swap in the new panel under the old id and open state
+    if (view.controller) view.controller.destroy();
+    const { id, hidden } = view.panel;
+    view.panel.replaceWith(built.panel);
+    built.panel.id = id;
+    built.panel.hidden = hidden;
+    view.panel = built.panel;
+    view.controller = built.controller;
   }
 
   function unmountTable(state) {
@@ -245,20 +257,32 @@
       );
     }
 
-    // draw before touching any state, so a throwing build changes nothing
+    // draw and build the table before touching any state, so a throwing
+    // build or table option changes nothing
     const { node, width } = draw(el, build);
+    const built = opts.table === undefined ? null : buildTable(opts.table, opts.label);
 
     let state = charts.get(el);
     if (!state) {
       el.replaceChildren();
       state = {
-        el, build, label: "", onClick: undefined, node: null, width: 0, frame: 0,
+        el, build, label: "", onClick: undefined, node: null, svg: null, width: 0, frame: 0,
         tableView: null, destroyed: false, resizeObserver: null, onFigureClick: null, controller: null,
       };
       const self = state;
       self.onFigureClick = (event) => {
+        // only a click in the plot's own svg: a legend click must not
+        // reuse the last pointed datum
+        if (!self.svg.contains(event.target)) return;
         const value = event.currentTarget.value;
-        if (self.onClick && value !== null && value !== undefined) self.onClick(value);
+        if (!self.onClick || value === null || value === undefined) return;
+        // Plot pinned its tip on pointerdown: a fresh render on the next
+        // frame clears it, so the next click opens again
+        try {
+          self.onClick(value);
+        } finally {
+          schedule(self);
+        }
       };
       self.resizeObserver = new ResizeObserver(() => {
         if (self.el.clientWidth !== self.width) schedule(self);
@@ -280,7 +304,7 @@
     state.label = opts.label;
     state.onClick = opts.onClick;
     mount(state, node, width);
-    syncTable(state, opts.table);
+    syncTable(state, built);
     return state.controller;
   }
 

@@ -8,11 +8,14 @@ and a dock toggle.
 ## install
 
 ```html
-<link rel="stylesheet" href="../assets/wonk-tokens.css">
-<link rel="stylesheet" href="../assets/wonk.css">
-<link rel="stylesheet" href="../assets/wonk-radio.css">
-<script defer src="../assets/wonk-radio.js"></script>
+<link rel="stylesheet" href="/wonk/wonk-fonts.css">
+<link rel="stylesheet" href="/wonk/wonk-tokens.css">
+<link rel="stylesheet" href="/wonk/wonk.css">
+<link rel="stylesheet" href="/wonk/wonk-radio.css">
+<script defer src="/wonk/wonk-radio.js"></script>
 ```
+
+paths assume WONK's `assets/` is served at `/wonk/` (see [README § install](../README.md#install)).
 
 load the css after `wonk.css`. the pack reuses `.wonk-btn`, `.wonk-range`,
 `.wonk-label`, `.wonk-num`, and `.wonk-dot` without restyling them. it has no
@@ -39,6 +42,8 @@ while a dock is mounted, `<html>` has the class `wonk-has-radio-dock` and the
 variable `--wonk-radio-dock-h`. a `ResizeObserver` keeps the variable equal to
 the dock's height. `body` padding and `.wonk-toasts` use it, so page content
 and toasts stay above the bar. destroying the last dock removes both.
+under a 520px viewport the dock drops the scope and the station line and
+keeps title, transport, and seek (about 108px tall). the inline player does not change.
 
 one row on wide containers (50rem and up). narrower containers wrap to two
 rows: now playing and transport, then scope and seek. volume hides under a

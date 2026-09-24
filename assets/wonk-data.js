@@ -78,6 +78,24 @@
     });
   }
 
+  // table() runs these before it touches the host; setSort and setRows
+  // run them too. Both throw on bad input; checkSort returns the column.
+  function checkSort(byKey, key, dir) {
+    const c = byKey.get(key);
+    if (!c) throw new Error(`wonkData.table: no column with key ${JSON.stringify(key)}`);
+    if (dir !== undefined && dir !== null && dir !== "asc" && dir !== "desc") {
+      throw new TypeError(`wonkData.table: sort dir must be "asc" or "desc", got ${JSON.stringify(dir)}`);
+    }
+    return c;
+  }
+
+  function checkRows(rows) {
+    if (!Array.isArray(rows)) throw new TypeError("wonkData.table: rows must be an array of plain objects");
+    rows.forEach((row, index) => {
+      if (!row || typeof row !== "object") throw new TypeError(`wonkData.table: row ${index} must be an object, got ${JSON.stringify(row)}`);
+    });
+  }
+
   // money totals unless total:false; any other column only with total:true
   const hasTotal = (c) => c.total === true || (c.type === "money" && c.total !== false);
   // the sort / total value: value(row) when given, else row[key]
@@ -158,6 +176,10 @@
     // null or false: no empty row, the app shows its own empty state
     const emptyText = opts.empty === null || opts.empty === false ? null : String(opts.empty ?? "No records match.");
     const span = columns.length + (select ? 1 : 0);
+    // bad sort or rows throw here, while the previous table still works
+    const initialRows = opts.rows || [];
+    if (opts.sort) checkSort(byKey, opts.sort.key, opts.sort.dir);
+    checkRows(initialRows);
     const tableId = nextId("wonk-data");
 
     // one table per host: rendering again replaces the previous one
@@ -396,11 +418,7 @@
     }
 
     function setSortState(key, dir) {
-      const c = byKey.get(key);
-      if (!c) throw new Error(`wonkData.table: no column with key ${JSON.stringify(key)}`);
-      if (dir !== undefined && dir !== null && dir !== "asc" && dir !== "desc") {
-        throw new TypeError(`wonkData.table: sort dir must be "asc" or "desc", got ${JSON.stringify(dir)}`);
-      }
+      const c = checkSort(byKey, key, dir);
       sort = { key: c.key, dir: dir || defaultDir(c) };
     }
 
@@ -488,11 +506,10 @@
 
     function setRows(rows) {
       alive();
-      if (!Array.isArray(rows)) throw new TypeError("wonkData.table: rows must be an array of plain objects");
+      checkRows(rows);
       const seen = new Set();
       let duplicate;
       entries = rows.map((row, index) => {
-        if (!row || typeof row !== "object") throw new TypeError(`wonkData.table: row ${index} must be an object, got ${JSON.stringify(row)}`);
         const raw = row[rowKey];
         const keyed = raw !== undefined && raw !== null && raw !== "";
         const key = keyed ? raw : index;
@@ -544,7 +561,7 @@
     });
 
     if (opts.sort) setSortState(opts.sort.key, opts.sort.dir);
-    setRows(opts.rows || []);
+    setRows(initialRows);
     host.wonkDataTable = controller;
     return controller;
   }
@@ -600,8 +617,11 @@
     if (typeof opts.title !== "string" || !opts.title) {
       throw new TypeError("wonkData.drill(opts): opts.title must be a non-empty string");
     }
+    if (!Array.isArray(opts.rows)) {
+      throw new TypeError("wonkData.drill(opts): opts.rows must be an array of plain objects");
+    }
     const f = fmt();
-    const rows = Array.isArray(opts.rows) ? opts.rows : [];
+    const rows = opts.rows;
 
     const dialog = make("dialog", "wonk-modal wonk-drill");
     const titleId = nextId("wonk-drill-title");

@@ -34,7 +34,7 @@ const SUITES = [
   { name: "charts",   page: "/demo/index.html",       global: "wonkChartsChecks" },
   {
     name: "template", page: "/templates/app.html", smoke: true,
-    selectors: [".wonk-shell", "button.wonk-stat", ".wonk-table", "[data-wonk-radio] .wonk-radio-scope", "figure, svg", "#trend-chart > [role='img']"],
+    selectors: [".wonk-shell", "button.wonk-stat", ".wonk-table", "[data-wonk-radio] .wonk-radio-scope", "#trend-chart > [role='img']"],
   },
 ];
 
@@ -255,7 +255,8 @@ try {
   for (const suite of selected) {
     const pageFile = resolvePath(suite.page);
     if (!pageFile || !fs.existsSync(pageFile)) {
-      console.log(`SKIP ${suite.name} › ${suite.page} does not exist`);
+      console.log(`FAIL ${suite.name} › page not found: ${suite.page}`);
+      failed++;
       continue;
     }
     let r;
