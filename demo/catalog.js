@@ -219,19 +219,37 @@ document.addEventListener("DOMContentLoaded", () => {
     { svc: "ingest-api", errs: 12 }, { svc: "identity", errs: 4 },
     { svc: "export", errs: 41 }, { svc: "webhooks", errs: 88 }, { svc: "cdc", errs: 7 },
   ];
-  function wonkChart(el, build) {
-    const css = getComputedStyle(document.documentElement);
-    const v = (n) => css.getPropertyValue(n).trim();
-    const series = [1, 2, 3, 4, 5, 6].map((i) => v(`--ak-chart-${i}`));
-    el.replaceChildren(
-      Plot.plot({
-        style: { background: "transparent", color: v("--ak-ink-3"), fontFamily: v("--ak-font-mono"), fontSize: "11px" },
-        ...build({ series, grid: v("--ak-hairline") }),
-      })
-    );
+  // one fixture record per error, so each bar opens exactly its count
+  const ERROR_CODES = ["timeout", "rate_limited", "bad_payload", "upstream_5xx"];
+  const errorRows = barData.flatMap((b) =>
+    Array.from({ length: b.errs }, (_, i) => {
+      const s = (i * 7919) % 86400; // spread over the day, deterministic
+      const hms = [s / 3600, (s / 60) % 60, s % 60].map((n) => String(Math.floor(n)).padStart(2, "0")).join(":");
+      return { id: `${b.svc}-${String(i + 1).padStart(3, "0")}`, svc: b.svc, code: ERROR_CODES[i % ERROR_CODES.length], at: `2026-09-24T${hms}Z` };
+    })
+  );
+  const errorColumns = [
+    { key: "id", label: "error" },
+    { key: "code", label: "code" },
+    { key: "at", label: "time", type: "date", format: { time: true } },
+  ];
+  function openErrors(svc) {
+    wonkData.drill({
+      title: `${svc} errors`,
+      subtitle: "today",
+      columns: errorColumns,
+      rows: errorRows.filter((r) => r.svc === svc),
+      sort: { key: "at", dir: "desc" },
+      download: `${svc}-errors.csv`,
+    });
   }
+  // wonkCharts.plot re-renders each chart on pair, theme, and width
+  // changes by itself, so renderAll's later calls have nothing to do.
+  let chartsDrawn = false;
   function renderCharts() {
-    wonkChart(document.getElementById("chart-line"), ({ series, grid }) => ({
+    if (chartsDrawn) return;
+    chartsDrawn = true;
+    wonkCharts.plot(document.getElementById("chart-line"), ({ series, grid }) => ({
       height: 240,
       marginLeft: 50,
       x: { label: "hour" },
@@ -241,10 +259,19 @@ document.addEventListener("DOMContentLoaded", () => {
         Plot.ruleY([0], { stroke: grid }),
         Plot.lineY(lineData, { x: "t", y: "v", stroke: "svc", strokeWidth: 2, tip: true }),
       ],
-    }));
-    wonkChart(document.getElementById("chart-bar"), ({ series, grid }) => ({
+    }), {
+      label: "Events by service, last 48 hours",
+      table: {
+        columns: [{ key: "t", label: "hour", type: "num" }, { key: "svc", label: "service" }, { key: "v", label: "events", type: "num" }],
+        rows: lineData,
+        sort: { key: "t", dir: "asc" },
+        limit: 12,
+      },
+    });
+    wonkCharts.plot(document.getElementById("chart-bar"), ({ series, grid }) => ({
       height: 200,
       marginLeft: 90,
+      marginRight: 32, // room for the value label past the longest bar
       x: { grid: true, label: "errors" },
       y: { label: null },
       marks: [
@@ -252,7 +279,18 @@ document.addEventListener("DOMContentLoaded", () => {
         Plot.barX(barData, { y: "svc", x: "errs", fill: series[0], rx: 2, insetTop: 1, insetBottom: 1, sort: { y: "-x" }, tip: true }),
         Plot.textX(barData, { y: "svc", x: "errs", text: (d) => d.errs, dx: 14 }),
       ],
-    }));
+    }), {
+      label: "Errors by service, today",
+      // the keyboard path: each service name opens the same drill as its bar
+      table: {
+        columns: [{ key: "svc", label: "service" }, { key: "errs", label: "errors", type: "num" }],
+        rows: barData,
+        rowKey: "svc",
+        sort: { key: "errs", dir: "desc" },
+        onRowAction: (row) => openErrors(row.svc),
+      },
+      onClick: (d) => openErrors(d.svc),
+    });
   }
   // SECTION:charts END
 

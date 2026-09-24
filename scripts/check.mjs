@@ -26,6 +26,7 @@ const SUITES = [
   { name: "motion",   page: "/demo/motion.html",      global: "wonkMotionChecks" },
   { name: "radio",    page: "/demo/radio.html",       global: "wonkRadioChecks" },
   { name: "data",     page: "/demo/index.html",       global: "wonkDataChecks" },
+  { name: "charts",   page: "/demo/index.html",       global: "wonkChartsChecks" },
 ];
 
 const GLOBAL_TIMEOUT_MS = 15000;

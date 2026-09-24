@@ -26,8 +26,8 @@ python3 -m http.server 4748 --bind 127.0.0.1
 
 all examples use labeled local fixtures. the workbench does not execute SQL or
 call a backend. self-host fonts in production; these galleries load fonts from
-Google, and the base gallery's chart section loads d3 and Observable Plot
-from jsDelivr. Prism (syntax highlighting) is vendored locally, never a CDN.
+Google. Prism (syntax highlighting), d3, and Observable Plot (charts) are
+vendored locally, never a CDN.
 
 ## install
 
@@ -73,6 +73,7 @@ a real system fallback (`system-ui`, `ui-monospace`).
 | data tools | `wonk-data.css`, `wonk-data.js` | `wonk.css`, `wonk.js` | [data-tools.md](references/data-tools.md) |
 | motion | `wonk-motion.css`, `wonk-motion.js` | `wonk-tokens.css` only | [motion.md](references/motion.md) |
 | code + json editor | `wonk-code.css`, `wonk-code.js`, `assets/vendor/prism/*` | `wonk-tokens.css`, `wonk.css` | [code.md](references/code.md) |
+| charts | `wonk-charts.js`, `assets/vendor/d3/*`, `assets/vendor/plot/*` | `wonk-tokens.css`, `wonk.css`; `wonk-data.js` for the sortable table view | [charts.md](references/charts.md) |
 
 none of the packs add a package dependency, plain script/link tags. load a
 pack's css after the base css, its js after the base js. the data pack's
@@ -82,7 +83,8 @@ a reusable module. colors, radii, and motion durations stay in
 `wonk-tokens.css`, read it before styling anything.
 
 full load order with every pack (real apps drop what they don't use, css
-before js within each pack, prism core before its grammar files):
+before js within each pack, prism core before its grammar files, d3 before
+Plot):
 
 ```html
 <link rel="stylesheet" href="assets/wonk-tokens.css">
@@ -99,11 +101,14 @@ before js within each pack, prism core before its grammar files):
 <script src="assets/vendor/prism/prism-json.min.js"></script>
 <script src="assets/vendor/prism/prism-sql.min.js"></script>
 <script src="assets/vendor/prism/prism-bash.min.js"></script>
+<script src="assets/vendor/d3/d3.min.js"></script>
+<script src="assets/vendor/plot/plot.umd.min.js"></script>
 <script src="assets/wonk.js"></script>
 <script src="assets/wonk-data.js"></script>
 <script src="assets/wonk-controls.js"></script>
 <script src="assets/wonk-motion.js"></script>
 <script src="assets/wonk-code.js"></script>
+<script src="assets/wonk-charts.js"></script>
 ```
 
 an unregistered grammar degrades to plain, visibly-flagged text instead of
@@ -354,6 +359,7 @@ any failure or uncaught page error. the GitHub Pages deploy runs it first.
 | `controls` | `demo/instruments.html` | `wonkControlsChecks` |
 | `motion` | `demo/motion.html` | `wonkMotionChecks` |
 | `data` | `demo/index.html` | `wonkDataChecks` |
+| `charts` | `demo/index.html` | `wonkChartsChecks` |
 
 the console path still works: serve the repo, open the page, and run
 `await wonkControlsChecks.run()` (or any global above); it returns

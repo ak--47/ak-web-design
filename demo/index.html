@@ -50,13 +50,20 @@
 <link rel="stylesheet" href="../assets/wonk-code.css">
 <link rel="stylesheet" href="catalog.css">
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js"></script>
+<!-- charts pack vendor: d3 7.9.0, then Observable Plot 0.6.17 (it
+     needs the d3 global), local files, deferred and before
+     wonk-charts.js. See references/charts.md. -->
+<script defer src="../assets/vendor/d3/d3.min.js"></script>
+<script defer src="../assets/vendor/plot/plot.umd.min.js"></script>
 
 <!-- base -->
 <script defer src="../assets/wonk.js"></script>
 <!-- data pack: wonkData.table, drill-down dialog, CSV (needs wonk.js) -->
 <script defer src="../assets/wonk-data.js"></script>
+<!-- charts pack: wonkCharts.plot themes, re-renders, and adds a table
+     view (needs the d3 + Plot globals above; uses wonkData.table when
+     it is loaded) -->
+<script defer src="../assets/wonk-charts.js"></script>
 <!-- instruments pack: knob/fader/window/segmented/stepper -->
 <script defer src="../assets/wonk-controls.js"></script>
 <!-- motion pack: eight one-shot effects -->
@@ -80,6 +87,7 @@
 <script defer src="code-checks.js"></script>
 <script defer src="base-checks.js"></script>
 <script defer src="data-checks.js"></script>
+<script defer src="charts-checks.js"></script>
 <!-- this page's own logic, all of it -->
 <script defer src="catalog.js"></script>
 </head>
@@ -505,6 +513,7 @@ order by latency desc;</code></pre>
           </div>
           <div class="wonk-card">
             <div class="wonk-label" style="margin-bottom:var(--ak-s3)">errors by service &middot; today</div>
+            <p style="margin-top:0; max-width:56ch">Select a bar to open its errors. In the table, each service name opens the same records.</p>
             <div id="chart-bar"></div>
           </div>
         </div>
