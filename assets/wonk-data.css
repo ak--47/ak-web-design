@@ -1,4 +1,4 @@
-/* WONK data workbench. Load after wonk.css. Native HTML owns semantics. */
+/* WONK v0.2.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
 .wonk-workbench { max-width: 90rem; margin: auto; padding: var(--ak-s6); }
 .wonk-workbench > * + * { margin-top: var(--ak-s6); }
 .wonk-rack { border: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: var(--ak-surface); min-width: 0; }

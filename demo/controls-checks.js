@@ -39,8 +39,8 @@
      non-finite input; pointercancel settles a drag WITHOUT firing the
      committing "change" event (only pointerup does).
    - init(scope): wires scope itself when it is a knob, and never calls
-     the broader wonk.init() (which would re-wire unrelated, non-
-     idempotent legacy widgets like the live jitter or glyph morph).
+     the broader wonk.init() (base widgets like the live jitter or glyph
+     morph are wonk.init()'s job; it is idempotent per element).
    ============================================================ */
 (() => {
   "use strict";
@@ -581,8 +581,8 @@
     }
   });
 
-  // -- init(scope): never calls the broader, non-idempotent wonk.init() --
-  check("init(scope): does not call the broader wonk.init() (would re-wire unrelated legacy widgets)", () => {
+  // -- init(scope): never calls the broader wonk.init() (base widgets are its job) --
+  check("init(scope): does not call the broader wonk.init() (base widgets stay wonk.init()'s job)", () => {
     const { host, cleanup } = withFixture(`
       <div>
         <div data-wonk-knob data-min="0" data-max="10" data-value="5"></div>

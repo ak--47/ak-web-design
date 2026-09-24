@@ -118,6 +118,9 @@
     <a class="wonk-navlink" href="#datatools">Data tools</a>
     <a class="wonk-navlink" href="#drill">Drill-down</a>
     <a class="wonk-navlink" href="#motion">Motion</a>
+    <div class="wonk-label" style="margin-top:var(--ak-s4)">Other galleries</div>
+    <a class="wonk-navlink" href="radio.html">Radio</a>
+    <a class="wonk-navlink" href="../templates/app.html">App template</a>
   </aside>
 
   <div>
@@ -434,7 +437,11 @@
           <div class="wonk-card" id="code-markup">
             <div class="wonk-label" style="margin-bottom:var(--ak-s3)">markup &middot; wiring an app to wonk</div>
             <pre class="wonk-pre"><code data-language="markup">&lt;html data-pair="metathesis" class="wonk"&gt;
-  &lt;script&gt;wonk.toast("you're getting wonkier...", "info")&lt;/script&gt;
+  &lt;script defer src="/wonk/wonk.js"&gt;&lt;/script&gt;
+  &lt;script&gt;
+    document.addEventListener("DOMContentLoaded", () =&gt;
+      wonk.toast("you're getting wonkier...", "info"));
+  &lt;/script&gt;
 &lt;/html&gt;</code></pre>
           </div>
           <div class="wonk-card" id="code-json">

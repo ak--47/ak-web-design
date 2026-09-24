@@ -247,9 +247,9 @@
     <p>
       <code>wonkControls.init(scope)</code> wires instruments inside injected
       DOM (and <code>scope</code> itself, wiring a knob directly via
-      <code>wonk.knob()</code> rather than calling the broader
-      <code>wonk.init()</code>, which would re-wire unrelated legacy
-      widgets). <code>wonkControls.destroy(scope)</code> clears each
+      <code>wonk.knob()</code>). It does not call the broader
+      <code>wonk.init()</code>; call that too for base widgets (it is
+      idempotent per element). <code>wonkControls.destroy(scope)</code> clears each
       control's cached handle and removes the segmented selector's
       window-level resize listener before you discard the subtree. Try it:
     </p>

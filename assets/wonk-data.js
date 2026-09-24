@@ -1,5 +1,5 @@
 /* ============================================================
-   wonk-data.js · records table, drill-down dialog, CSV export
+   WONK v0.2.0 · wonk-data.js · records table, drill-down dialog, CSV export
    window.wonkData (frozen): table, drill, drills, toCSV.
 
    Requires wonk.js (wonk.fmt formats every number; row toggles,

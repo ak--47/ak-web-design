@@ -11,6 +11,8 @@
 // A smoke suite ({ smoke: true, selectors: [...] }, no global) loads its
 // page, waits for DOMContentLoaded plus 1s, and passes when every
 // selector matches an element and the page threw no error.
+// Before any browser starts, checkVersion() compares VERSION with every
+// asset header, wonk.version, and --wonk-version, and exits 1 on a mismatch.
 // Only dependency: playwright.
 // ============================================================
 import http from "node:http";
@@ -145,6 +147,36 @@ function startServer() {
     server.listen(0, "127.0.0.1", () => resolve(server));
   });
 }
+
+// ---- version stamp: runs before the browser starts ----
+// VERSION must match the "WONK vX.Y.Z" stamp in the first header line
+// of every top-level asset, wonk.version in wonk.js, and
+// --wonk-version in wonk-tokens.css. Vendored files are not stamped.
+function checkVersion() {
+  const version = fs.readFileSync(path.join(ROOT, "VERSION"), "utf8").trim();
+  const bad = [];
+  const assetsDir = path.join(ROOT, "assets");
+  const assets = fs.readdirSync(assetsDir).filter((f) => /\.(css|js)$/.test(f)).sort();
+  for (const f of assets) {
+    const src = fs.readFileSync(path.join(assetsDir, f), "utf8");
+    const head = src.split("\n").slice(0, 2).join("\n");
+    const m = /WONK v(\d+\.\d+\.\d+)/.exec(head);
+    if (!m) bad.push(`assets/${f}: no "WONK v${version}" in its first header line`);
+    else if (m[1] !== version) bad.push(`assets/${f}: header says v${m[1]}`);
+    if (f === "wonk.js") {
+      const v = /version: "([^"]*)"/.exec(src);
+      if (!v || v[1] !== version) bad.push(`assets/wonk.js: wonk.version is ${v ? `"${v[1]}"` : "missing"}`);
+    }
+    if (f === "wonk-tokens.css") {
+      const v = /--wonk-version:\s*"([^"]*)"/.exec(src);
+      if (!v || v[1] !== version) bad.push(`assets/wonk-tokens.css: --wonk-version is ${v ? `"${v[1]}"` : "missing"}`);
+    }
+  }
+  for (const line of bad) console.log(`FAIL version › ${line} (VERSION is ${version})`);
+  if (bad.length) process.exit(1);
+  console.log(`PASS version › VERSION ${version} matches ${assets.length} asset headers, wonk.version, and --wonk-version`);
+}
+checkVersion();
 
 // ---- suite selection ----
 const filter = process.argv.slice(2);

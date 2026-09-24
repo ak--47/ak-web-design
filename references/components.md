@@ -20,6 +20,7 @@ state recipes, and the radio dock, with no inline styles and labeled fixtures.
 | precision knob, fader, bounded window, segmented selector, stepper | [instruments.md](instruments.md) | `demo/instruments.html` |
 | source channels, query toolbar, applied filters, records table (`wonkData.table`), drill-down dialog (`wonkData.drill`), inspector, jobs, result states | [data-tools.md](data-tools.md) | `demo/workbench.html`, `demo/index.html#drill` |
 | eight state-change effects, cancellation, live reduced-motion handling | [motion.md](motion.md) | `demo/motion.html` |
+| shuffle radio player and dock on a public GCS bucket (`data-wonk-radio`, `wonkRadio`) | [radio.md](radio.md) | `demo/radio.html` |
 
 load each optional pack after the base assets. `wonkControls.init(scope)` wires
 instruments, including the scope itself. `wonkMotion.play(el, name)` plays one

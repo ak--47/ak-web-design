@@ -1,5 +1,5 @@
 /* ============================================================
-   wonk.js · behaviors for the WONK design system
+   WONK v0.2.0 · wonk.js · behaviors for the WONK design system
    Dependency-free. Safe to load once per page.
    Everything respects prefers-reduced-motion.
    ============================================================ */
@@ -1572,6 +1572,6 @@
   window.wonk = {
     toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
     vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState, fmt,
-    theme: { init: initTheme }, drawer,
+    theme: { init: initTheme }, drawer, version: "0.2.0",
   };
 })();

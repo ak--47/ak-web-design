@@ -10,11 +10,9 @@ live demo: **[ak--47.github.io/ak-web-design](https://ak--47.github.io/ak-web-de
 
 ## open a working example
 
-start a new app from [`templates/app.html`](templates/app.html): copy it next
-to a copy of `assets/`, change `../assets/` on its first line to that
-folder, and replace the labeled fixtures. it ships the responsive shell,
-theme toggle, drillable stats, a records table, a chart, state recipes, and
-the radio dock.
+start a new app from [`templates/app.html`](templates/app.html) ([install](#install),
+step 3). it ships the responsive shell, theme toggle, drillable stats, a
+records table, a chart, state recipes, and the radio dock.
 
 visit the live demo above, or serve this directory locally and open
 `/demo/index.html`.
@@ -29,57 +27,118 @@ python3 -m http.server 4748 --bind 127.0.0.1
 | [instruments](demo/instruments.html) | precision knobs, fader, bounded window, segmented selector, stepper, lifecycle checks |
 | [data workbench](demo/workbench.html) | source meters, draft query controls, applied filters, sorting, selection, JSON download, record inspector |
 | [motion](demo/motion.html) | eight replayable state-change effects and browser checks |
+| [radio](demo/radio.html) | shuffle player on a public GCS bucket, dock variant, browser checks |
+| [app template](templates/app.html) | the starter: shell, drawer, theme toggle, drillable stats, records table, chart, radio dock |
 
 all examples use labeled local fixtures. the workbench does not execute SQL or
-call a backend. self-host fonts in production; these galleries load fonts from
-Google. Prism (syntax highlighting), d3, and Observable Plot (charts) are
-vendored locally, never a CDN.
+call a backend. the template loads the self-hosted fonts (`wonk-fonts.css`);
+the galleries still load fonts from Google. Prism (syntax highlighting), d3,
+and Observable Plot (charts) are vendored locally, never a CDN.
 
 ## install
 
-the base recipe is three files, no build step required.
+one recipe, one path convention: the app serves WONK's `assets/` folder at
+`/wonk/`. no build step, no package dependency.
 
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/wonk-tokens.css">
-<link rel="stylesheet" href="/wonk.css">
-<script defer src="/wonk.js"></script>
+**1. copy** the folder into the app's static root:
+
+```sh
+cp -R ~/.agents/skills/ak-web-design/assets ./public/wonk
 ```
 
-load order matters: tokens before components, components before behaviors.
-`wonk.js` reads `--ak-*` tokens at call time, not fonts, so the font link
-can load in parallel with everything else. set the pair and class on the
-root:
+delete the packs the app does not use ([optional packs](#optional-packs)).
+keep `fonts/` and each `vendor/` subfolder whole.
+
+**2. link** in `<head>`: the no-flash snippet, then fonts, tokens,
+components, behaviors. set the pair and class on the root:
 
 ```html
-<html data-pair="metathesis" class="wonk">
-```
-
-help text needs `wonk.js`: it shows every `data-tip` and `.wonk-term` hint
-on hover, focus, and tap, and describes it to screen readers. never use
-native `title=` for help text. without JS, only `.wonk-tip[data-tip]` keeps
-a CSS-only fallback.
-
-dark is the default. paper is `data-theme="paper"` on the root
-(`data-theme="light"` is an alias). call `wonk.theme.init()` once after
-`DOMContentLoaded`: it applies the saved theme, else paper when
-`prefers-color-scheme` is light, and from then on `wonk.setTheme()` and every
-`[data-wonk-theme-toggle]` button save the choice as `wonk-theme`. put this
-no-flash snippet in `<head>`, above the stylesheets, so a saved paper theme
-never flashes dark on load:
-
-```html
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
 <script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
+<link rel="stylesheet" href="/wonk/wonk-fonts.css">
+<link rel="stylesheet" href="/wonk/wonk-tokens.css">
+<link rel="stylesheet" href="/wonk/wonk.css">
+<script defer src="/wonk/wonk.js"></script>
+</head>
 ```
 
-the `catch` is there only because storage access throws in some sandboxed
-iframes. never ship a light mode that is plain white, both themes are real.
+- load order matters: tokens before components, components before
+  behaviors. `wonk.js` reads `--ak-*` tokens at call time, not fonts.
+- scripts load with `defer`. app code that calls `wonk.*` runs in a
+  `DOMContentLoaded` listener or in a deferred file after `wonk.js`. an
+  inline `<script>wonk.toast(…)</script>` in the body throws.
+- `wonk-fonts.css` self-hosts Space Grotesk 400/500/700 and IBM Plex Mono
+  400/500/600/700 (latin woff2, SIL OFL 1.1, `fonts/OFL.txt`). every face
+  keeps a real system fallback (`system-ui`, `ui-monospace`).
+- the no-flash snippet stays above the stylesheets, so a saved paper theme
+  never flashes dark. its `catch` is there only because storage access
+  throws in some sandboxed iframes.
+- dark is the default. paper is `data-theme="paper"` on the root
+  (`data-theme="light"` is an alias). call `wonk.theme.init()` once after
+  `DOMContentLoaded`: it applies the saved theme, else paper when
+  `prefers-color-scheme` is light, and from then on `wonk.setTheme()` and
+  every `[data-wonk-theme-toggle]` button save the choice as `wonk-theme`.
+  never ship a light mode that is plain white, both themes are real.
+- help text needs `wonk.js`: it shows every `data-tip` and `.wonk-term`
+  hint on hover, focus, and tap, and describes it to screen readers. never
+  use native `title=` for help text. without JS, only `.wonk-tip[data-tip]`
+  keeps a CSS-only fallback.
 
-self-host both faces (Space Grotesk, IBM Plex Mono) in production: download
-the woff2 files, `@font-face` them, drop the Google link. every face keeps
-a real system fallback (`system-ui`, `ui-monospace`).
+**3. start** from [`templates/app.html`](templates/app.html): copy it into
+the app, replace every `../assets/` with `/wonk/`, replace the labeled
+fixtures, and delete the sections the app does not need.
+
+**4. pin and detect drift.** record the version the app vendors:
+`wonk.version` in the console, the first line of every asset, and
+[`VERSION`](VERSION) in the skill all carry it. then add a byte-equality
+test, so the copy never falls behind the skill unnoticed. this generic
+version runs with `node --test`; list the files the app vendored:
+
+```js
+// wonk-vendor.test.js: the vendored WONK files are copies, not forks.
+import { readFileSync, existsSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import assert from "node:assert/strict";
+
+const SKILL = path.join(os.homedir(), ".agents/skills/ak-web-design/assets");
+const LOCAL = path.resolve("public/wonk");
+const FILES = ["wonk-fonts.css", "wonk-tokens.css", "wonk.css", "wonk.js"];
+
+test("vendored WONK files match the skill",
+  { skip: !existsSync(SKILL) && `no skill checkout at ${SKILL} (CI): drift not checked` },
+  () => {
+    for (const f of FILES) {
+      const same = readFileSync(path.join(LOCAL, f)).equals(readFileSync(path.join(SKILL, f)));
+      assert.ok(same, `${f} differs from the skill: re-copy it and read CHANGELOG.md`);
+    }
+  });
+```
+
+an app-local change belongs in the app's own css, loaded last. an
+improvement belongs upstream in the skill. neither is an edit to the
+vendored copy. [CHANGELOG.md](CHANGELOG.md) lists what each version changes.
+
+**5. CSP.** WONK needs no third-party origin, except the radio:
+
+```text
+default-src 'self';
+script-src 'self' 'sha256-tzsvA6zlvo5ACSUvkhZdp7yW/YdpVqA3rYwYZhP6Mss=';
+style-src 'self' 'unsafe-inline';
+img-src 'self' data:;
+connect-src 'self' https://storage.googleapis.com;
+media-src 'self' https://storage.googleapis.com
+```
+
+- the hash allows the no-flash snippet exactly as printed above. an edit to
+  it changes the hash.
+- move the app's own script, like the template's inline one, into a file.
+- `style-src 'unsafe-inline'`: Plot writes inline styles.
+- `img-src data:`: the template's favicon is a data URL.
+- `connect-src` and `media-src` are for the radio only (GCS listing and
+  streams). drop `https://storage.googleapis.com` when the app has no radio.
 
 ## optional packs
 
@@ -90,6 +149,8 @@ a real system fallback (`system-ui`, `ui-monospace`).
 | motion | `wonk-motion.css`, `wonk-motion.js` | `wonk-tokens.css` only | [motion.md](references/motion.md) |
 | code + json editor | `wonk-code.css`, `wonk-code.js`, `assets/vendor/prism/*` | `wonk-tokens.css`, `wonk.css` | [code.md](references/code.md) |
 | charts | `wonk-charts.js`, `assets/vendor/d3/*`, `assets/vendor/plot/*` | `wonk-tokens.css`, `wonk.css`; `wonk-data.js` for the sortable table view | [charts.md](references/charts.md) |
+| radio | `wonk-radio.css`, `wonk-radio.js` | `wonk-tokens.css`, `wonk.css` (not `wonk.js`) | [radio.md](references/radio.md) |
+| fonts | `wonk-fonts.css`, `assets/fonts/*` | nothing; load it first | [install](#install) |
 
 none of the packs add a package dependency, plain script/link tags. load a
 pack's css after the base css, its js after the base js. the data pack's
@@ -103,28 +164,31 @@ before js within each pack, prism core before its grammar files, d3 before
 Plot):
 
 ```html
-<link rel="stylesheet" href="assets/wonk-tokens.css">
-<link rel="stylesheet" href="assets/wonk.css">
-<link rel="stylesheet" href="assets/wonk-controls.css">
-<link rel="stylesheet" href="assets/wonk-data.css">
-<link rel="stylesheet" href="assets/wonk-motion.css">
-<link rel="stylesheet" href="assets/wonk-code.css">
-<script src="assets/vendor/prism/prism-core.min.js"></script>
-<script src="assets/vendor/prism/prism-markup.min.js"></script>
-<script src="assets/vendor/prism/prism-css.min.js"></script>
-<script src="assets/vendor/prism/prism-clike.min.js"></script>
-<script src="assets/vendor/prism/prism-javascript.min.js"></script>
-<script src="assets/vendor/prism/prism-json.min.js"></script>
-<script src="assets/vendor/prism/prism-sql.min.js"></script>
-<script src="assets/vendor/prism/prism-bash.min.js"></script>
-<script src="assets/vendor/d3/d3.min.js"></script>
-<script src="assets/vendor/plot/plot.umd.min.js"></script>
-<script src="assets/wonk.js"></script>
-<script src="assets/wonk-data.js"></script>
-<script src="assets/wonk-controls.js"></script>
-<script src="assets/wonk-motion.js"></script>
-<script src="assets/wonk-code.js"></script>
-<script src="assets/wonk-charts.js"></script>
+<link rel="stylesheet" href="/wonk/wonk-fonts.css">
+<link rel="stylesheet" href="/wonk/wonk-tokens.css">
+<link rel="stylesheet" href="/wonk/wonk.css">
+<link rel="stylesheet" href="/wonk/wonk-controls.css">
+<link rel="stylesheet" href="/wonk/wonk-data.css">
+<link rel="stylesheet" href="/wonk/wonk-motion.css">
+<link rel="stylesheet" href="/wonk/wonk-code.css">
+<link rel="stylesheet" href="/wonk/wonk-radio.css">
+<script defer src="/wonk/vendor/prism/prism-core.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-markup.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-css.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-clike.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-javascript.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-json.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-sql.min.js"></script>
+<script defer src="/wonk/vendor/prism/prism-bash.min.js"></script>
+<script defer src="/wonk/vendor/d3/d3.min.js"></script>
+<script defer src="/wonk/vendor/plot/plot.umd.min.js"></script>
+<script defer src="/wonk/wonk.js"></script>
+<script defer src="/wonk/wonk-data.js"></script>
+<script defer src="/wonk/wonk-controls.js"></script>
+<script defer src="/wonk/wonk-motion.js"></script>
+<script defer src="/wonk/wonk-code.js"></script>
+<script defer src="/wonk/wonk-charts.js"></script>
+<script defer src="/wonk/wonk-radio.js"></script>
 ```
 
 an unregistered grammar degrades to plain, visibly-flagged text instead of

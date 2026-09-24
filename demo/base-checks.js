@@ -6,7 +6,7 @@
    .wonk-row, .wonk-main), tabs, spark, menu, reveal, hints: data-tip /
    data-hint / data-term, glossary, wonk.tip, disclosure: .wonk-acc,
    .wonk-fold, row toggles, foldAll, fold keys, formatting: wonk.fmt),
-   the delta classes, token contrast, and focus rings.
+   the delta classes, token contrast, focus rings, and the version stamp.
    Runs headless via `npm test` (or `npm test -- base`). By hand:
    load it on any page that already has wonk.js loaded (e.g.
    demo/index.html), then call:
@@ -1567,6 +1567,12 @@
     } finally {
       host.remove();
     }
+  });
+
+  check("version: wonk.version equals the --wonk-version token in wonk-tokens.css", () => {
+    const token = getComputedStyle(document.documentElement).getPropertyValue("--wonk-version").trim().replace(/^["']|["']$/g, "");
+    assert(/^\d+\.\d+\.\d+$/.test(String(wonk.version)), `wonk.version is ${JSON.stringify(wonk.version)}, expected x.y.z`);
+    assert(token === wonk.version, `--wonk-version is ${JSON.stringify(token)}, wonk.version is ${JSON.stringify(wonk.version)}`);
   });
 
   // ============================================================

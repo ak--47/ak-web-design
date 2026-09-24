@@ -5,32 +5,21 @@ This file covers wiring them into common stacks.
 
 ## Any app (the base recipe)
 
-1. Copy `wonk-tokens.css`, `wonk.css`, `wonk.js` into the app's static assets
-   (or serve from a shared path). They are the contract — do not fork values;
-   improve them upstream in the skill instead.
-2. Load fonts, tokens, components, behaviors, in that order:
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/wonk-tokens.css">
-<link rel="stylesheet" href="/wonk.css">
-<script defer src="/wonk.js"></script>
-```
-
-3. Set the pair and class on the root:
+1. Install with the one recipe in [README § install](../README.md#install):
+   copy `assets/` to the app's `/wonk/`, link `/wonk/wonk-fonts.css`,
+   `/wonk/wonk-tokens.css`, `/wonk/wonk.css`, and `/wonk/wonk.js` (with the
+   no-flash snippet above them), pin `wonk.version`, and add the drift test.
+   The vendored files are the contract — do not fork values; improve them
+   upstream in the skill instead.
+2. Set the pair and class on the root:
 
 ```html
 <html data-pair="metathesis" class="wonk">
 ```
 
-Theme: dark is the default. `document.documentElement.setAttribute("data-theme", "paper")`
-switches to paper; persist the choice in localStorage. `prefers-color-scheme: light`
-may set paper as the initial value.
-
-4. Self-host fonts for anything production-grade (download the woff2 files,
-   `@font-face` them, drop the Google link). Every face gets a real fallback.
+Theme: dark is the default. `wonk.theme.init()` applies the saved theme or
+`prefers-color-scheme`; after it, `wonk.setTheme("paper" | "dark")` switches
+and saves the choice ([README § install](../README.md#install)).
 
 ## Tailwind (v3 config or v4 @theme)
 
@@ -106,7 +95,7 @@ headings mixed-case grotesk).
 
 ## Vanilla JS apps (e.g. cerebros-style, no build step)
 
-The base recipe is the whole story: three files, classic script/link tags.
+The base recipe is the whole story: classic script/link tags under `/wonk/`.
 Replace the app's own token file usage gradually — map its old variable names
 to WONK tokens in one bridge block rather than editing every rule.
 
@@ -139,9 +128,9 @@ motion is explicit: `wonkMotion.play(element, 'value-changed')`. cancel before
 unmount with `wonkMotion.cancel(element)`. don't use effects to own framework
 visibility state. the component owns whether it exists and where focus returns.
 
-self-host fonts in production. the new galleries request fonts from Google;
-they send no fixture records to a service. the base chart gallery also loads
-Plot and d3 from jsDelivr. keep the app's existing pinned dependency versions.
+fonts and charts need no CDN: `/wonk/wonk-fonts.css` self-hosts both faces,
+and the charts pack uses the vendored d3 and Plot under `/wonk/vendor/`. an
+app that already pins its own Plot or d3 version keeps it.
 
 ## Charts
 
