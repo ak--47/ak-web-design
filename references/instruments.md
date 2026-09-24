@@ -200,6 +200,12 @@ reduced motion each option fills solid when checked. listen to native
 the sweet spot. `destroy()` removes the glide element and the `has-glide`
 class it added, so the track falls back to the solid-fill styling.
 
+`wonkControls.segmented(el)` returns `{ value, set(v), destroy() }` (also on
+`el.wonkSegmented`). `set(v)` checks the radio with that value and moves the
+glide; an unknown value throws. a framework that writes `checked` itself
+(React undo, server state) sends no `change`, so call `set(value)` after it:
+[adapters.md § framework lifecycle](adapters.md#optional-packs-and-framework-lifecycle).
+
 ## stepper (`.wonk-stepper`)
 
 a plain number input is already a stepper. this wrapper adds bigger click

@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk-motion.js · purposeful motion pack for the WONK system
+   WONK v0.3.0 · wonk-motion.js · purposeful motion pack for the WONK system
    Dependency-free. Pairs with assets/wonk-motion.css. Requires
    wonk-tokens.css to already be loaded (durations come from it).
 

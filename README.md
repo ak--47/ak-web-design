@@ -109,6 +109,8 @@ const SKILL = path.join(os.homedir(), ".agents/skills/ak-web-design/assets");
 const LOCAL = path.resolve("public/wonk");
 const FILES = ["wonk-fonts.css", "wonk-tokens.css", "wonk.css", "wonk.js"];
 
+const PINNED = "0.3.0"; // the WONK version this app vendors
+
 test("vendored WONK files match the skill",
   { skip: !existsSync(SKILL) && `no skill checkout at ${SKILL} (CI): drift not checked` },
   () => {
@@ -117,7 +119,30 @@ test("vendored WONK files match the skill",
       assert.ok(same, `${f} differs from the skill: re-copy it and read CHANGELOG.md`);
     }
   });
+
+// the two checks below need no skill checkout, so they run in CI too
+test("vendored WONK files carry the pinned version", () => {
+  for (const f of FILES) {
+    const head = readFileSync(path.join(LOCAL, f), "utf8").split("\n").slice(0, 2).join("\n");
+    assert.ok(head.includes(`WONK v${PINNED} `), `${f} is not WONK v${PINNED}: re-copy assets/ and read CHANGELOG.md`);
+  }
+});
+
+test("every url() in a vendored stylesheet exists", () => {
+  for (const f of FILES.filter((name) => name.endsWith(".css"))) {
+    const css = readFileSync(path.join(LOCAL, f), "utf8");
+    for (const [, url] of css.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) {
+      if (/^(data:|https?:|#)/.test(url)) continue;
+      assert.ok(existsSync(path.join(LOCAL, path.dirname(f), url)), `${f} points at a missing ${url}`);
+    }
+  }
+});
 ```
+
+the byte check skips where the skill is absent (CI), so on its own it lets a
+copy drift unseen. the version check fails in CI as soon as the pin and the
+files disagree, and the `url()` check catches renamed font files (0.2 renamed
+all of them). also check that every `/wonk/` path the app's pages link exists.
 
 an app-local change belongs in the app's own css, loaded last. an
 improvement belongs upstream in the skill. neither is an edit to the

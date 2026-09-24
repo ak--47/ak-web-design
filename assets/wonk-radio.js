@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk-radio.js · shuffle radio pack for the WONK system
+   WONK v0.3.0 · wonk-radio.js · shuffle radio pack for the WONK system
    Dependency-free. Pairs with assets/wonk-radio.css. Reads colors
    from wonk-tokens.css at draw time, so theme and pair switches
    apply to the scope without a reload.

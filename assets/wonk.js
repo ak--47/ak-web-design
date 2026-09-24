@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk.js · behaviors for the WONK design system
+   WONK v0.3.0 · wonk.js · behaviors for the WONK design system
    Dependency-free. Safe to load once per page.
    Everything respects prefers-reduced-motion.
    ============================================================ */
@@ -232,7 +232,15 @@
     let queued = false;
     new MutationObserver((records) => {
       const fresh = [];
-      records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) { added.add(n); fresh.push(n); } }));
+      records.forEach((r) => {
+        // aria-hidden came off (a modal library closed): the subtree may
+        // now take the hint tab stops focusTips skipped
+        if (r.type === "attributes") {
+          if (r.target.getAttribute("aria-hidden") !== "true") added.add(r.target);
+          return;
+        }
+        r.addedNodes.forEach((n) => { if (n.nodeType === 1) { added.add(n); fresh.push(n); } });
+      });
       if (foldState.size) fresh.forEach((n) => { if (n.isConnected) restoreFolds(n); });
       pruneHint();
       if (!added.size || queued) return;
@@ -247,7 +255,7 @@
           focusTips(n);
         });
       });
-    }).observe(document.body, { childList: true, subtree: true });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-hidden"] });
   }
 
   // ---- sparkline ----
@@ -668,7 +676,9 @@
   // it pauses its timer. A modal <dialog> makes everything outside it
   // inert, so while one is open the host moves inside it (and back to
   // <body> when it closes) so the toast stays visible and announced.
-  const MODAL_SELECTOR = CSS.supports("selector(:modal)");
+  // jsdom has no CSS object (vitest defines the key as undefined): test
+  // the function, not the key, so loading wonk.js never throws there
+  const MODAL_SELECTOR = typeof CSS !== "undefined" && typeof CSS?.supports === "function" && CSS.supports("selector(:modal)");
   const topModal = () =>
     MODAL_SELECTOR
       ? [...document.querySelectorAll("dialog[open]")].filter((d) => d.matches(":modal")).pop() || null
@@ -736,17 +746,24 @@
   // Document-level delegation, no per-element wiring:
   //  - one visual box, div.wonk-hint (aria-hidden), in <body> or inside
   //    the open modal dialog (same rule as toasts). position: fixed,
-  //    centered below its target, flips above when it would overflow,
-  //    8px from the viewport edges; follows resizes.
-  //  - hover shows after 50ms; focus and a touch/pen tap show at once.
-  //    Leaving the target starts a 150ms grace timer and entering the
-  //    box cancels it (hoverable). When it runs out, the focused
-  //    control's tip comes back, else the box hides. Escape hides it. A
-  //    scroll hides it; a focus tip follows its control instead.
-  //  - screen readers: on focus the text goes into the visually hidden
-  //    #wonk-hint-sr, and "wonk-hint-sr" is appended to the control's
-  //    aria-describedby (the page's own tokens stay; blur removes only
-  //    ours). Pointer movement never changes the description.
+  //    8px from the viewport edges; follows resizes. Centered below its
+  //    target, unless the box would cover another control there: then
+  //    above, right, or left, the first side that fits and covers none.
+  //    When every side covers one, below (above when below overflows).
+  //  - hover shows after 50ms; keyboard focus (:focus-visible) and a
+  //    touch/pen tap show at once. A mouse click that focuses a checkbox,
+  //    radio, or button shows no box of its own (the hover path covers
+  //    it); a text field matches :focus-visible on a click, so its box
+  //    shows and stays while you type. Leaving the
+  //    target starts a 150ms grace timer and entering the box cancels
+  //    it (hoverable). When it runs out, the keyboard-focused control's
+  //    tip comes back, else the box hides. Escape hides it. A scroll
+  //    hides it; a focus tip follows its control instead.
+  //  - screen readers: on every focus (mouse too) the text goes into the
+  //    visually hidden #wonk-hint-sr, and "wonk-hint-sr" is appended to
+  //    the control's aria-describedby (the page's own tokens stay; blur
+  //    removes only ours). Pointer movement never changes the
+  //    description.
   //  - wonk.tip(root, selector, render): rich tips. render(el) returns a
   //    Node (built with DOM APIs) or a string (shown as text, never
   //    parsed as HTML). Same box and rules.
@@ -855,9 +872,31 @@
     shown = shownBy = null;
   }
 
-  // centered below the anchor, above when below would overflow and
-  // above fits (or has more room), then clamped EDGE px inside the
-  // viewport
+  // true when a box at viewport rect r would cover a control other
+  // than the tip's own target (a checkbox row just below, say): the box
+  // would take the click meant for it. Probes 9 points; at each, the
+  // topmost element that is not the box. In an open modal only the
+  // modal's content counts (the rest is inert).
+  function coversControl(r) {
+    const modal = topModal();
+    for (const x of [r.left + 2, r.left + r.width / 2, r.left + r.width - 2]) {
+      for (const y of [r.top + 2, r.top + r.height / 2, r.top + r.height - 2]) {
+        const hit = document.elementsFromPoint(x, y).find((el) => !hintBox.contains(el));
+        const control = hit && hit.closest(COVERS);
+        if (!control || (modal && !modal.contains(control))) continue;
+        if (control.contains(shown.anchor) || control.contains(shown.el) || shown.el.contains(control)) continue;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // below, centered; else above, right, or left: the first side that
+  // fits the viewport and covers no other control. When every side
+  // covers one: below, or above when below would overflow and above
+  // fits (or has more room). Then clamped EDGE px inside the viewport.
+  // The chosen side sticks while the same tip shows (scroll, resize)
+  // and still fits.
   function placeHint() {
     if (!hintOpen() || !shown) return;
     if (!shown.anchor.isConnected) { hideHint(); return; }
@@ -870,23 +909,58 @@
     const a = shown.anchor.getBoundingClientRect();
     const vw = document.documentElement.clientWidth;
     const vh = document.documentElement.clientHeight;
-    const left = Math.max(EDGE, Math.min(a.left + a.width / 2 - o.width / 2, vw - EDGE - o.width));
-    let top = a.bottom + GAP;
-    const above = a.top - GAP - o.height;
-    if (top + o.height > vh - EDGE && (above >= EDGE || a.top > vh - a.bottom)) top = above;
-    top = Math.max(EDGE, Math.min(top, vh - EDGE - o.height));
-    s.left = `${left - o.left}px`;
-    s.top = `${top - o.top}px`;
+    const clampX = (x) => Math.max(EDGE, Math.min(x, vw - EDGE - o.width));
+    const clampY = (y) => Math.max(EDGE, Math.min(y, vh - EDGE - o.height));
+    const midX = clampX(a.left + a.width / 2 - o.width / 2);
+    const midY = clampY(a.top + a.height / 2 - o.height / 2);
+    const sides = {
+      below: { left: midX, top: a.bottom + GAP },
+      above: { left: midX, top: a.top - GAP - o.height },
+      right: { left: a.right + GAP, top: midY },
+      left: { left: a.left - GAP - o.width, top: midY },
+    };
+    const fits = (p) => p.left >= EDGE && p.left + o.width <= vw - EDGE && p.top >= EDGE && p.top + o.height <= vh - EDGE;
+    let side = shown.side && fits(sides[shown.side]) ? shown.side : null;
+    if (!side) {
+      side = Object.keys(sides).find((k) => {
+        const p = sides[k];
+        return fits(p) && !coversControl({ left: p.left, top: p.top, width: o.width, height: o.height });
+      });
+      if (!side) {
+        const overflows = sides.below.top + o.height > vh - EDGE;
+        side = overflows && (sides.above.top >= EDGE || a.top > vh - a.bottom) ? "above" : "below";
+      }
+      shown.side = side;
+    }
+    s.left = `${clampX(sides[side].left) - o.left}px`;
+    s.top = `${clampY(sides[side].top) - o.top}px`;
+  }
+
+  const renderTip = (tip) => (tip.reg ? tip.reg.render(tip.el) : tip.text);
+  const isNode = (v) => v !== null && typeof v === "object" && typeof v.nodeType === "number";
+  // the text a tip gives screen readers, without showing the box
+  function tipSrText(tip) {
+    const content = renderTip(tip);
+    if (content === null || content === undefined) return "";
+    return isNode(content) ? content.textContent : String(content);
+  }
+  // keyboard focus, not the focus a mouse click gives a checkbox or
+  // button. A focus event names a web component's host; the element
+  // that matches :focus-visible is the focused one inside its shadow root.
+  function keyboardFocus(el) {
+    let focused = el;
+    while (focused.shadowRoot && focused.shadowRoot.activeElement) focused = focused.shadowRoot.activeElement;
+    return focused.matches(":focus-visible");
   }
 
   // show a resolved tip at once; returns the text now in the box ("" if
   // the tip rendered nothing)
   function showTip(tip, by) {
     stopTimers();
-    const content = tip.reg ? tip.reg.render(tip.el) : tip.text;
+    const content = renderTip(tip);
     if (content === null || content === undefined || content === "") { hideHint(); return ""; }
     hintHome();
-    if (typeof content === "object" && typeof content.nodeType === "number") hintBox.replaceChildren(content);
+    if (isNode(content)) hintBox.replaceChildren(content);
     else hintBox.textContent = String(content);
     hintBox.hidden = false;
     shown = tip;
@@ -917,11 +991,11 @@
     if (hintSr) hintSr.textContent = "";
   }
 
-  // the grace timer ran out: the focused control's tip comes back, else
-  // the box hides
+  // the grace timer ran out: the keyboard-focused control's tip comes
+  // back, else the box hides
   function settleHint() {
     graceTimer = null;
-    const tip = srFor ? tipFor(srFor, true) : null;
+    const tip = srFor && keyboardFocus(srFor) ? tipFor(srFor, true) : null;
     if (!tip) hideHint();
     else if (!hintOpen() || !shown || tip.el !== shown.el) showTip(tip, "focus");
   }
@@ -972,7 +1046,11 @@
       if (hintOpen()) hideHint();
       return;
     }
-    describe(e.target, showTip(tip, "focus"), tip.reg);
+    // a mouse click that focuses a checkbox or button shows no box: a
+    // focus box would stay after the pointer leaves, until blur. Screen
+    // readers get the description either way.
+    if (keyboardFocus(e.target)) describe(e.target, showTip(tip, "focus"), tip.reg);
+    else describe(e.target, tipSrText(tip), tip.reg);
   }, true);
 
   document.addEventListener("focusout", (e) => {
@@ -980,14 +1058,19 @@
     if (shownBy === "focus" && shown && (shown.el.contains(e.target) || shown.anchor === e.target)) hideHint();
   }, true);
 
-  // Escape closes the box; the description stays while focus stays.
-  // While the box shows, that Escape does nothing else (WCAG 1.4.13):
-  // capture phase, so it is cancelled before a dialog, drawer, or menu
-  // sees it. A second Escape reaches them as usual.
+  // Escape closes the box (WCAG 1.4.13); the description stays while
+  // focus stays. When the box shows the focused element's tip, that
+  // Escape does nothing else: capture phase, so it is cancelled before a
+  // dialog, drawer, or menu sees it, and one key never closes a tip and
+  // a dialog at once. A second Escape reaches them as usual. A hover or
+  // tap tip on anything else closes, and the key goes on to the app.
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || !hintOpen()) return;
-    e.preventDefault();
-    e.stopPropagation();
+    const focused = document.activeElement;
+    if (shown && focused && focused !== document.body && (shown.anchor === focused || shown.el.contains(focused))) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     escaped = shown && shown.el;
     hideHint();
   }, true);
@@ -1018,8 +1101,12 @@
   // keyboard reach: .wonk-term and tip elements that cannot take focus
   // get tabindex="0", except inside an interactive element (no nested
   // tab stops), inside a tbody (per-row repeats rely on their column
-  // header's tip), a <label> of a control (the control's focus shows
-  // it), an author-set tabindex, or data-tip-focus="off"
+  // header's tip), inside aria-hidden content (hidden content must never
+  // take focus; the body observer runs this again once aria-hidden comes
+  // off), a <label> of a control (the control's focus shows it) and a
+  // .wonk-term with no tip of its own inside one, an author-set tabindex,
+  // or data-tip-focus="off". Inert content needs no skip: the browser
+  // keeps it out of the tab order until inert comes off.
   const FOCUS_SEL = `.wonk-term, ${TIP_SEL}`;
   const NATIVE_FOCUS =
     "a[href], area[href], button, input, select, textarea, iframe, summary, audio[controls], video[controls], " +
@@ -1027,13 +1114,18 @@
   const INTERACTIVE =
     `${NATIVE_FOCUS}, [role='button'], [role='link'], [role='tab'], [role='menuitem'], ` +
     "[role='option'], [role='checkbox'], [role='switch'], [role='slider']";
+  // what a hint box must not cover (placeHint): a control the pointer may
+  // head for next. Not any [tabindex]: a scroll region or a skip-link
+  // target is no click target.
+  const COVERS = `${INTERACTIVE}, label`;
   function focusTips(scope = document) {
     const els = [...scope.querySelectorAll(FOCUS_SEL)];
     if (scope.matches && scope.matches(FOCUS_SEL)) els.unshift(scope);
     els.forEach((el) => {
       if (el.hasAttribute("tabindex") || el.getAttribute("data-tip-focus") === "off") return;
       if (el.matches(NATIVE_FOCUS) || (el.localName === "label" && el.control)) return;
-      if (el.closest("tbody, .wonk-hint")) return;
+      if (el.closest("tbody, .wonk-hint, [aria-hidden='true']")) return;
+      if (!el.matches(TIP_SEL) && el.closest("label")?.control) return;
       if (el.parentElement && el.parentElement.closest(INTERACTIVE)) return;
       el.setAttribute("tabindex", "0");
     });
@@ -1125,6 +1217,8 @@
   // activation. On wiring, the tab with aria-selected="true" (else the
   // first) is selected and only its panel is visible. A tab whose
   // data-panel is missing or matches nothing is skipped with a warning.
+  // A click or key that selects another tab fires a bubbling
+  // wonk:tabchange on the tablist, detail { tab, panel }.
   let uid = 0;
   const ensureId = (el, prefix) => {
     if (el.id) return el.id;
@@ -1157,6 +1251,7 @@
       items.push({ tab, panel });
     });
     if (!items.length) return;
+    let current = null;
     const select = (chosen, focus = false) => {
       items.forEach(({ tab, panel }) => {
         const on = tab === chosen;
@@ -1165,6 +1260,12 @@
         panel.hidden = !on;
       });
       if (focus) chosen.focus();
+      const changed = current !== null && chosen !== current;
+      current = chosen;
+      if (changed) {
+        const { panel } = items.find(({ tab }) => tab === chosen);
+        root.dispatchEvent(new CustomEvent("wonk:tabchange", { bubbles: true, detail: { tab: chosen, panel } }));
+      }
     };
     items.forEach(({ tab }, i) => {
       tab.addEventListener("click", () => select(tab));
@@ -1192,9 +1293,15 @@
   //  - a click on a row toggle flips its aria-expanded and the hidden
   //    attribute of the element(s) its aria-controls names. A missing
   //    target warns once per toggle and changes nothing.
-  //  - wonk.foldAll(root, open) sets every <details> in root (root
-  //    included, .wonk-menu popups excluded) and every row toggle in
-  //    root. Returns how many changed.
+  //  - wonk.foldAll(root, open, {nested = true}) sets every <details> in
+  //    root (root included, .wonk-menu popups excluded) and every row
+  //    toggle in root. nested: false sets only the outermost ones: those
+  //    not inside another <details> or row detail within root. Returns
+  //    how many changed.
+  //  - a row toggle that changes (click, foldAll, a restored key) and a
+  //    keyed <details> that toggles fire a bubbling wonk:fold on the
+  //    element, detail { el, key (null when unkeyed), open }. A row
+  //    toggle fires it at once; a <details> after its native toggle.
   //  - a fold-all button folds document.querySelector(data-target), or,
   //    with no data-target, its closest section, article, or
   //    [data-fold-scope]. No match warns and changes nothing.
@@ -1217,7 +1324,7 @@
   function rowTargets(btn) {
     const ids = (btn.getAttribute("aria-controls") || "").split(/\s+/).filter(Boolean);
     const home = btn.getRootNode();
-    const byId = (id) => (home.getElementById ? home.getElementById(id) : home.querySelector(`#${CSS.escape(id)}`));
+    const byId = (id) => (home.getElementById ? home.getElementById(id) : home.querySelector(`[id="${id.replace(/["\\]/g, "\\$&")}"]`));
     const targets = ids.map(byId);
     if (ids.length && targets.every(Boolean)) return targets;
     if (!warnedRows.has(btn)) {
@@ -1227,6 +1334,9 @@
     return null;
   }
 
+  const emitFold = (el, open) =>
+    el.dispatchEvent(new CustomEvent("wonk:fold", { bubbles: true, detail: { el, key: el.getAttribute("data-fold-key"), open } }));
+
   // set one row toggle; returns true when anything changed
   function setRow(btn, open) {
     const targets = rowTargets(btn);
@@ -1235,6 +1345,7 @@
     btn.setAttribute("aria-expanded", String(open));
     targets.forEach((t) => { t.hidden = !open; });
     remember(btn, open);
+    if (changed) emitFold(btn, open);
     return changed;
   }
 
@@ -1245,18 +1356,29 @@
     return true;
   }
 
-  function foldAll(root, open) {
+  function foldAll(root, open, { nested = true } = {}) {
     if (!root || typeof root.querySelectorAll !== "function") {
       throw new TypeError("wonk.foldAll(root, open): root must be an element or a document");
     }
     if (typeof open !== "boolean") {
       throw new TypeError("wonk.foldAll(root, open): open must be true or false");
     }
+    if (typeof nested !== "boolean") {
+      throw new TypeError("wonk.foldAll(root, open, {nested}): nested must be true or false");
+    }
+    // outermost: no <details> or row detail between el and root
+    const outermost = (el) => {
+      for (let p = el === root ? null : el.parentElement; p && p !== root; p = p.parentElement) {
+        if (p.matches("details, .wonk-row-detail")) return false;
+      }
+      return true;
+    };
+    const pick = (el) => nested || outermost(el);
     const details = [...root.querySelectorAll("details")];
     if (root.matches && root.matches("details")) details.unshift(root);
     let changed = 0;
-    details.forEach((d) => { if (!d.closest(".wonk-menu") && setDetails(d, open)) changed++; });
-    root.querySelectorAll(".wonk-row-toggle").forEach((b) => { if (setRow(b, open)) changed++; });
+    details.forEach((d) => { if (!d.closest(".wonk-menu") && pick(d) && setDetails(d, open)) changed++; });
+    root.querySelectorAll(".wonk-row-toggle").forEach((b) => { if (pick(b) && setRow(b, open)) changed++; });
     return changed;
   }
 
@@ -1276,7 +1398,9 @@
 
   document.addEventListener("toggle", (e) => {
     const d = e.target;
-    if (d.localName === "details" && d.hasAttribute("data-fold-key")) remember(d, d.open);
+    if (d.localName !== "details" || !d.hasAttribute("data-fold-key")) return;
+    remember(d, d.open);
+    emitFold(d, d.open);
   }, true);
 
   document.addEventListener("click", (e) => {
@@ -1305,8 +1429,12 @@
   // strings are accepted. wonk.fmt.locale (default "en-US") applies to
   // every number; dates are always YYYY-MM-DD.
   //   num(n, {digits=0})                     1234.5 -> "1,235"
-  //   compact(n, {digits=1})                 1234 -> "1.2K"
-  //   money(n, {currency="USD", compact=false, digits=0 (1 if compact)})
+  //   compact(n, {digits})                   1234 -> "1.2K", 971100 -> "971K"
+  //   money(n, {currency="USD", compact=false, digits=0})
+  //     compact: true -> "$971K", "$1.2M", "$12M"
+  //   compact without digits rounds the standard Intl way: at most 2
+  //   significant digits, never fewer than the whole number (971K, not
+  //   970K). digits fixes the maximum decimals instead.
   //   pct(ratio, {digits=0})                 0.123 -> "12%"
   //   duration(ms)                           200000 -> "3m 20s"
   //   date(value, {tz="UTC", time=false})    "2026-09-24 15:04 UTC" with time
@@ -1322,21 +1450,23 @@
   };
   const numberFormat = (options) => new Intl.NumberFormat(fmt.locale, options);
   const fixed = (digits) => ({ minimumFractionDigits: digits, maximumFractionDigits: digits });
+  // compact notation: no digits leaves Intl's compact rounding in place
+  const compactDigits = (digits) => (digits === undefined ? {} : { minimumFractionDigits: 0, maximumFractionDigits: digits });
   const fmt = {
     locale: "en-US",
     num(n, { digits = 0 } = {}) {
       const v = toNumber(n);
       return Number.isNaN(v) ? UNKNOWN : numberFormat(fixed(digits)).format(v);
     },
-    compact(n, { digits = 1 } = {}) {
+    compact(n, { digits } = {}) {
       const v = toNumber(n);
-      return Number.isNaN(v) ? UNKNOWN : numberFormat({ notation: "compact", maximumFractionDigits: digits }).format(v);
+      return Number.isNaN(v) ? UNKNOWN : numberFormat({ notation: "compact", ...compactDigits(digits) }).format(v);
     },
     money(n, { currency = "USD", compact = false, digits } = {}) {
       const v = toNumber(n);
       if (Number.isNaN(v)) return UNKNOWN;
       const options = compact
-        ? { style: "currency", currency, notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
+        ? { style: "currency", currency, notation: "compact", ...compactDigits(digits) }
         : { style: "currency", currency, ...fixed(digits ?? 0) };
       return numberFormat(options).format(v);
     },
@@ -1577,6 +1707,6 @@
   window.wonk = {
     toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
     vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState, fmt,
-    theme: { init: initTheme }, drawer, version: "0.2.0",
+    theme: { init: initTheme }, drawer, version: "0.3.0",
   };
 })();

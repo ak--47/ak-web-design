@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk-fonts.css · self-hosted Space Grotesk + IBM Plex Mono
+   WONK v0.3.0 · wonk-fonts.css · self-hosted Space Grotesk + IBM Plex Mono
    Load first, before wonk-tokens.css. Replaces the Google Fonts link,
    so a strict CSP needs only font-src 'self'. Files live in fonts/
    next to this file (latin subset, woff2, from @fontsource 5.3.0).

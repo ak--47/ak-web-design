@@ -1,3 +1,13 @@
+# plans/
+
+Plans for maintaining the WONK skill itself: its assets, checks, docs, and
+demo pages. Apps that use WONK never read or vendor this folder.
+
+- Active plans live here at the root.
+- `completed/`: finished plans. Move a plan there whole once it ships.
+- This folder is version-controlled: never put secrets, tokens, or customer
+  data in these docs.
+
 # Implementation plans: one-shot friendly WONK
 
 Written by the improve skill, 2026-09-24, against `ea62dcd`. AK asked for
@@ -25,8 +35,16 @@ bug, and copy), a WONK audit, and the dm4 radio.
 | 009 | ACT 6 / DECIDE 3 | Version stamp, CHANGELOG, local fonts, one install recipe, SKILL.md rewrite + cheatsheet, loose ends | M | 006 | DONE (see git log) |
 | 010 | review | Fixes from the full-branch code review (F1-F11) | S-M | 001-009 | DONE (see git log) |
 | 011 | AK feedback | Radio album art + hover enlarge (with select caret, a.wonk-btn border, live divider fixes done directly) | S-M | 010 | DONE (see git log) |
+| 012 | cerebros | Suggested improvements from the Cerebros 0.2 upgrade (CSV dates + formula guard, focus rules, lazy detail, table/fold/tab events, styling, docs) | M | 001-011 | DONE in 0.3.0 (item 5's `rowClass` skipped) |
+| 013 | dm4 | Suggested improvements from the dm4 0.2 re-vendor (`CSS` guard at load, sticky focus hint, hint overlap + Escape decisions, Tailwind adapter + cascade docs, hint placement rules) | S-M | 001-011 | DONE in 0.3.0 (item 5, `wonk.color`, REJECTED by AK) |
 
-All plans are DONE. `npm test`: 197 passed, 0 failed.
+All plans are DONE and live in `completed/`. `npm test`: 217 passed, 0 failed.
+
+AK's decisions for 012/013 (2026-09-24): hint overlap uses smart placement
+(013 item 3, option a); element defaults move to `:where(.wonk)` (013 item 8);
+compact numbers use Intl's standard rounding by default (012 item 11); no
+`wonk.color` helper (013 item 5). Escape takes 013 item 4 option (a). The
+changes ship as WONK 0.3.0.
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (reason)
 

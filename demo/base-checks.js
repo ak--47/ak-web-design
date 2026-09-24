@@ -3,10 +3,13 @@
    behaviors (window.wonk: idempotent init, reduced motion, toast,
    setTheme, setPair, theme.init, wonk:themechange, the theme toggle,
    the responsive drawer, layout utilities (.wonk-sr, .wonk-grid,
-   .wonk-row, .wonk-main), tabs, spark, menu, reveal, hints: data-tip /
-   data-hint / data-term, glossary, wonk.tip, disclosure: .wonk-acc,
-   .wonk-fold, row toggles, foldAll, fold keys, formatting: wonk.fmt),
-   the delta classes, token contrast, focus rings, and the version stamp.
+   .wonk-row, .wonk-main), element defaults, stat tiles, the kv list,
+   the fold card, header hints, tabs + wonk:tabchange, spark, menu,
+   reveal, hints: data-tip / data-hint / data-term, glossary, wonk.tip,
+   placement, focus, Escape, disclosure: .wonk-acc, .wonk-fold, row
+   toggles, foldAll, fold keys, wonk:fold, formatting: wonk.fmt), the
+   delta classes, token contrast, focus rings, loading without a CSS
+   object, and the version stamp.
    Runs headless via `npm test` (or `npm test -- base`). By hand:
    load it on any page that already has wonk.js loaded (e.g.
    demo/index.html), then call:
@@ -645,6 +648,119 @@
     }
   });
 
+  check("typography: a class on p, h2, or small beats the element defaults (:where(.wonk)); p.wonk-help--error is red; a plain p keeps ink-2", () => {
+    const host = withFixture(`
+      <style>.chk-flat { margin: 0; color: rgb(1, 2, 3); } .chk-size { font-size: 10px; margin: 0; }</style>
+      <p class="chk-flat">p</p><h2 class="chk-size">h2</h2><small class="chk-flat">small</small>
+      <p class="wonk-help wonk-help--error">error help</p><p class="plain">plain</p>
+      <span class="p-err" style="color:var(--ak-err)">e</span><span class="p-ink2" style="color:var(--ak-ink-2)">i</span>`);
+    try {
+      const cs = (sel) => getComputedStyle(host.querySelector(sel));
+      eq(cs("p.chk-flat").marginBottom, "0px", "p.chk-flat margin-bottom");
+      eq(cs("p.chk-flat").color, "rgb(1, 2, 3)", "p.chk-flat color");
+      eq(cs("h2.chk-size").fontSize, "10px", "h2.chk-size font-size");
+      eq(cs("small.chk-flat").color, "rgb(1, 2, 3)", "small.chk-flat color");
+      eq(cs("p.wonk-help--error").color, cs(".p-err").color, "p.wonk-help--error color");
+      eq(cs("p.plain").color, cs(".p-ink2").color, "a plain p color");
+      assert(cs("p.plain").marginBottom !== "0px", "a plain p should keep its bottom margin");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("stat: button.wonk-card.wonk-stat keeps the card's padding, border, and background; --accent still applies; a bare button.wonk-stat has none, even under an app button rule", () => {
+    const host = withFixture(`
+      <style>:where(.chk-app) button { padding: 10px; border: 3px solid rgb(200, 0, 0); background: rgb(200, 0, 0); }</style>
+      <div class="wonk-card ref">card</div>
+      <button type="button" class="wonk-card wonk-stat tile"><span class="wonk-label">open</span><span class="wonk-num">12</span></button>
+      <button type="button" class="wonk-card wonk-card--accent wonk-stat accent"><span class="wonk-num">3</span></button>
+      <button type="button" class="wonk-stat bare"><span class="wonk-num">4</span></button>
+      <div class="chk-app"><button type="button" class="wonk-stat app"><span class="wonk-num">5</span></button></div>`);
+    try {
+      const cs = (sel) => getComputedStyle(host.querySelector(sel));
+      for (const prop of ["paddingTop", "paddingLeft", "borderTopWidth", "borderTopStyle", "backgroundColor"]) {
+        eq(cs(".tile")[prop], cs(".ref")[prop], `button.wonk-card.wonk-stat ${prop}`);
+      }
+      eq(cs(".accent").borderTopWidth, "3px", "button.wonk-card--accent.wonk-stat border-top-width");
+      eq(cs(".bare").paddingTop, "0px", "a bare button.wonk-stat padding-top");
+      eq(cs(".bare").borderTopStyle, "none", "a bare button.wonk-stat border-top-style");
+      eq(cs(".app").paddingTop, "0px", "an app's bare button rule must not reach button.wonk-stat padding");
+      eq(cs(".app").backgroundColor, "rgba(0, 0, 0, 0)", "an app's bare button rule must not reach button.wonk-stat background");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("kv at 390px: a long label stacks over its value, and every dd stays inside the list", async () => {
+    const f = await loadWonkFrame({
+      width: 390,
+      css: ["../assets/wonk-tokens.css", "../assets/wonk.css"],
+      body: `
+        <dl class="wonk-kv" style="margin:16px">
+          <dt>could mixpanel have changed it (ai)</dt><dd>Yes: the tracking plan changed on 2026-09-01 and the event was renamed</dd>
+          <dt>owner</dt><dd>Dana Lee</dd>
+        </dl>`,
+    });
+    try {
+      const dl = f.doc.querySelector("dl");
+      const right = dl.getBoundingClientRect().right;
+      const dt = dl.querySelector("dt");
+      const dds = [...dl.querySelectorAll("dd")];
+      assert(dds[0].getBoundingClientRect().top >= dt.getBoundingClientRect().bottom - 0.5, "at 390px a value should sit under its label");
+      dds.forEach((dd, i) => {
+        const r = dd.getBoundingClientRect().right;
+        assert(r <= right + 0.5, `dd ${i} right edge ${r} should be inside the list (${right})`);
+      });
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  check("fold card at 390px: the summary's + is pinned top right (absolute, at the top padding), and the wrapped facts stay clear of it", async () => {
+    const f = await loadWonkFrame({
+      width: 390,
+      css: ["../assets/wonk-tokens.css", "../assets/wonk.css"],
+      body: `
+        <details class="wonk-card wonk-card--fold" style="margin:8px">
+          <summary><span class="headline">Acme renewal with a long account name · $820k</span><span class="facts">AE Dana · CE Lee · closes Oct 31 · stage 4 · risk high</span></summary>
+          <div class="body">x</div>
+        </details>`,
+    });
+    try {
+      const summary = f.doc.querySelector("summary");
+      const s = f.win.getComputedStyle(summary);
+      const mark = f.win.getComputedStyle(summary, "::after");
+      eq(mark.position, "absolute", "summary::after position");
+      eq(mark.top, s.paddingTop, "summary::after top (the summary's top padding)");
+      const headline = f.doc.querySelector(".headline").getBoundingClientRect();
+      const facts = f.doc.querySelector(".facts").getBoundingClientRect();
+      assert(facts.top > headline.top, "setup: at 390px the facts should wrap under the headline");
+      const inner = summary.getBoundingClientRect().right - parseFloat(s.paddingRight);
+      assert(facts.right <= inner + 0.5 && headline.right <= inner + 0.5, `headline and facts should end before the + column (${inner}), got ${headline.right} and ${facts.right}`);
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  check("table: a header with a hint gets the dotted term underline (on the sort button's text when sortable); a header without one gets none", () => {
+    const host = withFixture(`
+      <table class="wonk-table"><thead><tr>
+        <th class="plain">plain</th>
+        <th class="hinted" data-tip="def">hinted</th>
+        <th class="sortable" data-tip="def"><button type="button" class="wonk-sort">sortable<span class="wonk-sort-arrow">↓</span></button></th>
+      </tr></thead></table>`);
+    try {
+      const cs = (sel) => getComputedStyle(host.querySelector(sel));
+      assert(cs("th.hinted").textDecorationLine.includes("underline"), `th[data-tip] should be underlined, got ${cs("th.hinted").textDecorationLine}`);
+      eq(cs("th.hinted").textDecorationStyle, "dotted", "th[data-tip] text-decoration-style");
+      assert(cs("th.sortable .wonk-sort").textDecorationLine.includes("underline"), "a hinted sortable header's button should be underlined");
+      eq(cs("th.sortable .wonk-sort").textDecorationStyle, "dotted", "hinted .wonk-sort text-decoration-style");
+      assert(!cs("th.plain").textDecorationLine.includes("underline"), "a header without a hint should not be underlined");
+    } finally {
+      host.remove();
+    }
+  });
+
   // ---- tabs ----
   check("tabs(root): clicking tab 2 hides panel 1, shows panel 2, and selects tab 2", () => {
     const id = "wonk-base-check-" + Math.random().toString(36).slice(2);
@@ -773,6 +889,28 @@
     } finally {
       a.host.remove();
       b.host.remove();
+    }
+  });
+
+  check("tabs(root): a click or arrow key that selects another tab fires one bubbling wonk:tabchange on the tablist with {tab, panel}; wiring and the current tab fire none", () => {
+    const { host, root, tabs, panels } = tabsFixture({ selected: 0 });
+    const seen = [];
+    const onChange = (e) => seen.push({ target: e.target, tab: e.detail.tab, panel: e.detail.panel });
+    host.addEventListener("wonk:tabchange", onChange);
+    try {
+      wonk.tabs(root);
+      eq(seen.length, 0, "events after wiring");
+      tabs[0].click();
+      eq(seen.length, 0, "events after clicking the selected tab");
+      key(tabs[0], "ArrowRight");
+      eq(seen.length, 1, "events after ArrowRight");
+      assert(seen[0].target === root && seen[0].tab === tabs[1] && seen[0].panel === panels[1], "the event should fire on the tablist and name tab 1 and panel 1");
+      tabs[2].click();
+      eq(seen.length, 2, "events after clicking tab 2");
+      assert(seen[1].tab === tabs[2] && seen[1].panel === panels[2], "the second event should name tab 2 and panel 2");
+    } finally {
+      host.removeEventListener("wonk:tabchange", onChange);
+      host.remove();
     }
   });
 
@@ -1136,7 +1274,7 @@
     }
   });
 
-  check("hint: in an open modal, Escape while the box shows only hides it (defaultPrevented, no bubbling); with no box it passes through", () => {
+  check("hint: in an open modal, Escape while the focused button's box shows only hides it (defaultPrevented, no bubbling); with no box it passes through", () => {
     const dlg = document.createElement("dialog");
     dlg.className = "wonk-modal";
     dlg.innerHTML = `<button type="button" data-tip="modal escape">inside</button>`;
@@ -1366,6 +1504,144 @@
     }
   });
 
+  check("hint: init gives no tabindex inside aria-hidden content (one arrives once aria-hidden comes off), nor to a .wonk-term with no tip of its own inside a control's label; a .wonk-term[data-tip] there keeps one", async () => {
+    const id = "wonk-base-check-" + Math.random().toString(36).slice(2);
+    const host = withFixture(`
+      <div class="hider" aria-hidden="true"><span class="hidden-tip" data-tip="legend">legend</span></div>
+      <label for="${id}" data-tip="label hint"><span class="bare wonk-term">Agreement</span> <span class="own wonk-term" data-tip="own definition">rate</span></label>
+      <input id="${id}">
+      <span class="plain wonk-term" data-tip="plain">plain</span>`);
+    try {
+      wonk.init(host);
+      const idx = (sel) => host.querySelector(sel).getAttribute("tabindex");
+      eq(idx(".hidden-tip"), null, "a span[data-tip] inside aria-hidden tabindex");
+      eq(idx(".bare"), null, "a .wonk-term with no tip inside a control's label tabindex");
+      eq(idx(".own"), "0", "a .wonk-term[data-tip] inside a control's label tabindex");
+      eq(idx(".plain"), "0", "a plain .wonk-term[data-tip] tabindex");
+      await frame(); // let the insertion's own observer pass run first
+      await frame();
+      eq(idx(".hidden-tip"), null, "the span[data-tip] inside aria-hidden tabindex after the insertion pass");
+      host.querySelector(".hider").removeAttribute("aria-hidden");
+      for (let i = 0; i < 3 && idx(".hidden-tip") === null; i++) await frame();
+      eq(idx(".hidden-tip"), "0", "the span[data-tip] tabindex within a frame after aria-hidden comes off");
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: keyboard focus into a web component (open shadow root, delegatesFocus) with data-tip shows the box", () => {
+    const name = "wonk-chk-field";
+    if (!customElements.get(name)) {
+      customElements.define(name, class extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: "open", delegatesFocus: true }).innerHTML = `<input aria-label="inner">`;
+        }
+      });
+    }
+    const host = withFixture(`<${name} data-tip="shadow hint"></${name}>`);
+    try {
+      const inner = host.querySelector(name).shadowRoot.querySelector("input");
+      inner.focus();
+      assert(inner.matches(":focus-visible"), "setup: the inner input should match :focus-visible");
+      assert(hintShown(), "keyboard focus inside the component should show its box");
+      eq(hintBox().textContent, "shadow hint", "box text");
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: a mouse-style focus (not :focus-visible) on a checkbox in label[data-tip] shows no box but describes it; leaving after a hover hides the box; keyboard focus shows a box that stays", async () => {
+    const host = withFixture(`<label data-tip="Ends the user"><input type="checkbox"> end the user</label>`);
+    const label = host.querySelector("label");
+    const box = host.querySelector("input");
+    // synthetic pointer only (see the hover check above)
+    const isolate = (e) => { if (e.isTrusted) e.stopImmediatePropagation(); };
+    window.addEventListener("mouseover", isolate, true);
+    window.addEventListener("mouseout", isolate, true);
+    try {
+      box.focus({ focusVisible: false });
+      assert(document.activeElement === box && !box.matches(":focus-visible"), "setup: focus({focusVisible:false}) should focus without :focus-visible, like a mouse click");
+      assert(!hintShown(), "a mouse-style focus should show no box");
+      const sr = document.getElementById(SR_ID);
+      assert(describedBy(box).includes(SR_ID) && !!sr && sr.textContent === "Ends the user", "a mouse-style focus should still describe the checkbox to screen readers");
+      mouse(label, "mouseover");
+      await sleep(120);
+      assert(hintShown(), "hovering the label should show its box");
+      mouse(label, "mouseout", document.body);
+      await sleep(300);
+      assert(!hintShown(), "leaving the label should hide the box, although the checkbox keeps focus");
+      box.blur();
+      box.focus();
+      assert(box.matches(":focus-visible"), "setup: a plain focus() should match :focus-visible here");
+      assert(hintShown(), "keyboard focus should show the box");
+      mouse(label, "mouseout", document.body);
+      await sleep(300);
+      assert(hintShown(), "a keyboard focus box should stay while focus stays");
+    } finally {
+      window.removeEventListener("mouseover", isolate, true);
+      window.removeEventListener("mouseout", isolate, true);
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: the box never covers the next control: for the first checkbox row it goes above, for a middle row beside, and with room below it stays below", () => {
+    const host = document.createElement("div");
+    host.style.cssText = "position:fixed; inset:0; z-index:150; background:var(--ak-ground);";
+    host.innerHTML = `<div style="position:absolute; top:300px; left:300px; display:grid; gap:4px; justify-items:start">
+      ${[1, 2, 3].map((i) => `<label class="r${i}" data-tip="hint for row ${i}"><input type="checkbox"> row ${i}</label>`).join("")}
+    </div>`;
+    document.body.appendChild(host);
+    const rect = (sel) => host.querySelector(sel).getBoundingClientRect();
+    const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    try {
+      wonk.hint.show(host.querySelector(".r1"));
+      let r = hintBox().getBoundingClientRect();
+      assert(!overlaps(r, rect(".r2")), "row 1's box should not cover row 2");
+      assert(r.bottom <= rect(".r1").top + 0.5, `row 1's box should go above row 1: box bottom ${r.bottom}, row top ${rect(".r1").top}`);
+      wonk.hint.show(host.querySelector(".r2"));
+      r = hintBox().getBoundingClientRect();
+      assert(!overlaps(r, rect(".r1")) && !overlaps(r, rect(".r3")), "row 2's box should cover neither row 1 nor row 3");
+      assert(r.left >= rect(".r2").right - 0.5, `row 2's box should go right of row 2: box left ${r.left}, row right ${rect(".r2").right}`);
+      wonk.hint.show(host.querySelector(".r3"));
+      r = hintBox().getBoundingClientRect();
+      assert(r.top >= rect(".r3").bottom - 0.5, `row 3 has room below, so its box should stay below: box top ${r.top}, row bottom ${rect(".r3").bottom}`);
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: a hover hint open while focus sits in a dialog's input: Escape hides the box and still reaches the app (not defaultPrevented, bubbles)", () => {
+    const dlg = document.createElement("dialog");
+    dlg.className = "wonk-modal";
+    dlg.innerHTML = `<input aria-label="field"> <span class="term" data-tip="hover only">term</span>`;
+    document.body.appendChild(dlg);
+    let bubbled = 0;
+    const onBubble = () => { bubbled++; };
+    document.addEventListener("keydown", onBubble);
+    try {
+      dlg.showModal();
+      const input = dlg.querySelector("input");
+      input.focus();
+      wonk.hint.show(dlg.querySelector(".term"));
+      assert(hintShown(), "wonk.hint.show should open the term's box");
+      const esc = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+      input.dispatchEvent(esc);
+      assert(!hintShown(), "Escape should hide the box");
+      assert(esc.defaultPrevented === false, "a box that is not the focused element's should not cancel Escape");
+      assert(bubbled === 1, `Escape should reach bubble-phase listeners (the app's dialog handler), reached ${bubbled} times`);
+    } finally {
+      document.removeEventListener("keydown", onBubble);
+      resetHint();
+      if (dlg.open) dlg.close();
+      dlg.remove();
+    }
+  });
+
   // ---- disclosure: .wonk-acc, .wonk-fold, row toggles, foldAll, fold keys ----
   // Fixtures are created with their final open state (no transition to
   // wait out), so computed pseudo-element transforms are settled values.
@@ -1572,6 +1848,74 @@
     }
   });
 
+  check("disclosure: wonk:fold fires once per change with {el, key, open}: a row toggle click, foldAll, a keyed <details>; an unkeyed <details> and a no-op foldAll fire none", async () => {
+    const id = uid("wonk-row");
+    const rowKey = uid("row");
+    const detailsKey = uid("deal");
+    const host = withFixture(`
+      <details class="keyed" data-fold-key="${detailsKey}"><summary>k</summary>x</details>
+      <details class="plain"><summary>p</summary>y</details>
+      <table><tbody>
+        <tr><td><button type="button" class="wonk-row-toggle" data-fold-key="${rowKey}" aria-expanded="false" aria-controls="${id}">r</button></td></tr>
+        <tr class="wonk-row-detail" id="${id}" hidden><td>d</td></tr>
+      </tbody></table>`);
+    const seen = [];
+    const onFold = (e) => seen.push(e.detail);
+    host.addEventListener("wonk:fold", onFold);
+    try {
+      const btn = host.querySelector(".wonk-row-toggle");
+      const keyed = host.querySelector(".keyed");
+      const plain = host.querySelector(".plain");
+      btn.click();
+      eq(seen.length, 1, "events after a row toggle click");
+      assert(seen[0].el === btn && seen[0].key === rowKey && seen[0].open === true, `the click event should carry {el: the toggle, key, open: true}, got key ${seen[0].key}, open ${seen[0].open}`);
+      const opening = Promise.all([toggled(keyed), toggled(plain)]);
+      eq(wonk.foldAll(host, true), 2, "foldAll(host, true) count (the row is open already)");
+      eq(seen.length, 1, "an already open row fires nothing, and a <details> fires only after its native toggle");
+      await opening;
+      eq(seen.length, 2, "events after foldAll(host, true): the keyed <details> only");
+      assert(seen[1].el === keyed && seen[1].key === detailsKey && seen[1].open === true, "the keyed <details> event should carry its key and open: true");
+      const closing = Promise.all([toggled(keyed), toggled(plain)]);
+      wonk.foldAll(host, false);
+      eq(seen.length, 3, "foldAll(host, false) fires the row's event at once");
+      assert(seen[2].el === btn && seen[2].open === false, "the row event should say open: false");
+      await closing;
+      eq(seen.length, 4, "events after foldAll(host, false)");
+      eq(wonk.foldAll(host, false), 0, "a second foldAll(host, false) count");
+      await frame();
+      await frame();
+      eq(seen.length, 4, "a foldAll that changes nothing fires nothing");
+    } finally {
+      host.removeEventListener("wonk:fold", onFold);
+      wonk.foldState.delete(rowKey);
+      wonk.foldState.delete(detailsKey);
+      host.remove();
+    }
+  });
+
+  check("disclosure: foldAll(root, open, {nested: false}) changes only the outermost folds (a row, an outer <details>), never folds inside them; a non-boolean nested throws", () => {
+    const id = uid("wonk-row");
+    const host = withFixture(`
+      <details class="outer"><summary>o</summary><details class="deep"><summary>d</summary>x</details></details>
+      <table><tbody>
+        <tr><td><button type="button" class="wonk-row-toggle" aria-expanded="false" aria-controls="${id}">area</button></td></tr>
+        <tr class="wonk-row-detail" id="${id}" hidden><td><details class="card"><summary>deal</summary>y</details></td></tr>
+      </tbody></table>`);
+    try {
+      const btn = host.querySelector(".wonk-row-toggle");
+      const q = (sel) => host.querySelector(sel);
+      eq(wonk.foldAll(host, true, { nested: false }), 2, "foldAll(host, true, {nested:false}) count");
+      assert(rowOpen(btn) && q(".outer").open, "the row and the outer <details> should open");
+      assert(!q(".deep").open && !q(".card").open, "a <details> inside the outer <details> or inside the row detail should stay closed");
+      eq(wonk.foldAll(host, false, { nested: false }), 2, "foldAll(host, false, {nested:false}) count");
+      let threw = null;
+      try { wonk.foldAll(host, true, { nested: "no" }); } catch (err) { threw = err; }
+      assert(threw instanceof TypeError, "a non-boolean nested should throw a TypeError");
+    } finally {
+      host.remove();
+    }
+  });
+
   // ---- formatting: wonk.fmt, and the delta classes ----
   // Every example row of the fmt table in references/components.md.
   // Unknown input (null, undefined, "", NaN) formats as "—", never as 0.
@@ -1590,6 +1934,14 @@
     eq(f.compact(950), "950", "compact(950)");
     eq(f.money(1234.5), "$1,235", "money(1234.5)");
     eq(f.money(1234567, { compact: true }), "$1.2M", "money(1234567, {compact:true})");
+    eq(f.money(971100, { compact: true }), "$971K", "money(971100, {compact:true})");
+    eq(f.money(45600, { compact: true }), "$46K", "money(45600, {compact:true})");
+    eq(f.money(1500, { compact: true }), "$1.5K", "money(1500, {compact:true})");
+    eq(f.money(12345678, { compact: true }), "$12M", "money(12345678, {compact:true})");
+    eq(f.money(800, { compact: true }), "$800", "money(800, {compact:true})");
+    eq(f.money(971100, { compact: true, digits: 1 }), "$971.1K", "money(971100, {compact:true, digits:1})");
+    eq(f.compact(971100), "971K", "compact(971100)");
+    eq(f.compact(971100, { digits: 1 }), "971.1K", "compact(971100, {digits:1})");
     eq(f.money(0), "$0", "money(0)");
     eq(f.pct(0.123), "12%", "pct(0.123)");
     eq(f.pct(0.123, { digits: 1 }), "12.3%", "pct(0.123, {digits:1})");
@@ -1674,6 +2026,34 @@
       eq(color(".delta-down"), color(".p-err"), "legacy .wonk-stat .delta-down color");
     } finally {
       host.remove();
+    }
+  });
+
+  check("load: wonk.js loads in a window with no CSS object (jsdom, vitest) and still exposes wonk.version", async () => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:absolute; width:0; height:0; border:0; visibility:hidden;";
+    document.body.appendChild(iframe);
+    try {
+      const win = iframe.contentWindow;
+      const doc = iframe.contentDocument;
+      doc.open();
+      doc.write("<!doctype html><html><head></head><body></body></html>");
+      doc.close();
+      win.CSS = undefined;
+      assert(win.CSS === undefined, "setup: the iframe's CSS should be undefined");
+      const errors = [];
+      win.addEventListener("error", (e) => errors.push(e.message));
+      await new Promise((resolve, reject) => {
+        const script = doc.createElement("script");
+        script.src = new URL("../assets/wonk.js", document.baseURI).href;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("could not load wonk.js into the iframe"));
+        doc.body.appendChild(script);
+      });
+      assert(errors.length === 0, `loading wonk.js with no CSS object threw: ${errors.join("; ")}`);
+      assert(win.wonk && win.wonk.version === wonk.version, `the iframe's wonk.version should be ${wonk.version}, got ${win.wonk && win.wonk.version}`);
+    } finally {
+      iframe.remove();
     }
   });
 

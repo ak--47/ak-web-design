@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk-code.js · syntax highlighting + JSON editor for WONK
+   WONK v0.3.0 · wonk-code.js · syntax highlighting + JSON editor for WONK
    Requires wonk-tokens.css + wonk.css already loaded, and Prism
    (core + grammars) loaded before this script. See
    references/code.md for the exact vendor load order and the

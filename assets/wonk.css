@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · components · requires wonk-tokens.css
+   WONK v0.3.0 · components · requires wonk-tokens.css
    Class prefix: .wonk-
    Fonts: load Space Grotesk (400,500,700) + IBM Plex Mono (400,500,600,700)
    ============================================================ */
@@ -25,28 +25,32 @@
 
 /* ---- typography ---- */
 /* headings: mixed-case grotesk. uppercase-wide is reserved for
-   page titles (.wonk-title) and labels (.wonk-label). */
-.wonk h1, .wonk h2, .wonk h3, .wonk h4 {
+   page titles (.wonk-title) and labels (.wonk-label).
+   element defaults (h1-h4, p, small, a) sit behind :where(.wonk), so
+   they weigh as a bare element (0,0,1): any class wins, a component's
+   or a utility's (Tailwind .text-sm, .m-0), and an app element rule
+   loaded after wonk.css wins by order. */
+:where(.wonk) h1, :where(.wonk) h2, :where(.wonk) h3, :where(.wonk) h4 {
   font-family: var(--ak-font-sans);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
   margin: 0 0 var(--ak-s3);
 }
-.wonk h1 { font-size: var(--ak-text-3xl); }
-.wonk h2 { font-size: var(--ak-text-2xl); }
-.wonk h3 { font-size: var(--ak-text-xl); }
-.wonk h4 { font-size: var(--ak-text-lg); }
-.wonk p  { margin: 0 0 var(--ak-s4); color: var(--ak-ink-2); }
-/* links: zero specificity (:where), so any component class wins. The hover
-   underline is for plain links only, never a WONK component (a.wonk-btn,
-   a.wonk-navlink, ...): an a.wonk-btn keeps its full border. */
+:where(.wonk) h1 { font-size: var(--ak-text-3xl); }
+:where(.wonk) h2 { font-size: var(--ak-text-2xl); }
+:where(.wonk) h3 { font-size: var(--ak-text-xl); }
+:where(.wonk) h4 { font-size: var(--ak-text-lg); }
+:where(.wonk) p  { margin: 0 0 var(--ak-s4); color: var(--ak-ink-2); }
+/* links: the hover underline is for plain links only, never a WONK
+   component (a.wonk-btn, a.wonk-navlink, ...): an a.wonk-btn keeps its
+   full border. */
 :where(.wonk) a { color: var(--ak-a1-text); text-decoration: none; }
 :where(.wonk) a:where(:not([class*="wonk-"])) { border-bottom: 1px solid transparent; transition: border-color var(--ak-t-fast) var(--ak-ease); }
 :where(.wonk) a:where(:not([class*="wonk-"])):hover { border-bottom-color: var(--ak-a1-text); }
-.wonk small { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
+:where(.wonk) small { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
 
-/* .wonk .wonk-title beats .wonk h1, so h1.wonk-title keeps its tracking */
+/* h1.wonk-title keeps the title tracking and size over the h1 default */
 .wonk .wonk-title {
   font-family: var(--ak-font-sans);
   font-weight: 700;
@@ -429,12 +433,14 @@ details.wonk-acc[open] > summary::after { transform: rotate(45deg); color: var(-
 
 .wonk-card.wonk-card--fold { padding: 0; } /* beats .wonk-card, defined later */
 .wonk-card--fold > summary {
+  position: relative;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--ak-s1) var(--ak-s3);
-  padding: var(--ak-s4) var(--ak-s6);
+  /* the right padding keeps the facts clear of the + */
+  padding: var(--ak-s4) calc(var(--ak-s6) + 1.5rem) var(--ak-s4) var(--ak-s6);
   cursor: pointer;
   border-radius: var(--ak-radius);
   transition: background var(--ak-t-fast) var(--ak-ease);
@@ -443,9 +449,13 @@ details.wonk-acc[open] > summary::after { transform: rotate(45deg); color: var(-
 .wonk-card--fold > summary:hover { background: var(--ak-hover); }
 .wonk-card--fold > summary .headline { font-family: var(--ak-font-sans); font-weight: 500; color: var(--ak-ink); }
 .wonk-card--fold > summary .facts { font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); color: var(--ak-ink-2); }
+/* pinned top right: on a wrapped (phone) summary the + stays on the
+   headline's first line, never alone on a middle line */
 .wonk-card--fold > summary::after {
   content: "+";
-  margin-left: auto;
+  position: absolute;
+  top: var(--ak-s4);
+  right: var(--ak-s6);
   font-family: var(--ak-font-mono);
   color: var(--ak-ink-3);
   transition: transform var(--ak-t-med) var(--ak-ease), color var(--ak-t-fast) var(--ak-ease);
@@ -503,7 +513,7 @@ details.wonk-acc[open] > summary::after { transform: rotate(45deg); color: var(-
 .wonk-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: var(--ak-radius-full); background: var(--ak-a1); border: 2px solid var(--ak-ground); }
 
 /* ---- key-value list ---- */
-.wonk-kv { display: grid; grid-template-columns: max-content 1fr; gap: var(--ak-s2) var(--ak-s6); margin: 0; }
+.wonk-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--ak-s2) var(--ak-s6); margin: 0; }
 .wonk-kv dt {
   font-family: var(--ak-font-mono);
   font-size: var(--ak-text-xs);
@@ -513,6 +523,12 @@ details.wonk-acc[open] > summary::after { transform: rotate(45deg); color: var(-
   padding-top: 2px;
 }
 .wonk-kv dd { margin: 0; font-size: var(--ak-text-sm); color: var(--ak-ink-2); }
+/* a phone stacks each label over its value: a long label beside its
+   value would push the value off screen */
+@media (max-width: 640px) {
+  .wonk-kv { grid-template-columns: minmax(0, 1fr); row-gap: var(--ak-s1); }
+  .wonk-kv dd:not(:last-child) { margin-bottom: var(--ak-s3); }
+}
 
 /* ---- cards & stats ---- */
 .wonk-card {
@@ -533,7 +549,8 @@ details.wonk-acc[open] > summary::after { transform: rotate(45deg); color: var(-
 
 /* deltas: the arrow glyph carries the direction, the color carries the
    sentiment (a rise in errors is bad), so color is never the only
-   signal. Usable on any element; .wonk .x beats .wonk small / .wonk p. */
+   signal. Usable on any element; .wonk .x also beats a component's own
+   text color, such as .wonk-table td. */
 .delta--good, .wonk .delta--good { color: var(--ak-ok); }
 .delta--bad, .wonk .delta--bad { color: var(--ak-err); }
 .delta--neutral, .wonk .delta--neutral { color: var(--ak-ink-2); }
@@ -546,16 +563,21 @@ button.wonk-stat,
   appearance: none;
   width: 100%;
   margin: 0;
-  padding: 0;
   font: inherit;
   color: inherit;
   text-align: left;
   text-transform: none;
   letter-spacing: normal;
-  background: transparent;
-  border: 0;
   border-radius: var(--ak-radius);
   cursor: pointer;
+}
+/* no chrome, except on a tile that is also a .wonk-card: it keeps the
+   card (and its --flat / --accent modifiers) */
+button.wonk-stat:not(.wonk-card),
+.wonk-stat--drill:not(.wonk-card) {
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 button.wonk-stat .wonk-num,
 .wonk-stat--drill .wonk-num {
@@ -645,6 +667,15 @@ button.wonk-stat:focus-visible,
   color: var(--ak-ink-2);
 }
 .wonk-table tr:hover td { background: var(--ak-hover); }
+/* a header with a hint reads as a term: dotted underline on its label
+   (the sort button's text in a sortable header, not the arrow) */
+.wonk-table th:is([data-tip], [data-hint], [data-term]):not(:has(.wonk-sort)),
+.wonk-table th:is([data-tip], [data-hint], [data-term]) .wonk-sort {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--ak-ink-3);
+  text-underline-offset: 3px;
+}
+.wonk-table th:is([data-tip], [data-hint], [data-term]) .wonk-sort-arrow { display: inline-block; }
 .wonk-table td.num, .wonk-table th.num { text-align: right; font-family: var(--ak-font-mono); font-variant-numeric: tabular-nums; }
 
 /* ---- tabs ---- */

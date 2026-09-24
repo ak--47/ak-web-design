@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk-charts.js · Observable Plot, themed from WONK tokens
+   WONK v0.3.0 · wonk-charts.js · Observable Plot, themed from WONK tokens
    window.wonkCharts (frozen): plot.
 
    Needs the d3 and Plot globals: load assets/vendor/d3/d3.min.js,

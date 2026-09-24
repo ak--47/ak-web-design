@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.2.0 · wonk-data.js · records table, drill-down dialog, CSV export
+   WONK v0.3.0 · wonk-data.js · records table, drill-down dialog, CSV export
    window.wonkData (frozen): table, drill, drills, toCSV.
 
    Requires wonk.js (wonk.fmt formats every number; row toggles,
@@ -169,6 +169,8 @@
     const detail = typeof opts.detail === "function" ? opts.detail : null;
     const foldKey = typeof opts.foldKey === "function" ? opts.foldKey : null;
     const onRowAction = typeof opts.onRowAction === "function" ? opts.onRowAction : null;
+    const actionLabel = typeof opts.actionLabel === "function" ? opts.actionLabel : null;
+    const rowClick = !!opts.rowClick;
     if (opts.limit !== undefined && opts.limit !== null && !(Number.isInteger(opts.limit) && opts.limit > 0)) {
       throw new TypeError(`wonkData.table: limit must be a positive integer, got ${JSON.stringify(opts.limit)}`);
     }
@@ -193,6 +195,7 @@
     const rowOf = new WeakMap();      // tr -> entry
     const checkboxOf = new WeakMap(); // row checkbox -> entry
     const actions = new WeakSet();    // this table's onRowAction buttons
+    const toggleOf = new WeakMap();   // this table's row toggles -> entry
 
     // ---- frame ----
     host.replaceChildren();
@@ -200,7 +203,7 @@
     region.setAttribute("role", "region");
     region.tabIndex = 0;
     region.setAttribute("aria-label", String(opts.label || opts.caption || "Records"));
-    const tableEl = make("table", "wonk-table");
+    const tableEl = make("table", rowClick ? "wonk-table wonk-table--rowclick" : "wonk-table");
     if (opts.caption) tableEl.appendChild(make("caption", opts.captionHidden ? "wonk-sr" : "", String(opts.caption)));
     const thead = make("thead");
     const tbody = make("tbody");
@@ -282,6 +285,7 @@
           const action = make("button", "wonk-value-link");
           action.type = "button";
           action.appendChild(content);
+          if (actionLabel) action.setAttribute("aria-label", String(actionLabel(row)));
           actions.add(action);
           content = action;
         }
@@ -298,6 +302,7 @@
           toggle.setAttribute("aria-expanded", String(open));
           toggle.setAttribute("aria-controls", id);
           if (keyed) toggle.setAttribute("data-fold-key", String(fk));
+          toggleOf.set(toggle, entry);
           if (onRowAction) {
             // a button cannot hold a button: the toggle keeps only its +
             toggle.setAttribute("aria-label", `Details for ${content.textContent}`);
@@ -311,12 +316,23 @@
           detailTr.hidden = !open;
           const cell = make("td");
           cell.colSpan = span;
-          cell.appendChild(toContent(extra));
           detailTr.appendChild(cell);
+          // a function builds the detail when the row first opens
+          if (typeof extra === "function") entry.build = () => cell.appendChild(toContent(extra()));
+          else cell.appendChild(toContent(extra));
         }
         tr.appendChild(td);
       });
       entry.nodes = { tr, detailTr, checkbox };
+      if (entry.build && !entry.nodes.detailTr.hidden) fillDetail(entry);
+    }
+
+    // build a lazy detail once, the first time its row opens
+    function fillDetail(entry) {
+      const build = entry.build;
+      if (!build) return;
+      entry.build = null;
+      build();
     }
 
     const shownEntries = () => (limit && !expanded ? entries.slice(0, limit) : entries);
@@ -342,6 +358,13 @@
       renderMore();
       syncSelection();
     }
+
+    // after every body render: setRows, a sort, Show all
+    const emitRender = () =>
+      host.dispatchEvent(new CustomEvent("wonk-data:render", {
+        bubbles: true,
+        detail: { rows: shownEntries().map((entry) => entry.row), sort: sort ? { ...sort } : null },
+      }));
 
     function renderMore() {
       if (!limit || expanded || entries.length <= limit) {
@@ -426,6 +449,7 @@
       sortEntries();
       paintHeaders();
       renderBody();
+      emitRender();
     }
 
     // ---- selection ----
@@ -454,6 +478,7 @@
       const firstNew = entries[limit];
       expanded = true;
       renderBody();
+      emitRender();
       const target = firstNew && firstNew.nodes && firstNew.nodes.tr.querySelector("input, button, a[href], [tabindex]");
       (target || region).focus();
     }
@@ -477,7 +502,32 @@
         if (entry) onRowAction(entry.row);
         return;
       }
-      if (t.closest("button") === showAllBtn) showAll();
+      if (t.closest("button") === showAllBtn) { showAll(); return; }
+      if (rowClick) forwardRowClick(t, e);
+    }
+
+    // rowClick: a click on a plain part of a row runs the row action,
+    // else flips the row toggle. Controls, links, labels, the select
+    // cell, detail rows, and a drag that selects text keep their own
+    // behavior; the action button and the toggle stay the keyboard path.
+    const OWN_CLICK = "a, button, input, select, textarea, label, summary, [tabindex], [contenteditable], .wonk-select-cell";
+    function forwardRowClick(t, e) {
+      const tr = t.closest("tr");
+      const entry = tr && rowOf.get(tr);
+      if (!entry || e.defaultPrevented) return;
+      const own = t.closest(OWN_CLICK);
+      if (own && tr.contains(own)) return;
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed && tr.contains(selection.anchorNode)) return;
+      if (onRowAction) { onRowAction(entry.row); return; }
+      const toggle = tr.querySelector(".wonk-row-toggle");
+      if (toggle) toggle.click();
+    }
+
+    // a row toggle opened (click, foldAll, a restored key): build its lazy detail
+    function onFold(e) {
+      const entry = e.detail && e.detail.open ? toggleOf.get(e.target) : null;
+      if (entry) fillDetail(entry);
     }
 
     function onChange(e) {
@@ -498,6 +548,7 @@
 
     host.addEventListener("click", onClick);
     host.addEventListener("change", onChange);
+    host.addEventListener("wonk:fold", onFold);
 
     // ---- data ----
     function alive() {
@@ -515,7 +566,7 @@
         const key = keyed ? raw : index;
         if (seen.has(key)) duplicate = key;
         seen.add(key);
-        return { row, key, keyed, index, nodes: null };
+        return { row, key, keyed, index, nodes: null, build: null };
       });
       if (duplicate !== undefined) {
         console.warn(`wonkData.table: duplicate rowKey ${JSON.stringify(duplicate)} (rowKey "${rowKey}"); selection treats rows with the same key as one`);
@@ -526,6 +577,7 @@
       paintHeaders();
       renderBody();
       renderFoot();
+      emitRender();
       if (selected.size !== before) emitSelect();
     }
 
@@ -534,6 +586,7 @@
       destroyed = true;
       host.removeEventListener("click", onClick);
       host.removeEventListener("change", onChange);
+      host.removeEventListener("wonk:fold", onFold);
       host.replaceChildren();
       entries = [];
       selected.clear();
@@ -561,29 +614,33 @@
     });
 
     if (opts.sort) setSortState(opts.sort.key, opts.sort.dir);
+    host.wonkDataTable = controller; // set before the first wonk-data:render
     setRows(initialRows);
-    host.wonkDataTable = controller;
     return controller;
   }
 
   // ============================================================
   // wonkData.toCSV(columns, rows) -> string
   // ============================================================
-  // Raw values (value(row) when given, else row[key]), dates as ISO,
-  // every field quoted, inner quotes doubled. A string that starts
-  // with = + - @ tab or CR gets a leading ' so a spreadsheet never
-  // runs it as a formula; numbers are written as they are.
+  // Raw values (value(row) when given, else row[key]), every field
+  // quoted, inner quotes doubled. A date column writes what the table
+  // shows, wonk.fmt.date(v, format): YYYY-MM-DD, or YYYY-MM-DD HH:MM UTC
+  // with format.time (an ISO timestamp breaks spreadsheet date filters
+  // and can shift the day). Any other Date value is written as ISO. A
+  // string that starts with = + - @ (after any whitespace), tab, CR, or
+  // LF gets a leading ' so a spreadsheet never runs it as a formula,
+  // even one that trims the whitespace; numbers are written as they are.
   function toCSV(columns, rows) {
     if (!Array.isArray(columns)) throw new TypeError("wonkData.toCSV(columns, rows): columns must be an array");
     if (!Array.isArray(rows)) throw new TypeError("wonkData.toCSV(columns, rows): rows must be an array");
     const quote = (s) => `"${s.replace(/"/g, '""')}"`;
-    const guard = (s) => (/^[=+\-@\t\r]/.test(s) ? `'${s}` : s);
+    const guard = (s) => (/^(?:[\t\r\n]|\s*[=+\-@])/.test(s) ? `'${s}` : s);
     const field = (c, row) => {
       const v = rawValue(c, row);
       if (v === null || v === undefined) return "";
       if (v instanceof Date || c.type === "date") {
         const t = toTime(v);
-        if (t !== null) return new Date(t).toISOString();
+        if (t !== null) return c.type === "date" ? fmt().date(t, c.format || {}) : new Date(t).toISOString();
         if (v instanceof Date) return "";
       }
       if (typeof v === "number") return Number.isFinite(v) ? String(v) : "";
@@ -632,6 +689,15 @@
     h2.id = titleId;
     const count = `${f.num(rows.length)} ${rows.length === 1 ? "row" : "rows"}${opts.subtitle ? ` · ${opts.subtitle}` : ""}`;
     heading.append(h2, make("p", "wonk-drill-count", count));
+    // note: show-your-work under the count ("12,345 min / 60 = 205.8 h"),
+    // a Node or text, and the dialog's accessible description
+    if (opts.note !== undefined && opts.note !== null && opts.note !== "") {
+      const note = make("div", "wonk-drill-note");
+      note.id = nextId("wonk-drill-note");
+      note.appendChild(toContent(opts.note));
+      heading.appendChild(note);
+      dialog.setAttribute("aria-describedby", note.id);
+    }
     const actions = make("div", "wonk-drill-actions");
     let download = null;
     if (opts.download) {
@@ -658,6 +724,8 @@
       foldKey: opts.foldKey,
       rowKey: opts.rowKey,
       onRowAction: opts.onRowAction,
+      actionLabel: opts.actionLabel,
+      rowClick: opts.rowClick,
       empty: opts.empty,
       label: opts.title,
       caption: opts.title,

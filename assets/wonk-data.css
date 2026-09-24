@@ -1,4 +1,4 @@
-/* WONK v0.2.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
+/* WONK v0.3.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
 .wonk-workbench { max-width: 90rem; margin: auto; padding: var(--ak-s6); }
 .wonk-workbench > * + * { margin-top: var(--ak-s6); }
 .wonk-rack { border: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: var(--ak-surface); min-width: 0; }
@@ -56,6 +56,8 @@
 .wonk-table td[data-type="date"], .wonk-table td[data-type="duration"] { white-space: nowrap; }
 .wonk-table .wonk-table-empty td { color: var(--ak-ink-2); padding-block: var(--ak-s6); }
 .wonk-table .wonk-table-empty:hover td { background: transparent; }
+/* rowClick: a plain part of a row is a click target too */
+.wonk-table--rowclick > tbody > tr:not(.wonk-row-detail, .wonk-table-empty) { cursor: pointer; }
 .wonk-table tfoot td { color: var(--ak-ink); font-weight: 600; border-top: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-bottom: 0; }
 .wonk-table tfoot .wonk-total-label { font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); font-weight: 500; letter-spacing: var(--ak-track-label); text-transform: uppercase; color: var(--ak-ink-2); }
 /* totals stay in view while a long table scrolls */
@@ -78,6 +80,8 @@ dialog.wonk-drill[open] {
 .wonk-drill-head { flex: none; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--ak-s3) var(--ak-s4); padding: var(--ak-s6) var(--ak-s6) var(--ak-s4); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); }
 .wonk-drill-head h2 { margin: 0; font-size: var(--ak-text-xl); }
 .wonk-drill-head .wonk-drill-count { margin: var(--ak-s1) 0 0; font-family: var(--ak-font-mono); font-size: var(--ak-text-sm); font-variant-numeric: tabular-nums; color: var(--ak-ink-2); }
+/* the drill's note option: show-your-work under the count */
+.wonk-drill-head .wonk-drill-note { margin: var(--ak-s1) 0 0; font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); font-variant-numeric: tabular-nums; color: var(--ak-ink-2); }
 .wonk-drill-actions { display: flex; flex-wrap: wrap; gap: var(--ak-s2); }
 .wonk-drill-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 0 var(--ak-s6) var(--ak-s4); }
 .wonk-drill-body > .wonk-table-scroll { flex: 1 1 auto; min-height: 0; max-height: none; }

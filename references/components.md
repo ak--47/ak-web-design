@@ -50,6 +50,11 @@ application behavior lives in the workbench example.
 `--ak-font-mono` is IBM Plex Mono (400/500/600/700). `--ak-track-label` is
 `0.06em`, relative to the element's own font-size, not a fixed rem value.
 
+the element defaults (`h1`-`h4`, `p`, `small`, `a`) weigh as a bare element
+(`:where(.wonk) p`, specificity 0,0,1). any class on the element wins, a
+WONK component's or a utility's (`.text-sm`, `.m-0`), and an app element
+rule loaded after `wonk.css` wins by order.
+
 ## Layout & dividers
 
 ```html
@@ -214,6 +219,10 @@ ids where missing, `aria-controls` and `aria-labelledby`, and a roving
 wiring, the tab with `aria-selected="true"` (else the first) is selected and
 only its panel is visible, whatever `hidden` said in the markup. a tab whose
 `data-panel` is missing or matches nothing is skipped with a `console.warn`.
+a click or key that selects another tab fires a bubbling `wonk:tabchange` on
+the tablist with `detail: { tab, panel }`, so the app knows the active tab
+after keyboard selection too. wonk.js owns the arrow keys: an app arrow-key
+handler on the tabs double-steps.
 
 ## Data display
 
@@ -239,12 +248,12 @@ only its panel is visible, whatever `hidden` said in the markup. a tab whose
 
 <span class="wonk-badge">default</span>          <!-- --ok --warn --err --info --accent -->
 
-<table class="wonk-table">
+<table class="wonk-table">                       <!-- a th[data-tip] gets the dotted term underline -->
   <thead><tr><th>service</th><th class="num">req/s</th></tr></thead>
   <tbody><tr><td>ingest-api</td><td class="num">18,204</td></tr></tbody>
 </table>
 
-<dl class="wonk-kv">
+<dl class="wonk-kv">                             <!-- under 640px each term stacks over its value -->
   <dt>version</dt><dd>v2.4.1</dd>
 </dl>
 
@@ -284,6 +293,8 @@ el.className = d.className;                                // "delta--bad"
 - `button.wonk-stat`, or `.wonk-stat--drill` on another element: the tile has
   no button chrome, keeps left-aligned text, and fills its cell. its
   `.wonk-num` gets a dotted underline and turns `--ak-a1-text` on hover.
+  `class="wonk-card wonk-stat"` on the button makes the tile the card itself:
+  it keeps the card's padding, border, and fill (and `--accent`/`--flat`).
 - `.wonk-value-link` on a `button` or `a`: mono, tabular numbers, original
   case, `--ak-a1-text`, dotted underline. use it for a clickable number or
   record id. never put an id in `.wonk-btn--quiet`: buttons are uppercase.
@@ -299,12 +310,18 @@ locale. dates are always `YYYY-MM-DD`.
 | call | example → result |
 |---|---|
 | `num(n, {digits=0})` | `1234.5` → `"1,235"` |
-| `compact(n, {digits=1})` | `1234` → `"1.2K"`, `2500000` → `"2.5M"`, `950` → `"950"` |
-| `money(n, {currency="USD", compact=false, digits})` | `1234.5` → `"$1,235"`; `{compact:true}` `1234567` → `"$1.2M"` (digits: 0, or 1 when compact) |
+| `compact(n, {digits})` | `1234` → `"1.2K"`, `971100` → `"971K"`, `2500000` → `"2.5M"`, `950` → `"950"` |
+| `money(n, {currency="USD", compact=false, digits})` | `1234.5` → `"$1,235"`; `{compact:true}` `971100` → `"$971K"`, `1234567` → `"$1.2M"`, `12345678` → `"$12M"` |
 | `pct(ratio, {digits=0})` | `0.123` → `"12%"`; `{digits:1}` → `"12.3%"` |
 | `duration(ms)` | `450` → `"450 ms"`, `1200` → `"1.2 s"`, `200000` → `"3m 20s"`, `5400000` → `"1h 30m"` |
 | `date(value, {tz="UTC", time=false})` | `"2026-09-24T15:04:00Z"` → `"2026-09-24"`; `{time:true}` → `"2026-09-24 15:04 UTC"` |
 | `delta(change, {higherIsBetter=true, format="pct"})` | `0.12` → `{text:"▲ 12%", direction:"up", sentiment:"good", className:"delta--good"}`; `{higherIsBetter:false}` → `sentiment:"bad"`, `className:"delta--bad"`; `0` → `"— 0%"`, `"flat"`, `"neutral"` |
+
+compact output without `digits` rounds the standard Intl way: at most two
+significant digits, and never fewer digits than the whole number (`$971K`,
+not `$970K`; `$1.5K`, `$46K`). `digits` sets the most decimals instead
+(`{compact:true, digits:1}` `971100` → `"$971.1K"`). non-compact `money`
+defaults to 0 decimals.
 
 `delta`'s `format` is `"pct"`, `"num"`, `"money"`, or a function that gets the
 absolute change. `digits` and `currency` pass through. a change that formats as
@@ -374,15 +391,30 @@ describes the focused control to screen readers. no class, no wiring.
 <input class="wonk-input" id="q">
 ```
 
-- hover shows after 50ms, focus and tap show at once. the pointer can move
-  onto the box. Escape closes it. a scroll closes it (a focus hint follows
+- hover shows after 50ms. keyboard focus (`:focus-visible`) and tap show at
+  once. a mouse click that focuses a checkbox or button shows no box of its
+  own: the hover box covers it, and it hides when the pointer leaves. a text
+  field matches `:focus-visible` on a click, so its box shows and stays while
+  you type. the pointer can move onto the box. a scroll closes it (a focus hint follows
   its control).
-- focus appends `wonk-hint-sr` to the control's `aria-describedby` and keeps
-  the page's own tokens. blur removes only that token.
+- the box sits below its target. when it would cover another control there
+  (the next checkbox row, a button), it goes above, then right, then left:
+  the first side that fits and covers nothing clickable. when every side
+  covers one, it stays below.
+- Escape closes the box. when the box shows the focused element's hint, that
+  Escape stops there: an open dialog or menu stays open, and a second Escape
+  reaches it. a hover or tap hint on anything else closes, and the same
+  Escape goes on to the app.
+- every focus (mouse too) appends `wonk-hint-sr` to the control's
+  `aria-describedby` and keeps the page's own tokens. blur removes only that
+  token.
 - `wonk.init(scope)`, and nodes injected later, give `.wonk-term` and
   non-focusable `[data-tip]` elements `tabindex="0"`, except inside an
-  interactive element or a `tbody` (per-row repeats rely on their column
-  header's hint). opt out with `data-tip-focus="off"`.
+  interactive element, inside a `tbody` (per-row repeats rely on their column
+  header's hint), inside `aria-hidden="true"` content (one arrives once
+  `aria-hidden` comes off), and a `.wonk-term` with no hint of its own inside
+  a control's `<label>` (the control's focus shows the label's hint). opt out
+  with `data-tip-focus="off"`.
 - an unknown `data-term` shows nothing and warns once in the console.
 - the box lives in `<body>` (or the open modal), so a scrolling table never
   clips it.
@@ -412,6 +444,31 @@ same box and rules. the screen-reader text is the content's `textContent`.
 a second call with the same `root` and selector returns the same handle.
 `wonk.tip` adds no `tabindex`: give targets one (or a roving tabindex) when
 keyboard users need them.
+
+where a hint may go:
+
+- **one hint per thing, defined once.** a hint that repeats on every item
+  (ten result cards with four hinted badges each) is forty tab stops. outside
+  a `tbody`, give repeats `data-tip-focus="off"` and define the term once: in
+  a column header, a fold, or one `.wonk-term` above the list.
+- **a `data-tip` covers its whole subtree.** a hint on a `fieldset` or a
+  `section` shows for every child that has none of its own. a child with its
+  own tooltip (an app's React tooltip) then opens two boxes at once. put the
+  hint on the element it explains.
+- **dense control rows** (checkbox lists with a few px between rows): put one
+  `.wonk-hint-btn` beside the group, not a hint on every label.
+- **disabled controls never take focus**, so their hint never reaches
+  `aria-describedby`. say why a control is disabled as visible text, or point
+  its `aria-describedby` at a `.wonk-sr` node with the reason.
+- **a native `<option>` cannot hold a hint.** put the detail in the option's
+  text ("Last 6 months · 2026-05-01 to 2026-10-31"), or show the selected
+  option's detail as visible text beside the field, or update the field's
+  `.wonk-hint-btn` `data-tip` on `change`. `title=` on an `<option>` shows
+  only on some desktop browsers, never on touch or to the keyboard: use it
+  only as an extra, never as the only place the detail lives.
+- **`data-tip` is display text.** wonk.js shows every `data-tip` and
+  `data-hint` value. never use either as a lookup key for app code, and
+  remove an app's own `data-hint` tooltip handler, or both boxes open.
 
 Plot chart tooltips are auto-styled by wonk.css — never restyle per chart.
 
@@ -462,6 +519,15 @@ headline first, detail behind a fold. which one to use, and the copy rules:
   that matches nothing warns and does nothing.
 - `wonk.foldAll(root, open)` sets every `<details>` (all depths) and every
   row toggle in `root`. it skips `.wonk-menu` popups.
+  `wonk.foldAll(root, open, { nested: false })` sets only the outermost ones,
+  those not inside another `<details>` or row detail within `root`: "Unfold
+  all areas" opens the area rows and leaves the deal cards inside them closed.
+- a row toggle that changes (a click, `foldAll`, a restored key) fires a
+  bubbling `wonk:fold` at once, and a keyed `<details>` fires one after its
+  native `toggle`. `detail: { el, key, open }` (`key` is `null` on an unkeyed
+  row toggle). use it to keep open state in the URL. an unkeyed `<details>`
+  has only the native `toggle` event (it does not bubble: listen in the
+  capture phase).
 - `data-fold-key` on a `<details>` or a row toggle keeps its open state
   across re-renders, in memory only (`wonk.foldState`, a `Map`). a keyed
   element inserted later, or passed through `wonk.init(scope)`, gets its
@@ -514,7 +580,7 @@ resume when it turns off.
 | `wonk.glossary(map?)` | merge term definitions for `data-term`; returns the current map |
 | `wonk.tip(root, selector, render)` | rich hint for matches inside `root`; `render(el)` returns a Node or a string (shown as text); returns `{destroy}` |
 | `wonk.hint.show(el)` / `wonk.hint.hide()` | show `el`'s hint now (returns `false` if it has none) / hide the box |
-| `wonk.foldAll(root, open)` | open (`true`) or close (`false`) every `<details>` and `.wonk-row-toggle` in `root`, `.wonk-menu` excluded; returns how many changed |
+| `wonk.foldAll(root, open, {nested}?)` | open (`true`) or close (`false`) every `<details>` and `.wonk-row-toggle` in `root`, `.wonk-menu` excluded; `nested: false` only the outermost; returns how many changed; changes fire `wonk:fold` |
 | `wonk.foldState` | the `Map` of remembered `data-fold-key` -> open states; `.clear()` forgets them |
 | `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline; drops missing values, `[]` empties `el`, one value draws a dot |
 | `wonk.fmt.num` / `.compact` / `.money` / `.pct` / `.duration` / `.date` / `.delta` | format numbers, dates, and deltas as strings; unknown input returns `—`; [formatting](#formatting-wonkfmt) |
@@ -524,7 +590,7 @@ resume when it turns off.
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |
 | `wonk.glyph(el)` | glyph morph (`[data-wonk-glyph]`) |
 | `wonk.scatter(el)` | hover type scatter (`[data-wonk-scatter]`) |
-| `wonk.tabs(root)` | wire one `.wonk-tabs` (ARIA + keyboard) |
+| `wonk.tabs(root)` | wire one `.wonk-tabs` (ARIA + keyboard); a new selection fires `wonk:tabchange` |
 | `wonk.menu(details)` | wire one `.wonk-menu` (close on choose, Escape, edge flip) |
 | `wonk.vu(el)`, `wonk.knob(el)`, `wonk.scope(el)` | wire an exotic widget manually |
 | `wonk.reveal(scope?)` | arm scroll reveals not yet armed |

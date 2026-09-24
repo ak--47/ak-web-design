@@ -121,15 +121,24 @@ APIs and `textContent` only, so data never reaches `innerHTML`.
 | `sort` | `{ key, dir }`. a header click toggles it. the first click sorts numbers and dates descending, text ascending. ties keep `rowKey` order. unknown values sort last in both directions |
 | `caption`, `captionHidden`, `label` | the caption (visually hidden with `captionHidden: true`). `label` names the scroll region; the default is the caption |
 | `select` | a checkbox column. select-all means the visible rows. sorting keeps selections by key. rows that leave with `setRows` leave the selection. the host fires `wonk-data:select` with `detail.selected` |
-| `detail(row)` | a Node or string. the first cell becomes a `.wonk-row-toggle` for a hidden detail row. return `null` for a row with no detail. `foldKey(row)` sets `data-fold-key`, so an open row stays open across `setRows` |
+| `detail(row)` | a Node or string. the first cell becomes a `.wonk-row-toggle` for a hidden detail row. return `null` for a row with no detail. return a function (`(row) => () => buildNotes(row)`) to build the detail only when its row first opens (a click, `foldAll`, a remembered fold key): a re-render on every search keystroke then builds no hidden details. `foldKey(row)` sets `data-fold-key`, so an open row stays open across `setRows` |
 | `limit` | show the first N sorted rows and a `.wonk-more` line with a Show all button |
 | `empty` | the zero-row copy, default "No records match.", in one full-width cell. `null` or `false` renders no empty row: use it when the app shows its own empty state with a recovery action, so the reader sees one message |
 | `onRowAction(row)` | the first column's value becomes a `.wonk-value-link` button that calls it. never make the whole row the only click target |
+| `actionLabel(row)` | the row action button's accessible name, when the cell text is not enough: `` (row) => `${row.name}: filter the deals` `` |
+| `rowClick` | `true`: a click on a plain part of a row runs `onRowAction`, else flips the row's detail toggle. links, buttons, inputs, labels, the select cell, detail rows, and a drag that selects text keep their own behavior. the action button and the toggle stay the keyboard path |
 
 the controller has `setRows(rows)`, `setSort(key, dir)`, `rows` (sorted),
 `selected` (keys, in row order), `sort`, `clearSelection()`, and `destroy()`. a
-header click fires `wonk-data:sort` with `detail: { key, dir }`. a second
-`wonkData.table()` on the same host destroys the first.
+header click fires `wonk-data:sort` with `detail: { key, dir }`. every body
+render (`setRows`, a sort, Show all) fires `wonk-data:render` with
+`detail: { rows, sort }`, `rows` being the rows now in the body, in order: mark
+the selected row or insert an app row there, since a render replaces the body.
+the first one fires inside `wonkData.table()`, before it returns: listen on
+the host before the call, and use `host.wonkDataTable`, not the returned value.
+a second `wonkData.table()` on the same host destroys the first. all events
+bubble; a nested table's events reach the outer host too, so check
+`e.target === host`.
 
 the module is for arrays already in memory: hundreds to low thousands of rows.
 server pagination and virtual scrolling stay the app's job (see [tables need a
@@ -141,7 +150,10 @@ every number that counts records opens those records
 ([hierarchy.md](hierarchy.md#numbers-lead-to-records)). `wonkData.drill(opts)`
 opens a native modal `dialog.wonk-drill` with the title, a count line
 ("12 rows · this quarter"), and a `wonkData.table` with the same `columns`,
-`rows`, `sort`, `limit`, `detail`, `foldKey`, and `onRowAction` options.
+`rows`, `sort`, `limit`, `detail`, `foldKey`, `onRowAction`, `actionLabel`,
+and `rowClick` options. `note` (text or a Node) shows the work under the
+count line, "12,345 minutes / 60 = 205.8 h", and becomes the dialog's
+accessible description.
 
 ```html
 <div class="wonk-card">
@@ -188,8 +200,11 @@ wonkData.drill({ title: "Acme deals", columns: dealColumns, rows: acmeDeals });
   listed once per owner), set `total: false` so the total does not double-count.
 
 `wonkData.toCSV(columns, rows)` returns the CSV that Download CSV saves: a header
-of labels, raw values (not formatted, `value(row)` when given), ISO dates, every
-field quoted. a string that starts with `=`, `+`, `-`, `@`, tab, or CR gets a
+of labels, raw values (not formatted, `value(row)` when given), every field
+quoted. a `date` column writes what the table shows: `YYYY-MM-DD`, or
+`YYYY-MM-DD HH:MM UTC` with `format: { time: true }` (an ISO timestamp breaks
+spreadsheet date filters and can shift the day). a string that starts with
+`=`, `+`, `-`, or `@` (also after leading whitespace), tab, CR, or LF gets a
 leading `'`, so a spreadsheet never runs it as a formula. numbers stay as they are.
 
 ## measurement, progress, and missing data differ

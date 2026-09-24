@@ -328,6 +328,139 @@
     }
   });
 
+  check("table detail as a function: built only when its row first opens (toggle click, foldAll, an open fold key), never on render or sort", () => {
+    const host = withHost();
+    const prefix = uid("chk-lazy");
+    const rows = Array.from({ length: 100 }, (_, i) => ({ id: `r${i}`, name: `row ${i}`, n: i }));
+    let built = 0;
+    const detail = (row) => () => { built++; const p = document.createElement("p"); p.textContent = `detail ${row.name}`; return p; };
+    let t;
+    try {
+      wonk.foldState.set(`${prefix}-r5`, true);
+      t = wonkData.table(host, {
+        columns: [{ key: "name", label: "name" }, { key: "n", label: "n", type: "num" }],
+        rows,
+        detail,
+        foldKey: (row) => `${prefix}-${row.id}`,
+      });
+      assert(host.querySelectorAll("tbody .wonk-row-toggle").length === 100, "every row with a detail function should get a toggle");
+      assert(built === 1, `render should build only the row whose fold key is open, built ${built}`);
+      const toggleOf = (key) => host.querySelector(`tbody tr[data-key="${key}"] button.wonk-row-toggle`);
+      const detailOf = (btn) => document.getElementById(btn.getAttribute("aria-controls"));
+      assert(detailOf(toggleOf("r5")).textContent === "detail row 5", "the open keyed row should hold its detail");
+      toggleOf("r0").click();
+      assert(built === 2 && detailOf(toggleOf("r0")).textContent === "detail row 0", `one click should build that row's detail once, built ${built}`);
+      toggleOf("r0").click();
+      toggleOf("r0").click();
+      assert(built === 2, `closing and opening again should not build again, built ${built}`);
+      t.setSort("n", "asc");
+      assert(built === 2, `a sort should build nothing, built ${built}`);
+      wonk.foldAll(host.querySelector("tbody"), true);
+      assert(built === 100, `foldAll should build every row not built yet, built ${built}`);
+    } finally {
+      if (t) t.destroy();
+      host.remove();
+      rows.forEach((row) => wonk.foldState.delete(`${prefix}-${row.id}`));
+    }
+  });
+
+  check("table: wonk-data:render fires after every body render (setRows, a header sort, Show all) with the rows in the body and the sort", () => {
+    const host = withHost();
+    const seen = [];
+    const controllers = [];
+    const onRender = (e) => { seen.push(e.detail); controllers.push(host.wonkDataTable); };
+    host.addEventListener("wonk-data:render", onRender);
+    let t;
+    try {
+      t = wonkData.table(host, {
+        columns: [{ key: "name", label: "name" }, { key: "n", label: "n", type: "num" }],
+        rows: [{ id: "a", name: "a", n: 1 }, { id: "b", name: "b", n: 3 }, { id: "c", name: "c", n: 2 }],
+        limit: 2,
+      });
+      assert(seen.length === 1, `the first render should fire once, fired ${seen.length}`);
+      assert(controllers[0] === t, "host.wonkDataTable should already be the controller during the first render");
+      same(seen[0].rows.map((r) => r.id), ["a", "b"], "the first render's rows (limit 2)");
+      sortButton(host, "n").click();
+      assert(seen.length === 2, `a header sort should fire once, total ${seen.length}`);
+      same(seen[1].rows.map((r) => r.id), ["b", "c"], "rows after sorting n desc");
+      same(seen[1].sort, { key: "n", dir: "desc" }, "the sort after a header click");
+      [...host.querySelectorAll("button")].find((b) => b.textContent === "Show all").click();
+      assert(seen.length === 3 && seen[2].rows.length === 3, `Show all should fire once with 3 rows, total ${seen.length}`);
+      t.setRows([{ id: "d", name: "d", n: 9 }]);
+      assert(seen.length === 4, `setRows should fire once, total ${seen.length}`);
+      same(seen[3].rows.map((r) => r.id), ["d"], "rows after setRows");
+    } finally {
+      host.removeEventListener("wonk-data:render", onRender);
+      if (t) t.destroy();
+      host.remove();
+    }
+  });
+
+  check("table rowClick: a plain cell click runs onRowAction once; a link, the action button's own click, and the select cell do not add one; without onRowAction it flips the row toggle", () => {
+    const host = withHost();
+    const acted = [];
+    let t;
+    try {
+      t = wonkData.table(host, {
+        columns: [{ key: "name", label: "name" }, { key: "site", label: "site", type: "link" }, { key: "n", label: "n", type: "num" }],
+        rows: [{ id: "a", name: "Acme", site: "https://example.com/", n: 1 }],
+        select: true,
+        rowClick: true,
+        onRowAction: (row) => acted.push(row.id),
+      });
+      assert(host.querySelector("table.wonk-table--rowclick"), "rowClick should mark the table .wonk-table--rowclick");
+      const tr = bodyRows(host)[0];
+      tr.cells[3].click();
+      same(acted, ["a"], "a click on a plain cell");
+      const link = tr.querySelector("a[href]");
+      link.addEventListener("click", (e) => e.preventDefault(), { once: true }); // stay on the page
+      link.click();
+      same(acted, ["a"], "a click on a link inside the row adds no action");
+      tr.querySelector(".wonk-value-link").click();
+      same(acted, ["a", "a"], "the action button runs the action once itself");
+      tr.cells[0].click();
+      same(acted, ["a", "a"], "a click in the select cell adds no action");
+      t.destroy();
+
+      t = wonkData.table(host, {
+        columns: [{ key: "name", label: "name" }, { key: "n", label: "n", type: "num" }],
+        rows: [{ id: "a", name: "Acme", n: 1 }],
+        rowClick: true,
+        detail: (row) => `detail ${row.name}`,
+      });
+      const toggle = host.querySelector("tbody .wonk-row-toggle");
+      bodyRows(host)[0].cells[1].click();
+      assert(toggle.getAttribute("aria-expanded") === "true", "without onRowAction a plain cell click should open the row");
+      bodyRows(host)[0].cells[1].click();
+      assert(toggle.getAttribute("aria-expanded") === "false", "a second plain cell click should close it");
+      toggle.click();
+      assert(toggle.getAttribute("aria-expanded") === "true", "the toggle itself still flips once per click");
+    } finally {
+      if (t) t.destroy();
+      host.remove();
+    }
+  });
+
+  check("table actionLabel(row) names the row action button; the detail toggle keeps its Details for label", () => {
+    const host = withHost();
+    let t;
+    try {
+      t = wonkData.table(host, {
+        columns: [{ key: "name", label: "name" }],
+        rows: [{ id: "a", name: "Amplitude" }],
+        onRowAction: () => {},
+        actionLabel: (row) => `${row.name}: filter the deals`,
+        detail: (row) => `about ${row.name}`,
+      });
+      const action = host.querySelector("tbody .wonk-value-link");
+      assert(action.getAttribute("aria-label") === "Amplitude: filter the deals", `the action's aria-label should come from actionLabel, got ${JSON.stringify(action.getAttribute("aria-label"))}`);
+      assert(host.querySelector("tbody .wonk-row-toggle").getAttribute("aria-label") === "Details for Amplitude", "the toggle label should stay Details for <cell text>");
+    } finally {
+      if (t) t.destroy();
+      host.remove();
+    }
+  });
+
   check("table link: a javascript: or data: href renders plain text; an https href renders a[href]", () => {
     const host = withHost();
     let t;
@@ -465,6 +598,23 @@
     }
   });
 
+  check("drill note: renders under the count as text (never HTML) and is the dialog's accessible description", async () => {
+    try {
+      const d = wonkData.drill({ ...drillOpts("Hours"), note: "<b>12,345</b> min / 60 = 205.8 h" });
+      const note = d.dialog.querySelector(".wonk-drill-head .wonk-drill-note");
+      assert(note, "the drill should render a .wonk-drill-note in its header");
+      assert(note.textContent === "<b>12,345</b> min / 60 = 205.8 h" && !note.querySelector("b"), "the note should be literal text");
+      assert(note.previousElementSibling && note.previousElementSibling.matches(".wonk-drill-count"), "the note should follow the count line");
+      assert(d.dialog.getAttribute("aria-describedby") === note.id && note.id, "the dialog should be described by the note");
+      d.close();
+      const plain = wonkData.drill(drillOpts("No note"));
+      assert(!plain.dialog.querySelector(".wonk-drill-note") && !plain.dialog.hasAttribute("aria-describedby"), "a drill with no note has no note and no description");
+      plain.close();
+    } finally {
+      closeDrills();
+    }
+  });
+
   check("drill: a missing or non-array rows throws a TypeError naming rows and opens no dialog", () => {
     const { columns } = drillOpts("x");
     try {
@@ -523,7 +673,7 @@
   // ============================================================
   // toCSV
   // ============================================================
-  check("toCSV: label header, every field quoted, inner quotes doubled, raw values, ISO dates, formula guard on strings", () => {
+  check("toCSV: label header, every field quoted, inner quotes doubled, raw values, a date column as the table shows it, formula guard on strings", () => {
     const csv = wonkData.toCSV(
       [
         { key: "name", label: "Name" },
@@ -541,9 +691,38 @@
     const lines = csv.split("\r\n");
     assert(lines.length === 4, `expected 4 lines, got ${lines.length}: ${JSON.stringify(csv)}`);
     same(lines[0], '"Name","Say ""hi""","When","Amount","X"', "header");
-    same(lines[1], '"\'=SUM(1)","a ""b"" c","2026-09-24T15:04:00.000Z","-5",""', "row 1 (=SUM guarded; a number stays raw)");
-    same(lines[2], '"\'+1","\'-2","2026-01-02T00:00:00.000Z","1234.5","\'@home"', "row 2 (+, -, @ guarded)");
+    same(lines[1], '"\'=SUM(1)","a ""b"" c","2026-09-24","-5",""', "row 1 (=SUM guarded; a number stays raw)");
+    same(lines[2], '"\'+1","\'-2","2026-01-02","1234.5","\'@home"', "row 2 (+, -, @ guarded)");
     same(lines[3], '"\'\tx","\'\rline","","","plain"', "row 3 (tab and CR guarded; unknowns empty)");
+  });
+
+  check("toCSV: a date column writes YYYY-MM-DD (a plain date never shifts a day), or YYYY-MM-DD HH:MM UTC with format.time; a Date in another column stays ISO", () => {
+    const csv = wonkData.toCSV(
+      [
+        { key: "d", label: "d", type: "date" },
+        { key: "t", label: "t", type: "date", format: { time: true } },
+        { key: "raw", label: "raw" },
+      ],
+      [{ d: "2026-10-31", t: "2026-09-24T15:04:00Z", raw: new Date("2026-01-02T03:04:05Z") }]
+    );
+    same(csv.split("\r\n")[1], '"2026-10-31","2026-09-24 15:04 UTC","2026-01-02T03:04:05.000Z"', "date row");
+    same(wonkData.toCSV([{ key: "d", type: "date" }], [{ d: "2026-10-31" }]), '"d"\r\n"2026-10-31"', "the plan's example");
+  });
+
+  check("toCSV: the formula guard also catches a formula after leading whitespace or a line feed; a negative number stays raw", () => {
+    const csv = wonkData.toCSV([{ key: "s", label: "s" }, { key: "n", label: "n", type: "num" }], [
+      { s: " =1+1", n: -5 },
+      { s: "\n=1+1", n: 0 },
+      { s: "\t=1", n: 1 },
+      { s: "  @SUM(A1)", n: 2 },
+      { s: "a = b", n: 3 },
+    ]);
+    const lines = csv.split("\r\n");
+    same(lines[1], '"\' =1+1","-5"', "leading space before =");
+    same(lines[2], '"\'\n=1+1","0"', "leading line feed");
+    same(lines[3], '"\'\t=1","1"', "leading tab");
+    same(lines[4], '"\'  @SUM(A1)","2"', "spaces before @");
+    same(lines[5], '"a = b","3"', "an = after text is not a formula");
   });
 
   // ============================================================
