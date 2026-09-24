@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "serve": "node scripts/serve.mjs",
     "test": "node scripts/check.mjs"
   },
   "devDependencies": {

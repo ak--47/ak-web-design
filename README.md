@@ -18,7 +18,9 @@ visit the live demo above, or serve this directory locally and open
 `/demo/index.html`.
 
 ```sh
-python3 -m http.server 4748 --bind 127.0.0.1
+npm run serve               # http://127.0.0.1:4748, prints every gallery URL
+PORT=5000 npm run serve     # another port
+npm test                    # every check suite, headless
 ```
 
 | gallery | what works |
@@ -252,7 +254,8 @@ choosing and tuning a pair, the semantic tokens, and the chart series: see
 - motion is springy but purposeful: `--ak-ease`, durations 150/250/400ms
   (`--ak-t-fast`/`-med`/`-slow`).
 - the irregular jitter (100-180ms bursts, then rest) is the signature. it
-  lives ONLY on live/loading states (`data-wonk-live`, `.wonk-spectrum`).
+  lives ONLY on live/loading states (`data-wonk-live`, `.wonk-spectrum`,
+  the scrolling `.wonk-divider--live`).
   everything else moves smoothly. honor `prefers-reduced-motion`, including
   changes during the session.
 - eight explicit one-shot effects (panel enter/exit, value changed, row
@@ -271,7 +274,7 @@ choosing and tuning a pair, the semantic tokens, and the chart series: see
 | data display | `.wonk-card`, `.wonk-stat`, `button.wonk-stat`, `.wonk-value-link`, `.delta--good`/`--bad`/`--neutral`, `.wonk-badge`, `.wonk-table`, `.wonk-kv`, `.wonk-pre`, `.wonk-log`, `wonk.fmt` | `#cards`, `#table`, `#drill` | components.md |
 | feedback | `.wonk-alert`, `.wonk-acc`, `.wonk-modal`, `data-tip`, `.wonk-term`, `.wonk-hint-btn`, `wonk.toast()`, `wonk.tip()` | `#overlays` | components.md |
 | disclosure | `.wonk-fold`, `.wonk-card--fold`, `.wonk-row-toggle`, `.wonk-more`, `.wonk-fold-all`, `data-fold-key`, `wonk.foldAll()` | `#disclosure` | components.md, hierarchy.md |
-| live/loading | `.wonk-dot--live`, `.wonk-spectrum`, `.wonk-skeleton`, `.wonk-empty` | `#live` | components.md |
+| live/loading | `.wonk-dot--live`, `.wonk-spectrum`, `.wonk-skeleton`, `.wonk-divider--live`, `.wonk-empty` | `#live` | components.md |
 | exotic | VU meter, precision knob, oscilloscope | `#exotic` | components.md |
 | instruments | knob, fader, bounded window, segmented selector, stepper | `demo/instruments.html` | instruments.md |
 | data tools | channel bank, toolbar, filters, records table and drill-down (`wonkData`), inspector, jobs | `demo/workbench.html`, `#drill` | data-tools.md |
