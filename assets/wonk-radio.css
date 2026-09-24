@@ -52,15 +52,22 @@
   .wonk-radio-scope { width: 120px; height: 40px; }
 }
 
-/* ---- now playing ---- */
+/* ---- now playing: station line, then album art beside title + meta.
+   A hidden art slot takes no space (its margin is the gap) ---- */
 .wonk-radio-now {
   grid-area: now;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "station station"
+    "art title"
+    "art meta";
+  align-items: center;
+  gap: 2px 0;
 }
 .wonk-radio-station {
+  grid-area: station;
   display: flex;
   align-items: center;
   gap: var(--ak-s2);
@@ -70,7 +77,27 @@
 .wonk-radio-station .wonk-dot { flex: none; }
 .wonk-radio-station-name { overflow: hidden; text-overflow: ellipsis; }
 .wonk-radio-sep, .wonk-radio-state { color: var(--ak-ink-3); }
+.wonk-radio-art {
+  grid-area: art;
+  display: block;
+  width: 44px;
+  height: 44px;
+  margin-right: var(--ak-s3);
+  overflow: hidden;
+  border: var(--ak-hairline-w) solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
+  background: var(--ak-surface-2);
+}
+.wonk-radio-art[hidden] { display: none; }
+.wonk-radio-art--loading { visibility: hidden; }
+.wonk-radio-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .wonk-radio-title {
+  grid-area: title;
   font-family: var(--ak-font-sans);
   font-size: var(--ak-text-md);
   font-weight: 500;
@@ -82,6 +109,7 @@
   text-overflow: ellipsis;
 }
 .wonk-radio-meta {
+  grid-area: meta;
   font-size: var(--ak-text-xs);
   line-height: 1.5;
   min-height: 1.5em;
@@ -208,6 +236,11 @@ html.wonk-has-radio-dock .wonk-toasts {
   }
   .wonk-radio--dock .wonk-radio-scope,
   .wonk-radio--dock .wonk-radio-station { display: none; }
+  .wonk-radio--dock .wonk-radio-art {
+    width: 40px;
+    height: 40px;
+    margin-right: var(--ak-s2);
+  }
   .wonk-radio--dock .wonk-radio-now,
   .wonk-radio--dock .wonk-radio-progress { gap: 0; }
   .wonk-radio--dock .wonk-radio-seek .wonk-range { margin: 0; }
@@ -216,6 +249,28 @@ html.wonk-has-radio-dock .wonk-toasts {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+}
+
+/* ---- enlarged art: wonk.tip renders it into wonk.js's hint box,
+   which lives in <body>, so these rules are not scoped to .wonk-radio ---- */
+.wonk-radio-art-tip {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+}
+.wonk-radio-art-tip img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--ak-radius);
+  margin: var(--ak-s1) 0;
+}
+.wonk-radio-art-caption {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---- reduced motion: no transitions, the live dot holds still ---- */

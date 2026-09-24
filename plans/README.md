@@ -24,8 +24,9 @@ bug, and copy), a WONK audit, and the dm4 radio.
 | 006 | ACT 6 | `templates/app.html`, responsive shell + drawer, theme helper, layout utilities, `.wonk-sr`, smoke suite | M | 003-005, 007, 008 | DONE (see git log) |
 | 009 | ACT 6 / DECIDE 3 | Version stamp, CHANGELOG, local fonts, one install recipe, SKILL.md rewrite + cheatsheet, loose ends | M | 006 | DONE (see git log) |
 | 010 | review | Fixes from the full-branch code review (F1-F11) | S-M | 001-009 | DONE (see git log) |
+| 011 | AK feedback | Radio album art + hover enlarge (with select caret, a.wonk-btn border, live divider fixes done directly) | S-M | 010 | DONE (see git log) |
 
-All plans are DONE. `npm test`: 184 passed, 0 failed.
+All plans are DONE. `npm test`: 197 passed, 0 failed.
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (reason)
 

@@ -34,7 +34,7 @@ injected DOM. "auto" means no call is needed.
 | detail behind a fold | `.wonk-fold`, `.wonk-card--fold` | — | [hierarchy.md](hierarchy.md), [components.md § disclosure](components.md#disclosure) |
 | expandable row, long list | `.wonk-row-toggle`, `.wonk-more` | — | [components.md § disclosure](components.md#disclosure) |
 | open / close all folds | `.wonk-fold-all`, `data-fold-key` | `wonk.foldAll(root, open)` | [components.md § disclosure](components.md#disclosure) |
-| live or loading | `.wonk-dot--live`, `data-wonk-live`, `.wonk-spectrum`, `.wonk-skeleton` | auto (`wonk.live(el)`) | [components.md § live](components.md#live--loading) |
+| live or loading | `.wonk-dot--live`, `data-wonk-live`, `.wonk-spectrum`, `.wonk-skeleton`, `.wonk-divider--live` | auto (`wonk.live(el)`) | [components.md § live](components.md#live--loading) |
 | empty state | `.wonk-empty` | — | [components.md § live](components.md#live--loading) |
 | empty, stale, failed result | `.wonk-state` + `data-state` | — | [data-tools.md § state copy](data-tools.md#state-copy-must-identify-the-cause) |
 | chart | a container element | `wonkCharts.plot(el, build, opts)` | [charts.md § wonkCharts.plot](charts.md#theming-plot-from-tokens-wonkchartsplot) |

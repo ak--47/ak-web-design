@@ -69,7 +69,7 @@
   <section class="demo-section" id="player">
     <div class="wonk-label">01 &middot; inline player</div>
     <h3>Live on gs://aktunes/music/</h3>
-    <p>Shuffle plays every track once before any track repeats. Previous restarts the track after 3 seconds, else goes back one track.</p>
+    <p>Shuffle plays every track once before any track repeats. Previous restarts the track after 3 seconds, else goes back one track. The album art comes from each file's ID3 tag; hover or focus it to see it bigger.</p>
     <section class="wonk-radio" data-wonk-radio data-bucket="aktunes" data-prefix="music/" aria-label="Radio"></section>
     <p class="fixture-note">
       live data: this player lists the real bucket when the page loads. if the
@@ -93,8 +93,8 @@
   <section class="demo-section" id="markup">
     <div class="wonk-label">03 &middot; markup</div>
     <h3>One line</h3>
-<pre class="wonk-pre"><code>&lt;link rel="stylesheet" href="assets/wonk-radio.css"&gt;
-&lt;script defer src="assets/wonk-radio.js"&gt;&lt;/script&gt;
+<pre class="wonk-pre"><code>&lt;link rel="stylesheet" href="/wonk/wonk-radio.css"&gt;
+&lt;script defer src="/wonk/wonk-radio.js"&gt;&lt;/script&gt;
 
 &lt;section class="wonk-radio" data-wonk-radio data-bucket="aktunes" data-prefix="music/" aria-label="Radio"&gt;&lt;/section&gt;</code></pre>
     <p class="fixture-note">
@@ -121,7 +121,7 @@
           <tr><td><code>play() pause() toggle() next() prev()</code></td><td>transport, on the controller</td></tr>
           <tr><td><code>seek(s) setVolume(v) setMuted(b)</code></td><td>position in seconds, volume 0 to 1, mute</td></tr>
           <tr><td><code>wonk-radio:track</code></td><td>event on the host when the track changes</td></tr>
-          <tr><td><code>wonk-radio:state</code></td><td>event on the host when playing, loading, error, or visualizer changes</td></tr>
+          <tr><td><code>wonk-radio:state</code></td><td>event on the host when playing, loading, error, visualizer, or art changes</td></tr>
         </tbody>
       </table>
     </div>

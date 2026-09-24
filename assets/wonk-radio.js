@@ -12,7 +12,7 @@
    API (window.wonkRadio, frozen):
      init(scope = document)     mount every [data-wonk-radio] in scope
      destroy(scope = document)  tear down every player in scope
-     mount(el, opts)            opts: {bucket, prefix, manifest, tracks, title}
+     mount(el, opts)            opts: {bucket, prefix, manifest, tracks, title, fetch}
                                 -> controller (same one if already mounted)
      get(el)                    -> controller or null
      parseName(name)            "001 - AK - slip.mp3" -> {number, artist, title}
@@ -20,6 +20,8 @@
      listBucket(bucket, prefix, {fetch})  -> Promise<[{name, size}]>
      shuffleBag(n, {last, random})        -> permutation of 0..n-1
      formatTime(seconds, withHours)       -> "m:ss" or "h:mm:ss"
+     parseId3Picture(bytes)     ID3v2 tag bytes -> {mime, data, type} or null
+     readArt(url, {fetch, signal, maxBytes}) -> Promise<{mime, blob} | null>
 
    controller: play() pause() toggle() next() prev() seek(s)
      setVolume(0..1) setMuted(bool) destroy()
@@ -123,6 +125,174 @@
     const m = Math.floor((t % 3600) / 60);
     const s = String(t % 60).padStart(2, "0");
     return h > 0 || withHours ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+  }
+
+  // ---- album art: the picture in the file's ID3v2 tag ------------
+
+  const isId3 = (b) => b.length >= 10 && b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33; // "ID3"
+  // 28-bit synchsafe integer: 7 bits per byte
+  const synchsafe = (b, o) =>
+    ((b[o] & 0x7f) << 21) | ((b[o + 1] & 0x7f) << 14) | ((b[o + 2] & 0x7f) << 7) | (b[o + 3] & 0x7f);
+  const uint32 = (b, o) => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+  const latin1 = (b, from, to) => String.fromCharCode(...b.subarray(from, to));
+  const MAX_MIME = 64;
+
+  // Unsynchronisation put a 0x00 after 0xFF bytes; take it out again.
+  function resync(b) {
+    const out = new Uint8Array(b.length);
+    let n = 0;
+    for (let i = 0; i < b.length; i++) {
+      out[n++] = b[i];
+      if (b[i] === 0xff && b[i + 1] === 0x00) i++;
+    }
+    return out.subarray(0, n);
+  }
+
+  // Index just past the null terminator of a string starting at `from`,
+  // or -1. UTF-16 (encodings 1 and 2) ends with two zero bytes on a
+  // 2-byte boundary; latin1 and UTF-8 (0 and 3) with one.
+  function skipString(b, from, enc) {
+    if (enc === 1 || enc === 2) {
+      for (let i = from; i + 1 < b.length; i += 2) if (b[i] === 0 && b[i + 1] === 0) return i + 2;
+      return -1;
+    }
+    const i = b.indexOf(0, from);
+    return i === -1 ? -1 : i + 1;
+  }
+
+  // "image/png", v2.2 "JPG", bare "jpg" -> an image MIME type. An empty
+  // type names the image by its magic bytes. null: a link ("-->") or an
+  // image the player cannot name.
+  function imageMime(raw, data) {
+    let m = raw.trim().toLowerCase();
+    if (m === "-->") return null;
+    if (m && !m.includes("/")) m = `image/${m}`;
+    if (m === "image/jpg") m = "image/jpeg";
+    if (m && m !== "image/") return m;
+    if (data[0] === 0xff && data[1] === 0xd8) return "image/jpeg";
+    if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) return "image/png";
+    return null;
+  }
+
+  // APIC body (v2.3/2.4): encoding, MIME + null, picture type,
+  // description + null, image bytes. PIC body (v2.2): encoding, a
+  // 3-char format, picture type, description + null, image bytes.
+  function pictureOf(d, v22) {
+    const enc = d[0];
+    if (d.length < 5 || enc > 3) return null;
+    let raw, at;
+    if (v22) {
+      raw = latin1(d, 1, 4);
+      at = 4;
+    } else {
+      const end = d.indexOf(0, 1);
+      if (end === -1 || end - 1 > MAX_MIME) return null;
+      raw = latin1(d, 1, end);
+      at = end + 1;
+    }
+    if (at >= d.length) return null;
+    const type = d[at];
+    const start = skipString(d, at + 1, enc);
+    if (start === -1 || start >= d.length) return null;
+    const data = d.slice(start);
+    const mime = imageMime(raw, data);
+    return mime ? { mime, data, type } : null;
+  }
+
+  // bytes: a Uint8Array holding an ID3v2 tag, its 10-byte header
+  // included. Returns the front cover (picture type 3), else the first
+  // picture, as {mime, data: Uint8Array, type}; null when there is no
+  // tag, no picture, or the tag is malformed. Reads only inside bytes.
+  function parseId3Picture(bytes) {
+    if (!(bytes instanceof Uint8Array)) {
+      throw new TypeError(`wonkRadio.parseId3Picture: bytes must be a Uint8Array, got ${bytes === null ? "null" : typeof bytes}.`);
+    }
+    if (!isId3(bytes)) return null;
+    const major = bytes[3];
+    const flags = bytes[5];
+    if (major < 2 || major > 4) return null;
+    if (major === 2 && flags & 0x40) return null; // v2.2 "compression": no scheme was ever defined
+    let body = bytes.subarray(10, Math.min(bytes.length, 10 + synchsafe(bytes, 6)));
+    if (major < 4 && flags & 0x80) body = resync(body); // v2.2/2.3 unsynchronise the whole tag
+    let pos = 0;
+    if (major > 2 && flags & 0x40) { // extended header: v2.4 size counts itself, v2.3 size does not
+      if (body.length < 4) return null;
+      pos = major === 4 ? synchsafe(body, 0) : 4 + uint32(body, 0);
+    }
+    const idLen = major === 2 ? 3 : 4;
+    const head = major === 2 ? 6 : 10;
+    const picId = major === 2 ? "PIC" : "APIC";
+    let first = null;
+    while (pos + head <= body.length) {
+      if (body[pos] === 0) break; // padding
+      const id = latin1(body, pos, pos + idLen);
+      if (!/^[A-Z0-9]+$/.test(id)) break; // not a frame id: the rest is corrupt
+      const size = major === 2 ? (body[pos + 3] << 16) | (body[pos + 4] << 8) | body[pos + 5]
+        : major === 4 ? synchsafe(body, pos + 4) : uint32(body, pos + 4);
+      const fmt = major === 2 ? 0 : body[pos + 9];
+      const start = pos + head;
+      if (start + size > body.length) break; // truncated
+      pos = start + size;
+      if (id !== picId) continue;
+      let d = body.subarray(start, pos);
+      if (major === 3) {
+        if (fmt & 0xc0) continue;          // compressed or encrypted
+        if (fmt & 0x20) d = d.subarray(1); // grouping identity byte
+      } else if (major === 4) {
+        if (fmt & 0x0c) continue;          // compressed or encrypted
+        if (flags & 0x80 || fmt & 0x02) d = resync(d);
+        if (fmt & 0x40) d = d.subarray(1); // grouping identity byte
+        if (fmt & 0x01) d = d.subarray(4); // data length indicator
+      }
+      const pic = pictureOf(d, major === 2);
+      if (!pic) continue;
+      if (pic.type === 3) return pic;
+      if (!first) first = pic;
+    }
+    return first;
+  }
+
+  // Bytes start..end (inclusive) of url. A 200 means the host ignored
+  // Range and sends the whole file from byte 0: read only up to `end`,
+  // then cancel the rest, which is audio.
+  async function readRange(doFetch, url, start, end, signal) {
+    const res = await doFetch(url, { headers: { Range: `bytes=${start}-${end}` }, signal });
+    if (!res.ok) throw new Error(`wonk-radio: reading album art from ${url} failed (HTTP ${res.status}).`);
+    const want = end - start + 1;
+    const out = new Uint8Array(want);
+    if (!res.body) return out.subarray(0, 0);
+    let skip = res.status === 206 ? 0 : start;
+    let have = 0;
+    const reader = res.body.getReader();
+    while (have < want) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const from = Math.min(skip, value.length);
+      skip -= from;
+      const chunk = value.subarray(from, from + want - have);
+      out.set(chunk, have);
+      have += chunk.length;
+    }
+    await reader.cancel();
+    return out.subarray(0, have);
+  }
+
+  // Reads the ID3v2 tag at the start of url with two Range requests
+  // (the 10-byte header, then the rest of the tag) and returns its
+  // picture as {mime, blob}. null: no ID3 tag, no picture, or a tag over
+  // maxBytes. Network and HTTP errors reject; the caller decides.
+  async function readArt(url, { fetch: fetchImpl, signal, maxBytes = 2_000_000 } = {}) {
+    const doFetch = fetchImpl || ((u, init) => window.fetch(u, init));
+    const head = await readRange(doFetch, url, 0, 9, signal);
+    if (!isId3(head)) return null;
+    const total = 10 + synchsafe(head, 6);
+    if (total <= 10 || total > maxBytes) return null;
+    const rest = await readRange(doFetch, url, 10, total - 1, signal);
+    const tagBytes = new Uint8Array(10 + rest.length);
+    tagBytes.set(head);
+    tagBytes.set(rest, 10);
+    const pic = parseId3Picture(tagBytes);
+    return pic ? { mime: pic.mime, blob: new Blob([pic.data], { type: pic.mime }) } : null;
   }
 
   function fileNameOf(url) {
@@ -234,9 +404,14 @@
     sep.textContent = "·";
     const stateWord = node("span", "wonk-radio-state");
     station.append(dot, name, sep, stateWord);
+    // album art: hidden until a track's tag yields a picture
+    const art = node("span", "wonk-radio-art", { role: "img", "aria-label": "Album art" });
+    art.hidden = true;
+    const artImg = node("img", "", { alt: "", decoding: "async" });
+    art.append(artImg);
     const title = node("div", "wonk-radio-title");
     const meta = node("div", "wonk-radio-meta wonk-num");
-    now.append(station, title, meta);
+    now.append(station, art, title, meta);
 
     const transport = node("div", "wonk-radio-transport", { role: "group", "aria-label": "Transport" });
     const prevBtn = iconButton("wonk-btn--quiet", "Previous track", "prev");
@@ -268,7 +443,7 @@
     const inner = node("div", "wonk-radio-inner");
     inner.append(scope, now, transport, progress, volume);
     host.replaceChildren(inner);
-    return { scope, dot, stateWord, title, meta, prevBtn, playBtn, nextBtn, cur, seek, dur, status, muteBtn, vol };
+    return { scope, dot, stateWord, art, artImg, title, meta, prevBtn, playBtn, nextBtn, cur, seek, dur, status, muteBtn, vol };
   }
 
   // ---- player --------------------------------------------------
@@ -279,6 +454,7 @@
   const FFT_SIZE = 1024;
   const ECHO_OFFSET = 32;  // samples between the scope's two lines
   const HISTORY_CAP = 500;
+  const ART_CACHE = 12;    // object URLs of album art kept per player
   const SESSION_ACTIONS = ["play", "pause", "previoustrack", "nexttrack", "seekto", "seekbackward", "seekforward"];
 
   const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -330,15 +506,15 @@
     );
   }
 
-  async function fetchTracks(source) {
+  async function fetchTracks(source, doFetch) {
     if (source.tracks) return source.tracks;
     if (source.manifest) {
       const manifestUrl = new URL(source.manifest, document.baseURI).href;
-      const res = await fetch(manifestUrl);
+      const res = await doFetch(manifestUrl);
       if (!res.ok) throw new Error(`wonk-radio: manifest ${source.manifest} failed (HTTP ${res.status}).`);
       return normalizeTracks(await res.json(), `manifest ${source.manifest}`, manifestUrl);
     }
-    const items = await listBucket(source.bucket, source.prefix);
+    const items = await listBucket(source.bucket, source.prefix, { fetch: doFetch });
     return Object.freeze(items.map((it) =>
       Object.freeze({ url: mediaUrl(source.bucket, it.name), name: it.name, size: it.size, ...parseName(it.name) })
     ));
@@ -346,6 +522,11 @@
 
   function createPlayer(host, opts) {
     const source = resolveSource(host, opts); // throws on a missing source
+    if (opts.fetch != null && typeof opts.fetch !== "function") {
+      throw new TypeError(`wonkRadio.mount: opts.fetch must be a function like window.fetch, got ${typeof opts.fetch}.`);
+    }
+    // the track list and album art go through doFetch; tests inject a fake
+    const doFetch = opts.fetch || ((url, init) => window.fetch(url, init));
     const stationLabel = opts.title || host.dataset.title || "radio";
     const isDock = host.classList.contains("wonk-radio--dock");
     const addedClass = !host.classList.contains("wonk-radio");
@@ -379,6 +560,11 @@
     let playIcon = "play";
     let muteIcon = "volume";
     let { v: volume, muted } = readVolume();
+    let art = "none";       // "loading" | "on" | "none": the current track's album art
+    let artRead = null;     // AbortController of the pending art read
+    let artWarned = false;  // one console.warn per player for a failed art read
+    let artTip = null;      // wonk.tip handle for the enlarged art
+    const artCache = new Map(); // track url -> {url: object URL, mime}, oldest first
     const offs = [];
 
     const listen = (target, type, fn) => {
@@ -457,7 +643,7 @@
 
     function emitState() {
       if (destroyed) return;
-      const detail = { playing: isOn(), loading: isLoading(), error, visualizer };
+      const detail = { playing: isOn(), loading: isLoading(), error, visualizer, art };
       const key = JSON.stringify(detail);
       if (key === lastEmitted) return;
       lastEmitted = key;
@@ -479,6 +665,81 @@
       if (t && t.artist) bits.push(t.artist);
       if (t) bits.push(`${index + 1} / ${tracks.length}`);
       ui.meta.textContent = bits.join(" · ");
+      loadArt();
+    }
+
+    // ---- album art: read from the track's ID3 tag. Never touches
+    // playback or the status line ----
+    function setArt(next, entry) {
+      art = next;
+      const t = tracks[index];
+      ui.art.setAttribute("aria-label", t ? `Album art: ${t.title}` : "Album art");
+      if (next === "on") ui.artImg.src = entry.url;
+      else ui.artImg.removeAttribute("src");
+      // loading keeps the space of a shown thumbnail, so two covers in a
+      // row do not shift the title, but shows nothing; none removes it
+      if (next !== "loading") ui.art.hidden = next === "none";
+      ui.art.classList.toggle("wonk-radio-art--loading", next === "loading");
+      updateMetadata();
+      emitState();
+    }
+
+    function cacheArt(key, entry) {
+      artCache.delete(key);
+      artCache.set(key, entry); // most recent last
+      while (artCache.size > ART_CACHE) {
+        const [oldest, old] = artCache.entries().next().value;
+        artCache.delete(oldest);
+        URL.revokeObjectURL(old.url);
+      }
+    }
+
+    function loadArt() {
+      if (artRead) {
+        artRead.abort();
+        artRead = null;
+      }
+      const t = tracks[index];
+      if (!t) return setArt("none");
+      const hit = artCache.get(t.url);
+      if (hit) {
+        cacheArt(t.url, hit);
+        return setArt("on", hit);
+      }
+      const ac = new AbortController();
+      artRead = ac;
+      setArt("loading");
+      readArt(t.url, { fetch: doFetch, signal: ac.signal }).then((found) => {
+        if (destroyed || artRead !== ac) return; // stale: the track changed or the player is gone
+        artRead = null;
+        if (!found) return setArt("none");
+        const entry = { url: URL.createObjectURL(found.blob), mime: found.mime };
+        cacheArt(t.url, entry);
+        setArt("on", entry);
+      }, (err) => {
+        if (destroyed || artRead !== ac) return;
+        artRead = null;
+        if (!artWarned) {
+          artWarned = true;
+          console.warn(`wonk-radio: could not read album art for "${t.title}" (${(err && err.message) || err}). ` +
+            "Tracks whose art fails show none; playback is not affected. Later failures on this player are silent.", err);
+        }
+        setArt("none");
+      });
+    }
+
+    // the enlarged cover in wonk.js's hint box: an image and a caption
+    // (text, so the hint's screen-reader copy reads it)
+    function renderArtTip() {
+      const t = tracks[index];
+      const entry = t && art === "on" ? artCache.get(t.url) : null;
+      if (!entry) return null;
+      const box = node("div", "wonk-radio-art-tip");
+      const img = node("img", "", { src: entry.url, alt: "", decoding: "async" });
+      const caption = node("span", "wonk-radio-art-caption");
+      caption.textContent = t.artist ? `${t.title} · ${t.artist}` : t.title;
+      box.append(img, caption);
+      return box;
     }
 
     function updateTimeUI(t = loadedIndex === index ? audio.currentTime : 0) {
@@ -652,7 +913,10 @@
       if (sessionOwner !== ctrl || !navigator.mediaSession || typeof MediaMetadata !== "function") return;
       const t = tracks[index];
       if (!t) return;
-      navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist || "", album: stationLabel });
+      const data = { title: t.title, artist: t.artist || "", album: stationLabel };
+      const cover = art === "on" ? artCache.get(t.url) : null;
+      if (cover) data.artwork = [{ src: cover.url, type: cover.mime }];
+      navigator.mediaSession.metadata = new MediaMetadata(data);
     }
 
     function setPlaybackState(s) {
@@ -682,7 +946,7 @@
     async function loadTracks() {
       if (listing) return listing;
       error = null;
-      const pending = fetchTracks(source);
+      const pending = fetchTracks(source, doFetch);
       listing = pending;
       syncUI();
       emitState();
@@ -1071,6 +1335,12 @@
       analyser = null;
       offs.splice(0).forEach((off) => off());
       releaseSession();
+      if (artRead) artRead.abort();
+      artRead = null;
+      if (artTip) artTip.destroy();
+      artTip = null;
+      artCache.forEach((entry) => URL.revokeObjectURL(entry.url));
+      artCache.clear();
       host.replaceChildren();
       if (addedClass) host.classList.remove("wonk-radio");
       registry.delete(host);
@@ -1082,7 +1352,7 @@
       play, pause, toggle, next, prev, seek, setVolume, setMuted, destroy,
       get state() {
         return Object.freeze({
-          playing: isOn(), loading: isLoading(), error, visualizer,
+          playing: isOn(), loading: isLoading(), error, visualizer, art,
           index, position: index + 1, total: tracks.length, volume, muted,
         });
       },
@@ -1093,6 +1363,12 @@
       get host() { return host; },
     });
 
+    // the enlarge needs wonk.js (loaded before this file). Without it the
+    // thumbnail still shows, and it takes no tab stop it cannot use.
+    if (window.wonk && typeof window.wonk.tip === "function") {
+      artTip = window.wonk.tip(host, ".wonk-radio-art", renderArtTip);
+      ui.art.tabIndex = 0;
+    }
     registry.set(host, ctrl);
     players.set(ctrl, { yieldPlayback });
     if (isDock) addDock(host);
@@ -1144,6 +1420,7 @@
 
   window.wonkRadio = Object.freeze({
     init, destroy, mount, get, parseName, mediaUrl, listBucket, shuffleBag, formatTime,
+    parseId3Picture, readArt,
   });
 
   if (document.readyState === "loading") {

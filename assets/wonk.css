@@ -38,8 +38,12 @@
 .wonk h3 { font-size: var(--ak-text-xl); }
 .wonk h4 { font-size: var(--ak-text-lg); }
 .wonk p  { margin: 0 0 var(--ak-s4); color: var(--ak-ink-2); }
-.wonk a  { color: var(--ak-a1-text); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color var(--ak-t-fast) var(--ak-ease); }
-.wonk a:hover { border-bottom-color: var(--ak-a1-text); }
+/* links: zero specificity (:where), so any component class wins. The hover
+   underline is for plain links only, never a WONK component (a.wonk-btn,
+   a.wonk-navlink, ...): an a.wonk-btn keeps its full border. */
+:where(.wonk) a { color: var(--ak-a1-text); text-decoration: none; }
+:where(.wonk) a:where(:not([class*="wonk-"])) { border-bottom: 1px solid transparent; transition: border-color var(--ak-t-fast) var(--ak-ease); }
+:where(.wonk) a:where(:not([class*="wonk-"])):hover { border-bottom-color: var(--ak-a1-text); }
 .wonk small { font-size: var(--ak-text-sm); color: var(--ak-ink-3); }
 
 /* .wonk .wonk-title beats .wonk h1, so h1.wonk-title keeps its tracking */
@@ -84,6 +88,20 @@
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='24'%3E%3Cpath d='M0,18 H20 V6 H44 V18 H76 V6 H88 V18 H132 V6 H164 V18 H192' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") repeat-x center / 192px 24px;
 }
 .wonk-divider--accent { background-color: var(--ak-a1-text); }
+/* live signal: the wave scrolls. Only on live or loading states (a stream,
+   a running query), like every other WONK motion. Reduced motion stops it. */
+.wonk-divider--live {
+  background-color: var(--ak-a1-text);
+  -webkit-mask-position: 0 50%;
+          mask-position: 0 50%;
+  animation: wonk-wave-scroll 2.4s linear infinite;
+}
+@keyframes wonk-wave-scroll {
+  to { -webkit-mask-position: -192px 50%; mask-position: -192px 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wonk-divider--live { animation: none; }
+}
 
 /* plain hairline when the wave is too loud */
 .wonk-rule { border: none; border-top: var(--ak-hairline-w) solid var(--ak-hairline); margin: var(--ak-s6) 0; }
@@ -138,6 +156,19 @@
 .wonk-input:focus, .wonk-select:focus, .wonk-textarea:focus {
   outline: none;
   border-color: var(--ak-a1-text);
+}
+/* select: WONK's own caret, inset from the right edge (the native arrow
+   sits flush against the border). Two token-colored triangles form it. */
+.wonk-select:not([multiple]):not([size]) {
+  -webkit-appearance: none;
+          appearance: none;
+  padding-right: 2.5rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ak-ink-2) 50%),
+    linear-gradient(135deg, var(--ak-ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 1.25rem - 5px) 50%, calc(100% - 1.25rem) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
 }
 /* a 1px border color shift alone is not a focus indicator: add the ring */
 .wonk-input:focus-visible, .wonk-select:focus-visible, .wonk-textarea:focus-visible {

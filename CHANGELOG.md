@@ -24,6 +24,14 @@ again, then check these:
   Replace native `title=` help text with `data-tip`.
 - **`wonk.init(scope)` is idempotent.** Call it again after each render;
   it wires only elements it has not seen.
+- **Link rules no longer reach components.** `.wonk a` became a
+  zero-specificity rule, and the hover underline applies only to links
+  without a `wonk-*` class. An `a.wonk-btn` now has its full border and
+  the button's ink color (it used to lose its bottom border and turn
+  `--ak-a1-text`). An app CSS rule on plain `a` now wins over WONK's.
+- **`.wonk-select` draws its own caret**, inset from the right edge
+  (`appearance: none`, extra right padding). Multiple and sized selects keep
+  the native list box.
 - **Check suites return `{passed, failed, results}`.**
   `wonkControlsChecks.run()` used to return a bare array.
 - **New in the base:** `.wonk-term` + `wonk.glossary()`, `wonk.tip()`,
@@ -31,10 +39,11 @@ again, then check these:
   `.wonk-row-toggle`, `.wonk-more`, `wonk.foldAll()`), `wonk.fmt`,
   `.delta--good`/`--bad`/`--neutral`, `button.wonk-stat`,
   `.wonk-value-link`, the `.wonk-shell` mobile drawer,
-  `[data-wonk-theme-toggle]`, `.wonk-main`/`.wonk-section`/`.wonk-row`/
+  `[data-wonk-theme-toggle]`, `.wonk-divider--live` (the scrolling square
+  wave, live/loading only), `.wonk-main`/`.wonk-section`/`.wonk-row`/
   `.wonk-grid`/`.wonk-sr`, and `wonk.version`.
 - **New packs:** data (`wonk-data.js`: `wonkData.table`, `wonkData.drill`),
   charts (`wonk-charts.js` with vendored d3 7.9.0 and Plot 0.6.17), radio
-  (`wonk-radio.css`, `wonk-radio.js`), and fonts (`wonk-fonts.css` with
+  (`wonk-radio.css`, `wonk-radio.js`, with album art read from each mp3's ID3 tag), and fonts (`wonk-fonts.css` with
   `fonts/`, so apps stop loading Google Fonts).
 - **New starter:** `templates/app.html`.

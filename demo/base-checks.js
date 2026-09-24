@@ -592,6 +592,59 @@
     }
   });
 
+  check("links: an a.wonk-btn has the same borders and color as a button.wonk-btn (plain link rules never reach a component)", () => {
+    const host = withFixture(`<a class="wonk-btn" href="#x">Link button</a><button type="button" class="wonk-btn">Button</button><a href="#y">plain link</a>`);
+    try {
+      const a = getComputedStyle(host.querySelector("a.wonk-btn"));
+      const b = getComputedStyle(host.querySelector("button"));
+      const plain = getComputedStyle(host.querySelector("a:not([class])"));
+      for (const side of ["Top", "Right", "Bottom", "Left"]) {
+        assert(a[`border${side}Color`] === b[`border${side}Color`], `a.wonk-btn border-${side.toLowerCase()} color should be ${b[`border${side}Color`]}, got ${a[`border${side}Color`]}`);
+        assert(a[`border${side}Width`] === b[`border${side}Width`], `a.wonk-btn border-${side.toLowerCase()} width should be ${b[`border${side}Width`]}, got ${a[`border${side}Width`]}`);
+      }
+      assert(a.color === b.color, `a.wonk-btn color should be ${b.color}, got ${a.color}`);
+      assert(a.textDecorationLine === "none", `a.wonk-btn should not be underlined, got ${a.textDecorationLine}`);
+      assert(plain.textDecorationLine === "none", `a plain link uses a border underline on hover, not text-decoration; got ${plain.textDecorationLine}`);
+      const linkColor = getComputedStyle(document.documentElement).getPropertyValue("--ak-a1-text").trim();
+      const probe = document.createElement("span");
+      probe.style.color = linkColor;
+      host.appendChild(probe);
+      assert(plain.color === getComputedStyle(probe).color, `a plain link should use --ak-a1-text, got ${plain.color}`);
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("select: .wonk-select draws its own caret inset from the right edge", () => {
+    const host = withFixture(`<select class="wonk-select"><option>one</option></select><select class="wonk-select" multiple><option>a</option></select>`);
+    try {
+      const [single, multi] = host.querySelectorAll("select");
+      const s = getComputedStyle(single);
+      assert(s.appearance === "none", `single select appearance should be none, got ${s.appearance}`);
+      assert(parseFloat(s.paddingRight) >= 32, `single select needs >= 32px right padding for the caret, got ${s.paddingRight}`);
+      assert((s.backgroundImage.match(/linear-gradient/g) || []).length === 2, `single select should draw a two-gradient caret, got ${s.backgroundImage}`);
+      assert(getComputedStyle(multi).backgroundImage === "none", "a multiple select is a list box and gets no caret");
+    } finally {
+      host.remove();
+    }
+  });
+
+  check("live divider: .wonk-divider--live runs the scrolling wave animation", () => {
+    const host = withFixture(`<hr class="wonk-divider wonk-divider--live">`);
+    try {
+      const cs = getComputedStyle(host.querySelector("hr"));
+      const reducedNow = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reducedNow) {
+        assert(cs.animationName === "none", `under reduced motion the live divider should not animate, got ${cs.animationName}`);
+      } else {
+        assert(cs.animationName === "wonk-wave-scroll", `animation-name should be wonk-wave-scroll, got ${cs.animationName}`);
+        assert(cs.animationIterationCount === "infinite", `the wave should loop, got ${cs.animationIterationCount}`);
+      }
+    } finally {
+      host.remove();
+    }
+  });
+
   // ---- tabs ----
   check("tabs(root): clicking tab 2 hides panel 1, shows panel 2, and selects tab 2", () => {
     const id = "wonk-base-check-" + Math.random().toString(36).slice(2);

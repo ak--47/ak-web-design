@@ -83,6 +83,7 @@ application behavior lives in the workbench example.
 
 <hr class="wonk-divider">                        <!-- square wave: between CHAPTERS -->
 <hr class="wonk-divider wonk-divider--accent">   <!-- accent-colored wave -->
+<hr class="wonk-divider wonk-divider--live">     <!-- scrolling wave: live/loading states only -->
 <hr class="wonk-rule">                           <!-- hairline: within a chapter -->
 <div class="wonk-stack">…</div>                  <!-- children joined by vertical hairlines -->
 ```
@@ -472,6 +473,7 @@ headline first, detail behind a fold. which one to use, and the copy rules:
 <span class="wonk-dot wonk-dot--live" data-wonk-live></span>  <!-- irregular jitter -->
 <span class="wonk-dot wonk-dot--idle"></span>
 <span class="wonk-spectrum"><span></span>…12 spans…</span>    <!-- loader -->
+<hr class="wonk-divider wonk-divider--live">          <!-- scrolling square wave: a stream is open -->
 <div class="wonk-skeleton" style="height:14px"></div>
 <div class="wonk-empty">
   <div class="glyph" data-wonk-glyph>∿</div>
