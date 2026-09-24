@@ -191,7 +191,7 @@
   // Elements with .wonk-reveal fade/slide in when they enter the viewport.
   // CSS hides only elements this function has armed (.is-armed), so a
   // no-JS page, or an element JS never saw, stays visible. Each element
-  // is armed at most once. A MutationObserver (watchReveals, below) arms
+  // is armed at most once. A MutationObserver (watchInjected, below) arms
   // .wonk-reveal elements injected after init.
   const REVEAL_SEL = ".wonk-reveal:not(.is-in):not(.is-armed)";
   let revealIO = null;
@@ -219,20 +219,26 @@
     });
   }
   // one observer for the page; added subtrees are batched and passed to
-  // reveal() at most once per animation frame (before that frame paints)
-  function watchReveals() {
+  // reveal() and focusTips() at most once per animation frame (before
+  // that frame paints). Removals drop a hint whose target left the DOM.
+  function watchInjected() {
     if (!("MutationObserver" in window)) return;
     const added = new Set();
     let queued = false;
     new MutationObserver((records) => {
       records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) added.add(n); }));
+      pruneHint();
       if (!added.size || queued) return;
       queued = true;
       requestAnimationFrame(() => {
         queued = false;
         const nodes = [...added];
         added.clear();
-        nodes.forEach((n) => { if (n.isConnected) reveal(n); });
+        nodes.forEach((n) => {
+          if (!n.isConnected) return;
+          reveal(n);
+          focusTips(n);
+        });
       });
     }).observe(document.body, { childList: true, subtree: true });
   }
@@ -716,6 +722,356 @@
     return t;
   }
 
+  // ---- hints: data-tip, .wonk-term, wonk.tip ----
+  // The one way to do help text. Markup: [data-tip="text"] on anything
+  // ([data-hint] is an alias), .wonk-term[data-term="key"] resolved from
+  // wonk.glossary(), and a focused form control shows its <label>'s tip.
+  // Document-level delegation, no per-element wiring:
+  //  - one visual box, div.wonk-hint (aria-hidden), in <body> or inside
+  //    the open modal dialog (same rule as toasts). position: fixed,
+  //    centered below its target, flips above when it would overflow,
+  //    8px from the viewport edges; follows resizes.
+  //  - hover shows after 50ms; focus and a touch/pen tap show at once.
+  //    Leaving the target starts a 150ms grace timer and entering the
+  //    box cancels it (hoverable). When it runs out, the focused
+  //    control's tip comes back, else the box hides. Escape hides it. A
+  //    scroll hides it; a focus tip follows its control instead.
+  //  - screen readers: on focus the text goes into the visually hidden
+  //    #wonk-hint-sr, and "wonk-hint-sr" is appended to the control's
+  //    aria-describedby (the page's own tokens stay; blur removes only
+  //    ours). Pointer movement never changes the description.
+  //  - wonk.tip(root, selector, render): rich tips. render(el) returns a
+  //    Node (built with DOM APIs) or a string (shown as text, never
+  //    parsed as HTML). Same box and rules.
+  const TIP_SEL = "[data-tip], [data-hint], [data-term]";
+  const SR_ID = "wonk-hint-sr";
+  const SR_ONLY = "position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;";
+  const HOVER_DELAY = 50, GRACE = 150, EDGE = 8, GAP = 6;
+  const glossaryMap = Object.create(null);
+  const warnedTerms = new Set();
+  const tipRegs = [];
+  let hintBox = null, hintSr = null;
+  let shown = null, shownBy = null; // tip in the box: {el, anchor, text | reg}; "hover" | "touch" | "focus" | "api"
+  let srFor = null, srReg = null;   // control described by #wonk-hint-sr, and the rich tip it came from
+  let escaped = null;               // tip closed with Escape: hover leaves it closed until the pointer moves on
+  let hoverTimer = null, graceTimer = null;
+
+  // wonk.glossary({ term: "definition" }) merges; returns the current map
+  function glossary(map) {
+    if (map !== undefined) {
+      if (map === null || typeof map !== "object") {
+        throw new TypeError("wonk.glossary(map): map must be an object of term -> definition strings");
+      }
+      const entries = Object.entries(map);
+      entries.forEach(([term, def]) => {
+        if (typeof def !== "string") {
+          throw new TypeError(`wonk.glossary: the definition for "${term}" must be a string, got ${typeof def}`);
+        }
+      });
+      entries.forEach(([term, def]) => { glossaryMap[term] = def; });
+    }
+    return { ...glossaryMap };
+  }
+
+  // the plain tip text of one element, or null. An unknown data-term
+  // has no tip and warns once per term.
+  function tipText(el) {
+    const text = el.getAttribute("data-tip") || el.getAttribute("data-hint");
+    if (text) return text;
+    const term = el.getAttribute("data-term");
+    if (term === null) return null;
+    if (term in glossaryMap) return glossaryMap[term] || null;
+    if (!warnedTerms.has(term)) {
+      warnedTerms.add(term);
+      console.warn(`wonk.hint: no glossary entry for data-term=${JSON.stringify(term)}; add it with wonk.glossary({ ${JSON.stringify(term)}: "definition" })`);
+    }
+    return null;
+  }
+
+  // the tip for a node: the nearest ancestor with a rich tip, a
+  // data-tip/data-hint, or a known data-term. With labels, a form
+  // control falls back to its first <label> with a tip (the box then
+  // sits under the control). Returns {el, anchor, text | reg} or null.
+  function tipFor(node, labels) {
+    const start = node && (node.nodeType === 1 ? node : node.parentElement);
+    for (let el = start; el; el = el.parentElement) {
+      if (hintBox && hintBox.contains(el)) return null;
+      for (const reg of tipRegs) {
+        if (reg.root.contains(el) && el.matches(reg.selector)) return { el, anchor: el, reg };
+      }
+      if (el.matches(TIP_SEL)) {
+        const text = tipText(el);
+        if (text) return { el, anchor: el, text };
+      }
+    }
+    if (labels && start && start.labels) {
+      for (const label of start.labels) {
+        const text = label.matches(TIP_SEL) && tipText(label);
+        if (text) return { el: label, anchor: start, text };
+      }
+    }
+    return null;
+  }
+
+  // create the box and the screen-reader node once, and keep both in
+  // <body>, or inside the open modal dialog so neither is inert or
+  // hidden behind the top layer
+  function hintHome() {
+    if (!hintBox) {
+      hintBox = document.createElement("div");
+      hintBox.className = "wonk-hint";
+      hintBox.setAttribute("aria-hidden", "true");
+      hintBox.hidden = true;
+      hintSr = document.createElement("div");
+      hintSr.id = SR_ID;
+      hintSr.style.cssText = SR_ONLY;
+    }
+    const home = topModal() || document.body;
+    if (hintBox.parentNode !== home) home.appendChild(hintBox);
+    if (hintSr.parentNode !== home) home.appendChild(hintSr);
+    return home;
+  }
+
+  const hintOpen = () => !!hintBox && !hintBox.hidden;
+  const stopTimers = () => {
+    clearTimeout(hoverTimer);
+    clearTimeout(graceTimer);
+    hoverTimer = graceTimer = null;
+  };
+
+  function hideHint() {
+    stopTimers();
+    if (hintBox) {
+      hintBox.hidden = true;
+      hintBox.replaceChildren();
+    }
+    shown = shownBy = null;
+  }
+
+  // centered below the anchor, above when below would overflow and
+  // above fits (or has more room), then clamped EDGE px inside the
+  // viewport
+  function placeHint() {
+    if (!hintOpen() || !shown) return;
+    if (!shown.anchor.isConnected) { hideHint(); return; }
+    const s = hintBox.style;
+    s.left = "0px";
+    s.top = "0px";
+    // at 0,0 the box has its natural size, and its rect shows where its
+    // containing block starts (not 0,0 only under a transformed ancestor)
+    const o = hintBox.getBoundingClientRect();
+    const a = shown.anchor.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    const left = Math.max(EDGE, Math.min(a.left + a.width / 2 - o.width / 2, vw - EDGE - o.width));
+    let top = a.bottom + GAP;
+    const above = a.top - GAP - o.height;
+    if (top + o.height > vh - EDGE && (above >= EDGE || a.top > vh - a.bottom)) top = above;
+    top = Math.max(EDGE, Math.min(top, vh - EDGE - o.height));
+    s.left = `${left - o.left}px`;
+    s.top = `${top - o.top}px`;
+  }
+
+  // show a resolved tip at once; returns the text now in the box ("" if
+  // the tip rendered nothing)
+  function showTip(tip, by) {
+    stopTimers();
+    const content = tip.reg ? tip.reg.render(tip.el) : tip.text;
+    if (content === null || content === undefined || content === "") { hideHint(); return ""; }
+    hintHome();
+    if (typeof content === "object" && typeof content.nodeType === "number") hintBox.replaceChildren(content);
+    else hintBox.textContent = String(content);
+    hintBox.hidden = false;
+    shown = tip;
+    shownBy = by;
+    escaped = null;
+    placeHint();
+    return hintBox.textContent;
+  }
+
+  function describe(control, text, reg) {
+    undescribe();
+    if (!text) return;
+    hintHome();
+    hintSr.textContent = text;
+    const ids = (control.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean);
+    if (!ids.includes(SR_ID)) ids.push(SR_ID);
+    control.setAttribute("aria-describedby", ids.join(" "));
+    srFor = control;
+    srReg = reg || null;
+  }
+  function undescribe() {
+    if (srFor) {
+      const ids = (srFor.getAttribute("aria-describedby") || "").split(/\s+/).filter((id) => id && id !== SR_ID);
+      if (ids.length) srFor.setAttribute("aria-describedby", ids.join(" "));
+      else srFor.removeAttribute("aria-describedby");
+    }
+    srFor = srReg = null;
+    if (hintSr) hintSr.textContent = "";
+  }
+
+  // the grace timer ran out: the focused control's tip comes back, else
+  // the box hides
+  function settleHint() {
+    graceTimer = null;
+    const tip = srFor ? tipFor(srFor, true) : null;
+    if (!tip) hideHint();
+    else if (!hintOpen() || !shown || tip.el !== shown.el) showTip(tip, "focus");
+  }
+
+  // a removed target takes its box and its description with it
+  function pruneHint() {
+    if (shown && (!shown.el.isConnected || !shown.anchor.isConnected)) hideHint();
+    if (srFor && !srFor.isConnected) undescribe();
+  }
+
+  document.addEventListener("mouseover", (e) => {
+    if (hintBox && hintBox.contains(e.target)) { clearTimeout(graceTimer); graceTimer = null; return; }
+    const tip = tipFor(e.target, false);
+    if (!tip || tip.el !== escaped) escaped = null;
+    if (!tip) { clearTimeout(hoverTimer); hoverTimer = null; return; }
+    if (tip.el === escaped) return;
+    if (hintOpen() && shown && tip.el === shown.el) { stopTimers(); return; }
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => showTip(tip, "hover"), HOVER_DELAY);
+  }, true);
+
+  document.addEventListener("mouseout", (e) => {
+    const to = e.relatedTarget;
+    if (!to) { clearTimeout(hoverTimer); hoverTimer = null; } // the pointer left the page
+    if (!hintOpen() || !shown || shownBy === "focus") return;
+    const from = e.target;
+    if (!shown.el.contains(from) && !hintBox.contains(from)) return;
+    if (to && (shown.el.contains(to) || hintBox.contains(to))) return;
+    clearTimeout(graceTimer);
+    graceTimer = setTimeout(settleHint, GRACE);
+  }, true);
+
+  // touch and pen: iOS sends no mouseover to plain text, but pointer
+  // events reach every element. The tap's click still fires.
+  document.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    if (hintBox && hintBox.contains(e.target)) return;
+    const tip = tipFor(e.target, false);
+    if (tip) showTip(tip, "touch");
+    else if (hintOpen()) hideHint();
+  }, true);
+
+  document.addEventListener("focusin", (e) => {
+    if (hintBox && hintBox.contains(e.target)) return;
+    const tip = tipFor(e.target, true);
+    if (!tip) {
+      undescribe();
+      if (hintOpen()) hideHint();
+      return;
+    }
+    describe(e.target, showTip(tip, "focus"), tip.reg);
+  }, true);
+
+  document.addEventListener("focusout", (e) => {
+    if (srFor === e.target) undescribe();
+    if (shownBy === "focus" && shown && (shown.el.contains(e.target) || shown.anchor === e.target)) hideHint();
+  }, true);
+
+  // Escape closes the box; the description stays while focus stays
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !hintOpen()) return;
+    escaped = shown && shown.el;
+    hideHint();
+  }, true);
+
+  // position: fixed would leave the box behind a scrolled target. A focus
+  // tip follows its control (focusing an off-screen control scrolls it
+  // into view) and closes once the control leaves the viewport.
+  window.addEventListener("scroll", () => {
+    if (!hintOpen()) return;
+    if (shownBy !== "focus" || !shown) { hideHint(); return; }
+    const a = shown.anchor.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    if (a.bottom < 0 || a.top > vh || a.right < 0 || a.left > vw) hideHint();
+    else placeHint();
+  }, true);
+  window.addEventListener("resize", placeHint);
+  // an ancestor that finished moving carried the target with it: place
+  // again. Covers a scroll reveal sliding in, and a modal's open
+  // animation (its transform makes the dialog the box's containing
+  // block until it ends).
+  const replaceHint = (e) => {
+    if (hintOpen() && shown && e.target.contains && e.target.contains(shown.anchor)) placeHint();
+  };
+  document.addEventListener("transitionend", replaceHint, true);
+  document.addEventListener("animationend", replaceHint, true);
+
+  // keyboard reach: .wonk-term and tip elements that cannot take focus
+  // get tabindex="0", except inside an interactive element (no nested
+  // tab stops), inside a tbody (per-row repeats rely on their column
+  // header's tip), a <label> of a control (the control's focus shows
+  // it), an author-set tabindex, or data-tip-focus="off"
+  const FOCUS_SEL = `.wonk-term, ${TIP_SEL}`;
+  const NATIVE_FOCUS =
+    "a[href], area[href], button, input, select, textarea, iframe, summary, audio[controls], video[controls], " +
+    "[contenteditable]:not([contenteditable='false'])";
+  const INTERACTIVE =
+    `${NATIVE_FOCUS}, [role='button'], [role='link'], [role='tab'], [role='menuitem'], ` +
+    "[role='option'], [role='checkbox'], [role='switch'], [role='slider']";
+  function focusTips(scope = document) {
+    const els = [...scope.querySelectorAll(FOCUS_SEL)];
+    if (scope.matches && scope.matches(FOCUS_SEL)) els.unshift(scope);
+    els.forEach((el) => {
+      if (el.hasAttribute("tabindex") || el.getAttribute("data-tip-focus") === "off") return;
+      if (el.matches(NATIVE_FOCUS) || (el.localName === "label" && el.control)) return;
+      if (el.closest("tbody, .wonk-hint")) return;
+      if (el.parentElement && el.parentElement.closest(INTERACTIVE)) return;
+      el.setAttribute("tabindex", "0");
+    });
+  }
+
+  // wonk.tip(root, selector, render) -> {destroy}. Scoped to root;
+  // a second call with the same root and selector returns the same
+  // handle (and uses the newer render). wonk.tip adds no tabindex: make
+  // targets focusable yourself when keyboard users need them.
+  function tip(root, selector, render) {
+    if (!root || typeof root.contains !== "function" || typeof root.querySelector !== "function") {
+      throw new TypeError("wonk.tip(root, selector, render): root must be an element or a document");
+    }
+    if (typeof selector !== "string" || !selector.trim()) {
+      throw new TypeError("wonk.tip: selector must be a non-empty CSS selector string");
+    }
+    if (typeof render !== "function") {
+      throw new TypeError("wonk.tip: render must be a function (el) => Node | string");
+    }
+    root.querySelector(selector); // an invalid selector throws here, not on every hover
+    const known = tipRegs.find((r) => r.root === root && r.selector === selector);
+    if (known) {
+      known.render = render;
+      return known.handle;
+    }
+    const reg = { root, selector, render };
+    reg.handle = {
+      destroy() {
+        const i = tipRegs.indexOf(reg);
+        if (i === -1) return;
+        tipRegs.splice(i, 1);
+        if (shown && shown.reg === reg) hideHint();
+        if (srReg === reg) undescribe();
+      },
+    };
+    tipRegs.push(reg);
+    return reg.handle;
+  }
+
+  const hint = {
+    // show el's tip (or its label's) now; returns false if el has none
+    show(el) {
+      const found = tipFor(el, true);
+      if (!found) return false;
+      showTip(found, "api");
+      return hintOpen();
+    },
+    hide: hideHint,
+  };
+
   // ---- menu ----
   // Markup: details.wonk-menu > summary + .menu > button|a
   // Works without JS (native <details>). This adds: choosing an item
@@ -854,9 +1210,10 @@
     scope.querySelectorAll(".wonk-tabs").forEach(tabs);
     scope.querySelectorAll(".wonk-menu").forEach(menu);
     scope.querySelectorAll("[data-wonk-secret]").forEach(secret);
+    focusTips(scope);
     reveal(scope);
   }
-  const boot = () => { init(); watchReveals(); };
+  const boot = () => { init(); watchInjected(); };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
   } else {
@@ -865,6 +1222,6 @@
 
   window.wonk = {
     toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
-    vu, knob, scope: scopeWidget,
+    vu, knob, scope: scopeWidget, glossary, tip, hint,
   };
 })();

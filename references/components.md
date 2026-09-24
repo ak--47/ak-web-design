@@ -199,8 +199,6 @@ Charts: see [charts.md](charts.md). Sparklines: `wonk.spark(el, values)`.
 
 <dialog class="wonk-modal" id="m">…</dialog>     <!-- open with .showModal() -->
 
-<span class="wonk-tip" data-tip="mono, inverted">hover target</span>
-
 <!-- toasts are JS-only. wonk.js loads with defer, so wait for it: -->
 <script>
   document.addEventListener("DOMContentLoaded", () => {
@@ -215,6 +213,77 @@ button (`aria-label="Dismiss"`); hovering or focusing a toast pauses its
 timer. a modal `<dialog>` (`showModal()`) makes the rest of the page inert,
 so while one is open the host moves inside it (and back to `<body>` when it
 closes): a toast fired from a modal stays visible and announced.
+
+### hints and terms
+
+help text and term definitions use `data-tip` and `.wonk-term`, never
+native `title=` (it shows late or never, and never on focus or touch).
+wonk.js shows one inverted box on hover, keyboard focus, and tap, and
+describes the focused control to screen readers. no class, no wiring.
+`data-hint` works as an alias of `data-tip`.
+
+```html
+<!-- plain hint on anything -->
+<button class="wonk-btn" data-tip="Runs the query with the current draft">Run</button>
+
+<!-- a term with a definition: dotted underline, keyboard reachable -->
+<span class="wonk-term" data-tip="Share of calls where AI and rep agree">Agreement</span>
+
+<!-- a term defined once in a glossary -->
+<span class="wonk-term" data-term="agreement">Agreement</span>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    wonk.glossary({ agreement: "Share of calls where AI and rep agree" });
+  });
+</script>
+
+<!-- the standard "?" help button: a real button, outside the label -->
+<label class="wonk-label" for="period">period</label>
+<button type="button" class="wonk-hint-btn" data-tip="Uses the opportunity close date" aria-label="About period">?</button>
+
+<!-- a label hint shows when its control has focus -->
+<label class="wonk-label" for="q" data-tip="Matches deal names">search</label>
+<input class="wonk-input" id="q">
+```
+
+- hover shows after 50ms, focus and tap show at once. the pointer can move
+  onto the box. Escape closes it. a scroll closes it (a focus hint follows
+  its control).
+- focus appends `wonk-hint-sr` to the control's `aria-describedby` and keeps
+  the page's own tokens. blur removes only that token.
+- `wonk.init(scope)`, and nodes injected later, give `.wonk-term` and
+  non-focusable `[data-tip]` elements `tabindex="0"`, except inside an
+  interactive element or a `tbody` (per-row repeats rely on their column
+  header's hint). opt out with `data-tip-focus="off"`.
+- an unknown `data-term` shows nothing and warns once in the console.
+- the box lives in `<body>` (or the open modal), so a scrolling table never
+  clips it.
+- without JS, `.wonk-tip[data-tip]` keeps a CSS-only fallback on hover and
+  focus.
+
+rich tips, e.g. a heatmap cell that lists its deals and total:
+
+```js
+const handle = wonk.tip(grid, ".oe-cell", (el) => {
+  // return a Node built with DOM APIs, or a string (always shown as text, never HTML)
+  const frag = document.createDocumentFragment();
+  const head = document.createElement("strong");
+  head.textContent = `${el.dataset.count} deals · ${el.dataset.total}`;
+  frag.append(head);
+  for (const name of el.dataset.deals.split("|")) {
+    const row = document.createElement("div");
+    row.textContent = name;
+    frag.append("\n", row);            // keeps words apart in the screen-reader text
+  }
+  return frag;
+});
+handle.destroy();                      // before the grid unmounts
+```
+
+same box and rules. the screen-reader text is the content's `textContent`.
+a second call with the same `root` and selector returns the same handle.
+`wonk.tip` adds no `tabindex`: give targets one (or a roving tabindex) when
+keyboard users need them.
 
 Plot chart tooltips are auto-styled by wonk.css — never restyle per chart.
 
@@ -259,8 +328,11 @@ resume when it turns off.
 
 | Call | What it does |
 |---|---|
-| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal in injected DOM; idempotent per element |
+| `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal + hint `tabindex` in injected DOM; idempotent per element |
 | `wonk.toast(msg, kind?, ms?)` | show a toast (ok/warn/err/info); returns the toast element |
+| `wonk.glossary(map?)` | merge term definitions for `data-term`; returns the current map |
+| `wonk.tip(root, selector, render)` | rich hint for matches inside `root`; `render(el)` returns a Node or a string (shown as text); returns `{destroy}` |
+| `wonk.hint.show(el)` / `wonk.hint.hide()` | show `el`'s hint now (returns `false` if it has none) / hide the box |
 | `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline; drops missing values, `[]` empties `el`, one value draws a dot |
 | `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |

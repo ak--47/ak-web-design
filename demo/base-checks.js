@@ -1,7 +1,8 @@
 /* ============================================================
    demo/base-checks.js · browser-callable checks for wonk.js base
    behaviors (window.wonk: idempotent init, reduced motion, toast,
-   setTheme, setPair, tabs, spark, menu, reveal), token contrast, and
+   setTheme, setPair, tabs, spark, menu, reveal, hints: data-tip /
+   data-hint / data-term, glossary, wonk.tip), token contrast, and
    focus rings.
    Runs headless via `npm test` (or `npm test -- base`). By hand:
    load it on any page that already has wonk.js loaded (e.g.
@@ -661,6 +662,323 @@
       host.remove();
     }
     assert(failures.length === 0, failures.join("; "));
+  });
+
+  // ---- hints: data-tip / data-hint / data-term, glossary, wonk.tip ----
+  // One visual box (.wonk-hint, aria-hidden) follows hover, tap, and
+  // focus; one visually hidden #wonk-hint-sr describes the focused
+  // control. Fixtures are hidden; the box itself may show during a check.
+  const SR_ID = "wonk-hint-sr";
+  const hintBox = () => document.querySelector(".wonk-hint");
+  const hintShown = () => {
+    const b = hintBox();
+    return !!b && !b.hidden && getComputedStyle(b).display !== "none" && b.getBoundingClientRect().width > 0;
+  };
+  const describedBy = (el) => (el.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean);
+  const touch = (el) => el.dispatchEvent(new PointerEvent("pointerdown", { pointerType: "touch", isPrimary: true, bubbles: true, cancelable: true }));
+  const mouse = (el, type, relatedTarget = null) =>
+    el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, relatedTarget }));
+  // check cleanup: blur the fixture's focused control, then hide the box.
+  // Tolerates a missing wonk.hint so a failing check still tears down.
+  function resetHint() {
+    const a = document.activeElement;
+    if (a && a !== document.body) a.blur();
+    if (window.wonk && wonk.hint) wonk.hint.hide();
+  }
+
+  check("hint: focusing a button[data-tip] shows an aria-hidden .wonk-hint with its text and describes the button via #wonk-hint-sr", () => {
+    const text = "Runs the query with the current draft";
+    const host = withFixture(`<button type="button" data-tip="${text}">Run</button>`);
+    const btn = host.querySelector("button");
+    try {
+      btn.focus();
+      assert(hintShown(), "expected a visible .wonk-hint after focusing the button");
+      const box = hintBox();
+      assert(box.textContent === text, `box text should be the data-tip, got ${JSON.stringify(box.textContent)}`);
+      assert(box.getAttribute("aria-hidden") === "true", "the visual box must be aria-hidden (screen readers get #wonk-hint-sr)");
+      assert(describedBy(btn).includes(SR_ID), `button aria-describedby should include ${SR_ID}, got ${JSON.stringify(btn.getAttribute("aria-describedby"))}`);
+      const sr = document.getElementById(SR_ID);
+      assert(!!sr && sr.textContent === text, `#${SR_ID} should hold the hint text, got ${sr ? JSON.stringify(sr.textContent) : "no element"}`);
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: an existing aria-describedby=\"x\" keeps x and gains wonk-hint-sr; blur removes only wonk-hint-sr", () => {
+    const host = withFixture(`<button type="button" data-tip="with a description" aria-describedby="x">b</button>`);
+    const btn = host.querySelector("button");
+    try {
+      btn.focus();
+      const ids = describedBy(btn);
+      assert(ids.includes("x") && ids.includes(SR_ID), `expected tokens x and ${SR_ID}, got ${JSON.stringify(btn.getAttribute("aria-describedby"))}`);
+      btn.blur();
+      assert(btn.getAttribute("aria-describedby") === "x", `blur should leave only "x", got ${JSON.stringify(btn.getAttribute("aria-describedby"))}`);
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: a touch pointerdown on a span[data-tip] shows the box; a touch pointerdown elsewhere hides it", () => {
+    const host = withFixture(`<span class="target" data-tip="touch text">tap me</span> <span class="elsewhere">elsewhere</span>`);
+    try {
+      touch(host.querySelector(".target"));
+      assert(hintShown(), "a touch pointerdown on the target should show the box at once");
+      assert(hintBox().textContent === "touch text", `box text should be "touch text", got ${JSON.stringify(hintBox().textContent)}`);
+      touch(host.querySelector(".elsewhere"));
+      assert(!hintShown(), "a touch pointerdown on non-hint content should hide the box");
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: mouseover shows the box after the hover delay; mouseout hides it after the grace period; hovering the box during grace keeps it", async () => {
+    const host = withFixture(`<span data-tip="hover text">hover me</span>`);
+    const target = host.querySelector("[data-tip]");
+    try {
+      mouse(target, "mouseover");
+      assert(!hintShown(), "hover should wait out the short delay, not show synchronously");
+      await sleep(120);
+      assert(hintShown(), "mouseover should show the box within 120ms");
+      assert(getComputedStyle(hintBox()).pointerEvents !== "none", "the box must be hoverable (pointer-events not none)");
+      mouse(target, "mouseout", document.body);
+      await sleep(300);
+      assert(!hintShown(), "mouseout onto non-hint content should hide the box after the grace period");
+
+      mouse(target, "mouseover");
+      await sleep(120);
+      assert(hintShown(), "a second mouseover should show the box again");
+      mouse(target, "mouseout", document.body);
+      await sleep(40);
+      assert(hintShown(), "the box should still show during the grace period");
+      const box = hintBox();
+      mouse(box, "mouseover", document.body);
+      await sleep(300);
+      assert(hintShown(), "hovering the box during the grace period should keep it");
+      mouse(box, "mouseout", document.body);
+      await sleep(300);
+      assert(!hintShown(), "leaving the box should hide it after the grace period");
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: Escape hides the box; focus and the screen-reader description stay", () => {
+    const host = withFixture(`<button type="button" data-tip="escape text">b</button>`);
+    const btn = host.querySelector("button");
+    try {
+      btn.focus();
+      assert(hintShown(), "focus should show the box");
+      key(btn, "Escape");
+      assert(!hintShown(), "Escape should hide the box");
+      assert(document.activeElement === btn, "focus should stay on the button after Escape");
+      const sr = document.getElementById(SR_ID);
+      assert(describedBy(btn).includes(SR_ID) && !!sr && sr.textContent === "escape text", "the description should stay while focus stays");
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: a focused <input> whose <label> has data-tip shows the label's text and is described by it", () => {
+    const id = "wonk-base-check-" + Math.random().toString(36).slice(2);
+    const host = withFixture(`<label for="${id}" data-tip="Matches deal names">search</label><input id="${id}">`);
+    const input = host.querySelector("input");
+    try {
+      input.focus();
+      assert(hintShown(), "focusing the input should show its label's hint");
+      assert(hintBox().textContent === "Matches deal names", `box text should be the label's data-tip, got ${JSON.stringify(hintBox().textContent)}`);
+      assert(describedBy(input).includes(SR_ID), "the input should be described by #wonk-hint-sr");
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: init gives .wonk-term, span[data-tip], and thead th[data-tip] tabindex=0; skips tbody, buttons, and data-tip-focus=off; an injected node gets it within a frame", async () => {
+    const host = withFixture(`
+      <span class="term wonk-term" data-tip="def">term</span>
+      <span class="plain" data-tip="plain">plain</span>
+      <span class="off" data-tip="off" data-tip-focus="off">off</span>
+      <button type="button" data-tip="native">native</button>
+      <table><thead><tr><th data-tip="column">col</th></tr></thead>
+      <tbody><tr><td><span class="cell" data-tip="cell">1</span></td></tr></tbody></table>`);
+    try {
+      wonk.init(host);
+      const idx = (sel) => host.querySelector(sel).getAttribute("tabindex");
+      assert(idx(".term") === "0", `.wonk-term tabindex should be "0", got ${JSON.stringify(idx(".term"))}`);
+      assert(idx(".plain") === "0", `span[data-tip] tabindex should be "0", got ${JSON.stringify(idx(".plain"))}`);
+      assert(idx("th") === "0", `thead th[data-tip] tabindex should be "0", got ${JSON.stringify(idx("th"))}`);
+      assert(idx(".cell") === null, `a span[data-tip] in a tbody must not get a tabindex, got ${JSON.stringify(idx(".cell"))}`);
+      assert(idx("button") === null, `a natively focusable button must not get a tabindex, got ${JSON.stringify(idx("button"))}`);
+      assert(idx(".off") === null, `data-tip-focus="off" must not get a tabindex, got ${JSON.stringify(idx(".off"))}`);
+      const late = document.createElement("span");
+      late.setAttribute("data-tip", "late");
+      late.textContent = "late";
+      host.appendChild(late);
+      for (let i = 0; i < 3 && !late.hasAttribute("tabindex"); i++) await frame();
+      assert(late.getAttribute("tabindex") === "0", `a span[data-tip] injected after init should get tabindex "0" within a frame, got ${JSON.stringify(late.getAttribute("tabindex"))}`);
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: data-term resolves its text from wonk.glossary; an unknown term shows no box and warns once", () => {
+    const term = "wonkcheck" + Math.random().toString(36).slice(2);
+    const host = withFixture(`
+      <span class="known wonk-term" data-term="${term}">Known</span>
+      <span class="missing wonk-term" data-term="${term}-missing">Missing</span>`);
+    const realWarn = console.warn;
+    let warned = 0;
+    console.warn = () => { warned++; };
+    try {
+      const map = wonk.glossary({ [term]: "def" });
+      assert(map && map[term] === "def", "wonk.glossary(map) should return the merged map");
+      wonk.init(host);
+      const known = host.querySelector(".known");
+      const missing = host.querySelector(".missing");
+      known.focus();
+      assert(hintShown(), "focusing a known term should show the box");
+      assert(hintBox().textContent === "def", `box text should be the glossary definition, got ${JSON.stringify(hintBox().textContent)}`);
+      known.blur();
+      missing.focus();
+      assert(!hintShown(), "an unknown term should show no box");
+      missing.blur();
+      missing.focus();
+      assert(warned === 1, `expected exactly one console.warn for the unknown term, got ${warned}`);
+    } finally {
+      console.warn = realWarn;
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: data-hint works as an alias of data-tip", () => {
+    const host = withFixture(`<button type="button" data-hint="alias text">b</button>`);
+    const btn = host.querySelector("button");
+    try {
+      btn.focus();
+      assert(hintShown(), "focusing a button[data-hint] should show the box");
+      assert(hintBox().textContent === "alias text", `box text should be the data-hint, got ${JSON.stringify(hintBox().textContent)}`);
+    } finally {
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: the box wraps, stays 8px inside the viewport for a right-edge target, and flips above a bottom-edge target", () => {
+    const long = "a longer hint that has to wrap onto more than one line inside the box, like a real definition";
+    const make = (css) => {
+      const el = document.createElement("span");
+      el.style.cssText = `position:fixed; visibility:hidden; ${css}`;
+      el.setAttribute("data-tip", long);
+      el.textContent = "target";
+      document.body.appendChild(el);
+      return el;
+    };
+    const right = make("right:0; top:120px;");
+    const bottom = make("left:50%; bottom:0;");
+    try {
+      wonk.hint.show(right);
+      assert(hintShown(), "wonk.hint.show(el) should show the box");
+      let r = hintBox().getBoundingClientRect();
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      assert(r.width <= Math.min(20 * rem, innerWidth - 16) + 0.5, `box should wrap at 20rem, width was ${r.width}`);
+      assert(r.right <= innerWidth - 8 + 0.5, `box right ${r.right} should be <= innerWidth - 8 (${innerWidth - 8})`);
+      assert(r.left >= 8 - 0.5, `box left ${r.left} should be >= 8`);
+      wonk.hint.show(bottom);
+      r = hintBox().getBoundingClientRect();
+      const t = bottom.getBoundingClientRect();
+      assert(r.bottom <= t.top + 0.5, `box should flip above a bottom-edge target: box bottom ${r.bottom}, target top ${t.top}`);
+      assert(r.top >= 8 - 0.5, `box top ${r.top} should be >= 8`);
+    } finally {
+      resetHint();
+      right.remove();
+      bottom.remove();
+    }
+  });
+
+  check("hint: wonk.tip(root, sel, render) shows a returned Node on focus, a returned string as literal text, is idempotent, and destroy() stops it", () => {
+    const host = withFixture(`
+      <button type="button" class="cell" data-kind="node">n</button>
+      <button type="button" class="cell" data-kind="str">s</button>`);
+    const render = (el) => {
+      if (el.dataset.kind === "str") return "<b>not bold</b>";
+      const frag = document.createDocumentFragment();
+      const strong = document.createElement("strong");
+      strong.className = "rich";
+      strong.textContent = "3 deals";
+      frag.append(strong, document.createTextNode(" · $12k"));
+      return frag;
+    };
+    let handle = null;
+    try {
+      handle = wonk.tip(host, ".cell", render);
+      assert(wonk.tip(host, ".cell", render) === handle, "a second wonk.tip(root, sel) should return the same handle");
+      const [nodeBtn, strBtn] = host.querySelectorAll(".cell");
+      nodeBtn.focus();
+      assert(hintShown(), "focusing a rich-tip target should show the box");
+      assert(!!hintBox().querySelector("strong.rich"), "a returned Node should be rendered as built");
+      assert(hintBox().textContent === "3 deals · $12k", `box text should be the node's text, got ${JSON.stringify(hintBox().textContent)}`);
+      const sr = document.getElementById(SR_ID);
+      assert(!!sr && sr.textContent === "3 deals · $12k", "the description should be the rendered textContent");
+      nodeBtn.blur();
+      strBtn.focus();
+      assert(hintBox().textContent === "<b>not bold</b>", `a returned string should show as literal text, got ${JSON.stringify(hintBox().textContent)}`);
+      assert(!hintBox().querySelector("b"), "a returned string must never be parsed as HTML");
+      strBtn.blur();
+      handle.destroy();
+      nodeBtn.focus();
+      assert(!hintShown(), "after destroy() the rich tip should not show");
+    } finally {
+      if (handle) handle.destroy();
+      resetHint();
+      host.remove();
+    }
+  });
+
+  check("hint: a th[data-tip] in .wonk-table-scroll puts the box outside the scroll container; in an open modal the box is the dialog's child, placed below its target", async () => {
+    const host = withFixture(`
+      <div class="wonk-table-scroll" tabindex="0" style="max-height:80px">
+        <table class="wonk-table"><thead><tr><th data-tip="column hint">col</th></tr></thead>
+        <tbody><tr><td>1</td></tr></tbody></table>
+      </div>`);
+    const dlg = document.createElement("dialog");
+    dlg.className = "wonk-modal";
+    dlg.innerHTML = `<button type="button" data-tip="modal hint">inside</button>`;
+    document.body.appendChild(dlg);
+    try {
+      wonk.init(host);
+      const th = host.querySelector("th");
+      th.focus();
+      assert(hintShown(), "focusing the th[data-tip] should show the box");
+      const scroller = host.querySelector(".wonk-table-scroll");
+      assert(!scroller.contains(hintBox()), "the box must never be inside the scroll container");
+      assert(hintBox().parentElement === document.body, `the box should be a child of <body>, got ${hintBox().parentElement ? hintBox().parentElement.tagName : "none"}`);
+      th.blur();
+
+      dlg.showModal();
+      const btn = dlg.querySelector("button");
+      btn.focus();
+      await sleep(400); // let the wonk-pop open animation finish (its transform ends as none)
+      assert(hintShown(), "focusing a button inside the modal should show the box");
+      assert(hintBox().parentElement === dlg, `inside an open modal the box should be a child of the dialog, got ${hintBox().parentElement ? hintBox().parentElement.tagName : "none"}`);
+      const r = hintBox().getBoundingClientRect();
+      const a = btn.getBoundingClientRect();
+      assert(r.top >= a.bottom - 0.5 && r.top - a.bottom < 20, `box should sit just below its target: box top ${r.top}, target bottom ${a.bottom}`);
+      const offCenter = Math.abs((r.left + r.right) / 2 - (a.left + a.right) / 2);
+      assert(offCenter < 1, `box should be centered under its target, off by ${offCenter}px`);
+    } finally {
+      resetHint();
+      if (dlg.open) dlg.close();
+      dlg.remove();
+      host.remove();
+      resetHint();
+    }
   });
 
   // ============================================================

@@ -178,7 +178,7 @@
           <button class="wonk-btn wonk-btn--danger">Destroy</button>
           <button class="wonk-btn wonk-btn--quiet">Nevermind</button>
           <button class="wonk-btn" disabled>Disabled</button>
-          <button class="wonk-btn wonk-tip" data-tip="oh... interesting">Hover me</button>
+          <button class="wonk-btn" data-tip="oh... interesting">Hover me</button>
         </div>
       </section>
       <!-- SECTION:buttons END -->
@@ -330,14 +330,65 @@
 
       <!-- SECTION:overlays START -->
       <section class="demo-section wonk-reveal" id="overlays">
-        <div class="wonk-label">09 &middot; modal &middot; toast &middot; tooltip</div>
+        <div class="wonk-label">09 &middot; modal &middot; toast &middot; hints</div>
         <div class="demo-row">
           <button class="wonk-btn" id="open-modal">Open modal</button>
           <button class="wonk-btn" onclick="wonk.toast('Deployed to prod', 'ok')">Toast ok</button>
           <button class="wonk-btn" onclick="wonk.toast('Queue is backing up', 'warn')">Toast warn</button>
           <button class="wonk-btn" onclick="wonk.toast('webhook-fanout is down', 'err')">Toast err</button>
-          <span class="wonk-tip" data-tip="tooltips are mono + inverted" style="border-bottom:1px dashed var(--ak-hairline-strong); cursor:help">tooltip on this text</span>
         </div>
+        <h4 style="margin-top:var(--ak-s6)">Hints and terms</h4>
+        <p>Hover, focus, or tap. <span class="wonk-term" data-tip="Share of calls where the AI score and the rep's own call agree">Agreement</span> is 82% this week, and <span class="wonk-term" data-term="p95">p95</span> latency is 840ms.</p>
+        <div class="demo-grid" id="demo-hints">
+          <div>
+            <div class="wonk-field">
+              <div class="demo-row" style="gap:var(--ak-s2)">
+                <label class="wonk-label" for="demo-period">period</label>
+                <button type="button" class="wonk-hint-btn" data-tip="Uses the opportunity close date, not the created date" aria-label="About period">?</button>
+              </div>
+              <select class="wonk-select" id="demo-period"><option>this quarter</option><option>last quarter</option></select>
+            </div>
+            <div class="wonk-field">
+              <label class="wonk-label" for="demo-q" data-tip="Matches deal names, not account names">search</label>
+              <input class="wonk-input" id="demo-q" placeholder="deal name">
+            </div>
+          </div>
+          <div class="wonk-table-scroll" role="region" aria-label="Deals by stage, scroll for all columns" tabindex="0">
+            <table class="wonk-table">
+              <thead><tr><th>stage</th><th class="num" data-tip="Deals whose close date falls in the period">deals</th><th class="num" data-tip="Sum of open amounts, before discounts">pipeline</th></tr></thead>
+              <tbody>
+                <tr><td><span class="wonk-badge" tabindex="0" data-stage="discovery">discovery</span></td><td class="num">3</td><td class="num">$41k</td></tr>
+                <tr><td><span class="wonk-badge" tabindex="0" data-stage="proposal">proposal</span></td><td class="num">2</td><td class="num">$63k</td></tr>
+                <tr><td><span class="wonk-badge" tabindex="0" data-stage="closing">closing</span></td><td class="num">1</td><td class="num">$96k</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <script>
+          // a glossary term and a rich tip (stage badges list their deals).
+          // wonk.js loads with defer, so wait for it.
+          document.addEventListener("DOMContentLoaded", () => {
+            wonk.glossary({ p95: "95th percentile: 95% of requests finish faster than this" });
+            const deals = {
+              discovery: [["Acme renewal", 12], ["Globex pilot", 9], ["Initech seats", 20]],
+              proposal: [["Umbrella expansion", 48], ["Hooli proof of concept", 15]],
+              closing: [["Stark platform", 96]],
+            };
+            wonk.tip(document.getElementById("demo-hints"), "[data-stage]", (el) => {
+              const rows = deals[el.dataset.stage];
+              const frag = document.createDocumentFragment();
+              const head = document.createElement("strong");
+              head.textContent = `${rows.length} deals · $${rows.reduce((sum, [, k]) => sum + k, 0)}k`;
+              frag.append(head);
+              rows.forEach(([name, k]) => {
+                const row = document.createElement("div");
+                row.textContent = `${name} · $${k}k`;
+                frag.append("\n", row); // "\n" keeps words apart in the screen-reader text
+              });
+              return frag;
+            });
+          });
+        </script>
         <dialog class="wonk-modal" id="demo-modal">
           <div class="wonk-label">confirm</div>
           <h3>Destroy the staging cluster?</h3>

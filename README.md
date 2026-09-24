@@ -51,6 +51,11 @@ root:
 <html data-pair="metathesis" class="wonk">
 ```
 
+help text needs `wonk.js`: it shows every `data-tip` and `.wonk-term` hint
+on hover, focus, and tap, and describes it to screen readers. never use
+native `title=` for help text. without JS, only `.wonk-tip[data-tip]` keeps
+a CSS-only fallback.
+
 dark is the default. switch to paper with
 `document.documentElement.setAttribute("data-theme", "paper")` and persist
 the choice, `prefers-color-scheme: light` may pick paper as the initial
@@ -177,7 +182,7 @@ choosing and tuning a pair, the semantic tokens, and the chart series: see
 | forms | `.wonk-field`, `.wonk-input`, `.wonk-select`, `.wonk-textarea`, `.wonk-check`, `.wonk-toggle`, `.wonk-range` | `#forms` | components.md |
 | navigation | `.wonk-crumbs`, `.wonk-pages`, `.wonk-avatar`, `.wonk-menu`, `.wonk-tabs` | `#nav`, `#tabs` | components.md |
 | data display | `.wonk-card`, `.wonk-stat`, `.wonk-badge`, `.wonk-table`, `.wonk-kv`, `.wonk-pre`, `.wonk-log` | `#cards`, `#table` | components.md |
-| feedback | `.wonk-alert`, `.wonk-acc`, `.wonk-modal`, `.wonk-tip`, `wonk.toast()` | `#overlays` | components.md |
+| feedback | `.wonk-alert`, `.wonk-acc`, `.wonk-modal`, `data-tip`, `.wonk-term`, `.wonk-hint-btn`, `wonk.toast()`, `wonk.tip()` | `#overlays` | components.md |
 | live/loading | `.wonk-dot--live`, `.wonk-spectrum`, `.wonk-skeleton`, `.wonk-empty` | `#live` | components.md |
 | exotic | VU meter, precision knob, oscilloscope | `#exotic` | components.md |
 | instruments | knob, fader, bounded window, segmented selector, stepper | `demo/instruments.html` | instruments.md |

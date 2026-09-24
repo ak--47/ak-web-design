@@ -44,6 +44,8 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
    locally, `change` commits a draft, an explicit Run/Apply action runs the
    query: [README § instruments](README.md#instruments-and-draft-state).
    never fabricate activity, VU/scope helpers are decorative only.
+8. help text and term definitions use `data-tip` / `.wonk-term`, never
+   native `title=`: [components.md § hints](references/components.md#hints-and-terms).
 
 ## modes
 
