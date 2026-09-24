@@ -1080,6 +1080,14 @@
   check("hint: mouseover shows the box after the hover delay; mouseout hides it after the grace period; hovering the box during grace keeps it", async () => {
     const host = withFixture(`<span data-tip="hover text">hover me</span>`);
     const target = host.querySelector("[data-tip]");
+    // This check plays the pointer with synthetic events. A real (trusted)
+    // pointer must not take part: headless Chromium on Linux keeps its
+    // cursor inside the viewport and sends a trusted mouseover to whatever
+    // sits under it after a layout change, which correctly cancels the
+    // pending hover. Stop trusted mouse events before wonk.js sees them.
+    const isolate = (e) => { if (e.isTrusted) e.stopImmediatePropagation(); };
+    window.addEventListener("mouseover", isolate, true);
+    window.addEventListener("mouseout", isolate, true);
     try {
       mouse(target, "mouseover");
       assert(!hintShown(), "hover should wait out the short delay, not show synchronously");
@@ -1104,6 +1112,8 @@
       await sleep(300);
       assert(!hintShown(), "leaving the box should hide it after the grace period");
     } finally {
+      window.removeEventListener("mouseover", isolate, true);
+      window.removeEventListener("mouseout", isolate, true);
       resetHint();
       host.remove();
     }
