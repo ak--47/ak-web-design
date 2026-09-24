@@ -84,7 +84,7 @@
   <a class="demo-back wonk-btn wonk-btn--quiet" href="index.html">&larr; back to WONK</a>
   <div class="demo-row">
     <span class="wonk-label" id="pair-name">pair: metathesis</span>
-    <button class="wonk-btn" id="theme-toggle">Paper</button>
+    <button class="wonk-btn" type="button" data-wonk-theme-toggle>Paper</button>
   </div>
 </header>
 
@@ -321,14 +321,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // ---- theme toggle (dark/paper) ----
-  const toggle = document.getElementById("theme-toggle");
-  toggle.addEventListener("click", () => {
-    const paper = document.documentElement.getAttribute("data-theme") === "paper";
-    wonk.setTheme(paper ? "dark" : "paper");
-    toggle.textContent = paper ? "Paper" : "Dark";
-  });
-
   // ---- event logger shared by every section: each entry is a
   // padded, expandable <details> holding a real wonkCode.render'd
   // JSON payload (label, kind, detail), not a flattened string. The

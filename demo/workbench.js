@@ -129,9 +129,5 @@
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  get("theme-toggle").addEventListener("click", () => {
-    const paper = document.documentElement.dataset.theme !== "paper";
-    wonk.setTheme(paper ? "paper" : "dark"); get("theme-toggle").textContent = paper ? "Dark" : "Paper";
-  });
   render();
 })();

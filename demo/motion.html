@@ -64,7 +64,7 @@
   </div>
   <div class="demo-row">
     <span class="wonk-label" id="reduced-flag"></span>
-    <button class="wonk-btn" id="theme-toggle">Paper</button>
+    <button class="wonk-btn" type="button" data-wonk-theme-toggle>Paper</button>
   </div>
 </header>
 
@@ -244,14 +244,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   paintFlag();
   mql.addEventListener("change", paintFlag);
-
-  // ---- theme toggle ----
-  const toggle = document.getElementById("theme-toggle");
-  toggle.addEventListener("click", () => {
-    const paper = document.documentElement.getAttribute("data-theme") === "paper";
-    wonk.setTheme(paper ? "dark" : "paper");
-    toggle.textContent = paper ? "Paper" : "Dark";
-  });
 
   // ---- 1 + 2: panel enter / exit ----
   const panelEl = document.getElementById("panel-el");

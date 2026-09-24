@@ -43,26 +43,11 @@ body { margin: 0; }
 }
 .family-toc a:hover, .family-toc a:focus-visible { color: var(--ak-a1-text); border-color: var(--ak-a1-text); }
 
-/* ---- mobile nav: the sidebar TOC becomes a toggled drawer below
-   800px instead of disappearing. .demo-menu-btn shows only there. ---- */
-.demo-menu-btn { display: none; }
+/* ---- mobile: the sidebar drawer is wonk.css + wonk.js
+   (.wonk-drawer-btn, [data-wonk-drawer]); only the page padding is
+   this page's own. ---- */
 @media (max-width: 800px) {
-  .wonk-shell { grid-template-columns: minmax(0, 1fr); }
   .demo-main { padding: var(--ak-s4); }
-  .wonk-topbar { padding: var(--ak-s3) var(--ak-s4); }
-  .demo-menu-btn { display: inline-flex; }
-  .wonk-side {
-    display: flex;
-    position: fixed;
-    inset: 0 20% 0 0;
-    z-index: 40;
-    background: var(--ak-ground);
-    overflow-y: auto;
-    border-right: var(--ak-hairline-w) solid var(--ak-hairline-strong);
-    transform: translateX(-100%);
-    transition: transform var(--ak-t-med) var(--ak-ease);
-  }
-  .wonk-side.is-open { transform: translateX(0); box-shadow: var(--ak-shadow); }
 }
 
 /* ---- instrument event logs: same idiom as demo/instruments.html,

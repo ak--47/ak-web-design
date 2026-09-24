@@ -61,59 +61,20 @@ document.addEventListener("DOMContentLoaded", () => {
     b.style.background = chipColor(p);
     b.setAttribute("aria-pressed", p === "metathesis");
     b.addEventListener("click", () => {
-      wonk.setPair(p);
+      wonk.setPair(p); // fires wonk:themechange: the listener below repaints
       nameEl.textContent = "pair: " + p;
       [...picker.children].forEach((c) => c.setAttribute("aria-pressed", c === b));
-      [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
-      renderAll();
     });
     picker.appendChild(b);
   });
 
-  const toggle = document.getElementById("theme-toggle");
-  toggle.addEventListener("click", () => {
-    const paper = document.documentElement.getAttribute("data-theme") === "paper";
-    wonk.setTheme(paper ? "dark" : "paper");
-    toggle.textContent = paper ? "Paper" : "Dark";
+  // the theme toggle ([data-wonk-theme-toggle]) and the mobile drawer
+  // ([data-wonk-drawer]) are wonk.js's own. A pair or theme change
+  // recolors the chips and redraws the token-driven swatches and svgs.
+  document.addEventListener("wonk:themechange", () => {
     [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
     renderAll();
   });
-
-  // mobile TOC drawer: the sidebar becomes a toggled off-canvas panel
-  // below 800px (see .wonk-side rules in catalog.css). Closed, it is
-  // `inert` (unfocusable, unclickable) so a keyboard or screen-reader
-  // user tabbing through the page never lands on a link hidden off
-  // the left edge. Escape and an outside click both close it and
-  // return focus to the toggle button. Crossing the 800px breakpoint
-  // (resize) resets the drawer to the desktop's always-visible state.
-  const side = document.getElementById("wonk-side");
-  const menuBtn = document.getElementById("menu-toggle");
-  const mobileMenuQuery = window.matchMedia("(max-width: 800px)");
-  function setMenu(open) {
-    side.classList.toggle("is-open", open);
-    menuBtn.setAttribute("aria-expanded", String(open));
-    side.inert = mobileMenuQuery.matches && !open;
-  }
-  function syncMenuToViewport() {
-    setMenu(mobileMenuQuery.matches && side.classList.contains("is-open"));
-  }
-  syncMenuToViewport();
-  menuBtn.addEventListener("click", () => setMenu(!side.classList.contains("is-open")));
-  side.addEventListener("click", (e) => {
-    if (e.target.closest("a")) setMenu(false);
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && side.classList.contains("is-open")) {
-      setMenu(false);
-      menuBtn.focus();
-    }
-  });
-  document.addEventListener("click", (e) => {
-    if (!mobileMenuQuery.matches || !side.classList.contains("is-open")) return;
-    if (side.contains(e.target) || menuBtn.contains(e.target)) return;
-    setMenu(false);
-  });
-  mobileMenuQuery.addEventListener("change", syncMenuToViewport);
 
   document.getElementById("open-modal").addEventListener("click", () =>
     document.getElementById("demo-modal").showModal()

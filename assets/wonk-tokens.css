@@ -6,6 +6,7 @@
    Usage:
      <html data-pair="metathesis">              -> dark (default)
      <html data-pair="metathesis" data-theme="paper">  -> paper
+     data-theme="light" is an alias of paper (same selectors, same values)
 
    Pairs: metathesis (default) · glorpla · demogorgon · ancient · flourish
    ============================================================ */
@@ -70,7 +71,7 @@
   --ak-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-[data-theme="paper"] {
+:is([data-theme="paper"], [data-theme="light"]) {
   /* paper: the printed record. bone ground, ink text. */
   color-scheme: light;
   --ak-ground: #ece4d4;
@@ -120,8 +121,8 @@
   --ak-chart-1: #12a5a5; --ak-chart-2: #d84f53; --ak-chart-3: #6f7de8;
   --ak-chart-4: #3f9e5a; --ak-chart-5: #b8479e; --ak-chart-6: #9a9a10;
 }
-[data-theme="paper"],
-[data-theme="paper"][data-pair="metathesis"] {
+:is([data-theme="paper"], [data-theme="light"]),
+:is([data-theme="paper"], [data-theme="light"])[data-pair="metathesis"] {
   --ak-a1: #148484;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #0f6f6f;
@@ -151,7 +152,7 @@
   --ak-chart-1: #9a5fd6; --ak-chart-2: #3f9e5a; --ak-chart-3: #b8479e;
   --ak-chart-4: #6f7de8; --ak-chart-5: #d84f53; --ak-chart-6: #12a5a5;
 }
-[data-theme="paper"][data-pair="glorpla"] {
+:is([data-theme="paper"], [data-theme="light"])[data-pair="glorpla"] {
   --ak-a1: #6a3ddb;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #5527c9;
@@ -181,7 +182,7 @@
   --ak-chart-1: #4a7fd6; --ak-chart-2: #d84f53; --ak-chart-3: #12a5a5;
   --ak-chart-4: #9a5fd6; --ak-chart-5: #3f9e5a; --ak-chart-6: #b8479e;
 }
-[data-theme="paper"][data-pair="demogorgon"] {
+:is([data-theme="paper"], [data-theme="light"])[data-pair="demogorgon"] {
   --ak-a1: #2f5cb0;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #29509c;
@@ -211,7 +212,7 @@
   --ak-chart-1: #e05a2e; --ak-chart-2: #12a5a5; --ak-chart-3: #9a5fd6;
   --ak-chart-4: #9a9a10; --ak-chart-5: #6f7de8; --ak-chart-6: #b8479e;
 }
-[data-theme="paper"][data-pair="ancient"] {
+:is([data-theme="paper"], [data-theme="light"])[data-pair="ancient"] {
   --ak-a1: #cf3a12;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #b03210;
@@ -241,7 +242,7 @@
   --ak-chart-1: #9a9a10; --ak-chart-2: #6f7de8; --ak-chart-3: #d84f53;
   --ak-chart-4: #12a5a5; --ak-chart-5: #9a5fd6; --ak-chart-6: #3f9e5a;
 }
-[data-theme="paper"][data-pair="flourish"] {
+:is([data-theme="paper"], [data-theme="light"])[data-pair="flourish"] {
   --ak-a1: #7a7a0e;
   --ak-a1-ink: #ffffff;
   --ak-a1-text: #62620b;

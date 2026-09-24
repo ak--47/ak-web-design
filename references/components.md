@@ -9,6 +9,10 @@ on the same subtree after a render is safe (already-wired elements are
 skipped). wonk.js loads with `defer`, so any inline script that calls `wonk.*`
 must wait for `DOMContentLoaded`.
 
+to start a new app, copy [`templates/app.html`](../templates/app.html): the
+shell, drawer, theme toggle, stats with drills, a records table, a chart,
+state recipes, and the radio dock, with no inline styles and labeled fixtures.
+
 ## specialized packs
 
 | pack | catalog | gallery |
@@ -49,16 +53,30 @@ application behavior lives in the workbench example.
 
 ```html
 <div class="wonk-shell">                         <!-- sidebar app frame -->
-  <aside class="wonk-side">
+  <nav class="wonk-side" id="app-nav" aria-label="Main">
     <div class="brand">WONK</div>
-    <a class="wonk-navlink active" href="#">Overview</a>
+    <a class="wonk-navlink active" href="#" aria-current="page">Overview</a>
     <a class="wonk-navlink" href="#">Logs</a>
-  </aside>
+  </nav>
   <div>
-    <header class="wonk-topbar">…</header>
-    <main>…</main>
+    <header class="wonk-topbar">
+      <div class="wonk-row">
+        <!-- shows below 800px; opens the side as a drawer -->
+        <button type="button" class="wonk-btn wonk-drawer-btn" data-wonk-drawer
+                aria-controls="app-nav" aria-expanded="false">Menu</button>
+        <div class="wonk-title" role="heading" aria-level="1">Overview</div>
+      </div>
+      <button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button>
+    </header>
+    <main class="wonk-main">                     <!-- page padding, centered 80rem column -->
+      <section class="wonk-section">…</section>  <!-- bottom space, anchor offset, s4 between children -->
+    </main>
   </div>
 </div>
+
+<div class="wonk-row">…</div>                    <!-- wrapping row of controls, s3 gap -->
+<div class="wonk-grid">…</div>                   <!-- auto-fit cards; style="--wonk-grid-min: 320px" to change the 260px minimum -->
+<h2 class="wonk-sr">Summary</h2>                 <!-- visually hidden, still read by screen readers -->
 
 <section class="wonk-reveal">…</section>        <!-- fades + slides in on scroll -->
 
@@ -74,6 +92,45 @@ view. a no-JS page, or an element wonk.js never saw, stays visible. sections
 injected after load are armed automatically (one page-wide
 `MutationObserver`), no `wonk.reveal()` call needed. reduced motion shows
 them at once.
+
+drawer: below 800px `.wonk-shell` is one column and `.wonk-side` is an
+off-canvas panel. wonk.js wires every `[data-wonk-drawer]` button whose
+`aria-controls` names the side: a click toggles it and `aria-expanded`; a
+link click inside it, Escape, and a click outside it close it, and Escape
+returns focus to the button. the closed drawer is `inert`, so Tab never
+lands on a hidden link. crossing 800px resets it to closed. above 800px the
+button is hidden and the side is a normal column. a missing `aria-controls`
+target warns and does nothing.
+
+### theme
+
+```html
+<!-- in <head>, above the stylesheets: a saved paper theme never flashes dark -->
+<script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
+
+<button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    wonk.theme.init();                           // saved theme, else prefers-color-scheme
+    document.addEventListener("wonk:themechange", (e) => {
+      console.log(e.detail.theme, e.detail.pair); // "dark" | "paper", "metathesis" | …
+    });
+  });
+</script>
+```
+
+- `wonk.theme.init({key = "wonk-theme"})` applies the stored theme, else
+  paper when `prefers-color-scheme` is light, else dark, and returns it.
+  init stores nothing. after it, every `setTheme` stores the choice under
+  `key`. the snippet reads the same key.
+- `wonk.setTheme("dark" | "paper" | "light")`: `"light"` is an alias and
+  applies `data-theme="paper"`. `wonk.setPair(name)` takes metathesis,
+  glorpla, demogorgon, ancient, or flourish. both throw on any other name,
+  and both fire `wonk:themechange` on `document` with
+  `{detail: {theme, pair}}`.
+- a `[data-wonk-theme-toggle]` button flips dark and paper. it reads `Paper`
+  in dark and `Dark` in paper; `aria-pressed` is `true` in paper.
+- `data-theme="light"` written by hand styles exactly like paper.
 
 ## Buttons
 
@@ -458,7 +515,9 @@ resume when it turns off.
 | `wonk.foldState` | the `Map` of remembered `data-fold-key` -> open states; `.clear()` forgets them |
 | `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline; drops missing values, `[]` empties `el`, one value draws a dot |
 | `wonk.fmt.num` / `.compact` / `.money` / `.pct` / `.duration` / `.date` / `.delta` | format numbers, dates, and deltas as strings; unknown input returns `—`; [formatting](#formatting-wonkfmt) |
-| `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
+| `wonk.setPair(name)` / `wonk.setTheme("dark"\|"paper"\|"light")` | switch pair / theme; throw on an unknown name; fire `wonk:themechange` |
+| `wonk.theme.init({key}?)` | apply the saved theme (else `prefers-color-scheme`) and save later `setTheme` calls; returns the theme; [theme](#theme) |
+| `wonk.drawer(button)` | wire one `[data-wonk-drawer]` button (init does this) |
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |
 | `wonk.glyph(el)` | glyph morph (`[data-wonk-glyph]`) |
 | `wonk.scatter(el)` | hover type scatter (`[data-wonk-scatter]`) |
@@ -470,5 +529,6 @@ resume when it turns off.
 every wiring call is idempotent per element: a second call on the same
 element does nothing (`vu` and `knob` return the existing handle).
 
-After a `setPair`/`setTheme`, re-render charts and any canvas widgets; token
-reads inside wonk.js utilities are already live.
+After a `setPair`/`setTheme`, re-render your own canvas or svg drawings on
+`wonk:themechange`. `wonkCharts.plot` charts re-render by themselves, and
+token reads inside wonk.js utilities are already live.

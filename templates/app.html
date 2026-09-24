@@ -1,0 +1,353 @@
+<!-- change ../assets/ to where you copied WONK's assets folder -->
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview · Pipeline</title>
+<!-- no-flash: applies a saved paper theme before the first paint. keep it above the stylesheets. -->
+<script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
+<!--
+  WONK starter. Copy this file next to a copy of WONK's assets folder.
+  1. pick one pair for the app: data-pair on <html> (references/pairs.md).
+  2. replace the fixtures (DEALS, LAST_WEEK) in the app script at the end.
+  3. delete the radio blocks if the app has no radio.
+  Markup for every class: references/components.md. Copy rules:
+  references/hierarchy.md.
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='24' text-anchor='middle' fill='%233fc9c9'%3E%E2%88%BF%3C/text%3E%3C/svg%3E">
+<!-- self-host both faces in production (README § install) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/wonk-tokens.css">
+<link rel="stylesheet" href="../assets/wonk.css">
+<link rel="stylesheet" href="../assets/wonk-data.css">
+<!-- radio: delete with the radio block -->
+<link rel="stylesheet" href="../assets/wonk-radio.css">
+<!-- charts: d3, then Plot, both before wonk-charts.js -->
+<script defer src="../assets/vendor/d3/d3.min.js"></script>
+<script defer src="../assets/vendor/plot/plot.umd.min.js"></script>
+<script defer src="../assets/wonk.js"></script>
+<script defer src="../assets/wonk-data.js"></script>
+<script defer src="../assets/wonk-charts.js"></script>
+<!-- radio: delete with the radio block -->
+<script defer src="../assets/wonk-radio.js"></script>
+</head>
+<body>
+
+<div class="wonk-shell">
+  <nav class="wonk-side" id="app-nav" aria-label="Main">
+    <div class="brand" data-wonk-secret="seven clicks. persistence closes deals."><span data-wonk-glyph aria-hidden="true">&#8767;</span> Pipeline</div>
+    <a class="wonk-navlink active" href="#overview" aria-current="page">Overview</a>
+    <a class="wonk-navlink" href="#records">Deals</a>
+    <a class="wonk-navlink" href="#trend">Trend</a>
+  </nav>
+
+  <div>
+    <header class="wonk-topbar">
+      <div class="wonk-row">
+        <button type="button" class="wonk-btn wonk-drawer-btn" data-wonk-drawer aria-controls="app-nav" aria-expanded="false">Menu</button>
+        <div class="wonk-title" role="heading" aria-level="1">Overview</div>
+      </div>
+      <div class="wonk-row">
+        <span class="wonk-label" id="pair-label">pair: metathesis</span>
+        <button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button>
+      </div>
+    </header>
+
+    <main class="wonk-main">
+
+      <section class="wonk-section" id="overview" aria-labelledby="overview-title">
+        <h2 class="wonk-sr" id="overview-title">Summary</h2>
+        <div class="wonk-grid">
+          <div class="wonk-card wonk-card--accent">
+            <button type="button" class="wonk-stat" data-wonk-drill="pipeline" data-tip="The amount of every deal that is not won or lost">
+              <span class="wonk-label">Open pipeline</span>
+              <span class="wonk-num" id="stat-pipeline">&mdash;</span>
+              <small id="delta-pipeline"></small>
+            </button>
+          </div>
+          <div class="wonk-card">
+            <button type="button" class="wonk-stat" data-wonk-drill="at-risk" data-term="at-risk">
+              <span class="wonk-label">Deals at risk</span>
+              <span class="wonk-num" id="stat-risk">&mdash;</span>
+              <small id="delta-risk"></small>
+            </button>
+          </div>
+          <div class="wonk-card">
+            <button type="button" class="wonk-stat" data-wonk-drill="won" data-tip="Deals marked won with a close date in September 2026">
+              <span class="wonk-label">Won this month</span>
+              <span class="wonk-num" id="stat-won">&mdash;</span>
+              <small id="delta-won"></small>
+            </button>
+          </div>
+        </div>
+        <p class="wonk-freshness"><span class="wonk-badge">fixture</span><span>Made-up deals from this file feed every number, table, and chart on this page. Snapshot 2026-09-24 09:00 UTC.</span></p>
+        <details class="wonk-fold">
+          <summary>How these are counted</summary>
+          <div class="body">
+            <p>Open pipeline adds up the amount of every deal that is not won or lost.</p>
+            <p>A deal is <span class="wonk-term" data-term="at-risk">at risk</span> when it is open and its owner flagged a blocker.</p>
+            <p>Won this month counts deals marked won with a close date in September 2026. Each change compares with the same count last week or last month. Select a number to see its deals.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="wonk-section" id="records" aria-labelledby="records-title">
+        <div class="wonk-rack">
+          <header class="wonk-rack-head">
+            <h2 id="records-title">Deals</h2>
+            <div class="wonk-fold-all" role="group" aria-label="Deal details">
+              <button type="button" class="wonk-btn wonk-btn--quiet" data-wonk-fold-all="open" data-target="#deals-table">Unfold all</button>
+              <button type="button" class="wonk-btn wonk-btn--quiet" data-wonk-fold-all="close" data-target="#deals-table">Fold all</button>
+            </div>
+          </header>
+          <div class="wonk-rack-body">
+            <p>Largest first. Open a deal to see its next step and blocker.</p>
+            <div id="deals-table"></div>
+          </div>
+          <div class="wonk-selection-bar">
+            <output id="deals-selected">0 selected</output>
+            <button type="button" class="wonk-btn" id="deals-download" disabled>Download CSV</button>
+            <button type="button" class="wonk-btn wonk-btn--quiet" id="deals-clear" disabled>Clear selection</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="wonk-section" id="trend" aria-labelledby="trend-title">
+        <div class="wonk-rack">
+          <header class="wonk-rack-head">
+            <h2 id="trend-title">New pipeline by week</h2>
+            <span class="wonk-label">2026-07-27 to 2026-09-21</span>
+          </header>
+          <div class="wonk-rack-body">
+            <p>The amount of the deals created each week. Select a point to see those deals.</p>
+            <div id="trend-chart"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="wonk-section" id="states" aria-labelledby="states-title">
+        <h2 id="states-title">Empty, stale, and error states</h2>
+        <p>Show one of these in place of a table or chart. Each one names the cause and the way out.</p>
+        <div class="wonk-grid">
+          <div class="wonk-empty">
+            <div class="glyph" aria-hidden="true">&empty;</div>
+            <h3>No deals match these filters.</h3>
+            <p>Clear a filter or widen the date range.</p>
+          </div>
+          <article class="wonk-state" data-state="stale">
+            <h3>Showing the 09:00 UTC snapshot.</h3>
+            <p>Refresh failed at 09:02 UTC. Retry keeps this timestamp visible.</p>
+          </article>
+          <article class="wonk-state" data-state="error">
+            <h3>The source rejected the query.</h3>
+            <p>Field <code>close_date</code> is missing. Your filters are kept.</p>
+          </article>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// the app script. wonk.js and the packs load with defer, so wait for them.
+document.addEventListener("DOMContentLoaded", () => {
+  "use strict";
+  const fmt = wonk.fmt;
+  const $ = (id) => document.getElementById(id);
+
+  // ---- fixtures: made-up deals. Replace DEALS and LAST_WEEK with your data. ----
+  // stageKind colors the stage badge (ok, warn, err, info, accent).
+  const DEALS = [
+    { id: "D-1001", deal: "Acme renewal", owner: "Dana", stage: "Negotiation", amount: 82000, created: "2026-07-28", close: "2026-10-31", next: "Legal review on 2026-10-02", risk: "Security review is still open." },
+    { id: "D-1002", deal: "Globex expansion", owner: "Sam", stage: "Proposal", amount: 64000, created: "2026-08-04", close: "2026-11-14", next: "Send revised pricing", risk: null },
+    { id: "D-1003", deal: "Umbrella platform", owner: "Lee", stage: "Proposal", amount: 51000, created: "2026-08-06", close: "2026-12-12", next: "Book a technical deep dive", risk: null },
+    { id: "D-1004", deal: "Stark analytics", owner: "Ortiz", stage: "Negotiation", amount: 46000, created: "2026-08-12", close: "2026-10-20", next: "Confirm the signer", risk: null },
+    { id: "D-1005", deal: "Initech seats", owner: "Dana", stage: "Discovery", amount: 44000, created: "2026-08-19", close: "2026-12-02", next: "Find an executive sponsor", risk: "No executive sponsor yet." },
+    { id: "D-1006", deal: "Hooli pilot", owner: "Park", stage: "Discovery", amount: 38000, created: "2026-08-25", close: "2026-12-18", next: "Ask for next year's budget date", risk: "Budget moved to the next fiscal year." },
+    { id: "D-1007", deal: "Wayne renewal", owner: "Sam", stage: "Won", stageKind: "ok", amount: 30000, created: "2026-07-29", close: "2026-09-09", next: "Hand off to onboarding", risk: null },
+    { id: "D-1008", deal: "Cyberdyne pilot", owner: "Lee", stage: "Proposal", amount: 21000, created: "2026-09-01", close: "2026-11-30", next: "Share the pilot plan", risk: null },
+    { id: "D-1009", deal: "Soylent add-on", owner: "Park", stage: "Won", stageKind: "ok", amount: 19000, created: "2026-08-11", close: "2026-09-15", next: "Send the invoice", risk: null },
+    { id: "D-1010", deal: "Tyrell research", owner: "Ortiz", stage: "Won", stageKind: "ok", amount: 27000, created: "2026-08-05", close: "2026-08-21", next: "Plan the kickoff", risk: null },
+    { id: "D-1011", deal: "Wonka supply", owner: "Dana", stage: "Won", stageKind: "ok", amount: 56000, created: "2026-08-18", close: "2026-08-28", next: "Plan the quarterly review", risk: null },
+    { id: "D-1012", deal: "Oscorp data", owner: "Sam", stage: "Negotiation", amount: 73000, created: "2026-09-08", close: "2026-10-27", next: "Answer the discount request", risk: "Procurement asked for a 20% discount." },
+    { id: "D-1013", deal: "Massive Dynamic", owner: "Lee", stage: "Discovery", amount: 35000, created: "2026-09-10", close: "2027-01-15", next: "Map the buying group", risk: null },
+    { id: "D-1014", deal: "Vandelay imports", owner: "Park", stage: "Proposal", amount: 28000, created: "2026-09-15", close: "2026-11-20", next: "Send the proposal", risk: null },
+    { id: "D-1015", deal: "Pied Piper storage", owner: "Ortiz", stage: "Won", stageKind: "ok", amount: 42000, created: "2026-08-26", close: "2026-09-18", next: "Start onboarding", risk: null },
+    { id: "D-1016", deal: "Gringotts audit", owner: "Dana", stage: "Discovery", amount: 61000, created: "2026-09-22", close: "2027-02-10", next: "Schedule the discovery call", risk: null },
+    { id: "D-1017", deal: "Nakatomi security", owner: "Sam", stage: "Won", stageKind: "ok", amount: 24000, created: "2026-07-30", close: "2026-08-07", next: "Renewal check in 2027-07", risk: null },
+    { id: "D-1018", deal: "Duff distribution", owner: "Ortiz", stage: "Lost", stageKind: "err", amount: 33000, created: "2026-08-03", close: "2026-09-11", next: "Log the loss reason", risk: null },
+  ];
+  // last week's values, from the same made-up source
+  const LAST_WEEK = { pipeline: 503000, atRisk: 2 };
+
+  // ---- derived rows: every number opens the rows it counts ----
+  const sum = (rows) => rows.reduce((total, d) => total + d.amount, 0);
+  const open = DEALS.filter((d) => d.stage !== "Won" && d.stage !== "Lost");
+  const atRisk = open.filter((d) => d.risk);
+  const wonIn = (month) => DEALS.filter((d) => d.stage === "Won" && d.close.startsWith(month));
+  const wonNow = wonIn("2026-09");
+  const wonBefore = wonIn("2026-08");
+
+  const COLUMNS = [
+    { key: "deal", label: "Deal" },
+    { key: "owner", label: "Owner" },
+    { key: "stage", label: "Stage", type: "badge" },
+    { key: "amount", label: "Amount", type: "money", hint: "Annual contract value in US dollars" },
+    { key: "close", label: "Close date", type: "date", hint: "Expected close date, or the day it closed (UTC)" },
+  ];
+
+  // ---- chrome: theme, pair label, terms ----
+  wonk.theme.init(); // the theme toggle's choice persists as "wonk-theme", which the no-flash snippet reads
+  const showPair = () => { $("pair-label").textContent = `pair: ${document.documentElement.dataset.pair}`; };
+  showPair();
+  document.addEventListener("wonk:themechange", showPair);
+  wonk.glossary({ "at-risk": "An open deal whose owner flagged a blocker that can stop it from closing" });
+
+  // ---- overview: the numbers, their changes, and their drills ----
+  function showStat(name, value, delta, versus) {
+    $(`stat-${name}`).textContent = value;
+    const el = $(`delta-${name}`);
+    el.textContent = `${delta.text} ${versus}`;
+    el.className = delta.className;
+  }
+  const pipeline = sum(open);
+  showStat("pipeline", fmt.money(pipeline, { compact: true }),
+    fmt.delta((pipeline - LAST_WEEK.pipeline) / LAST_WEEK.pipeline), "vs last week");
+  showStat("risk", fmt.num(atRisk.length),
+    fmt.delta(atRisk.length - LAST_WEEK.atRisk, { format: "num", higherIsBetter: false }), "vs last week");
+  showStat("won", fmt.num(wonNow.length),
+    fmt.delta(wonNow.length - wonBefore.length, { format: "num" }), "vs last month");
+
+  wonkData.drills({
+    pipeline: () => ({
+      title: "Open pipeline",
+      subtitle: "deals not won or lost",
+      columns: COLUMNS,
+      rows: open,
+      sort: { key: "amount", dir: "desc" },
+      download: "open-pipeline.csv",
+    }),
+    "at-risk": () => ({
+      title: "Deals at risk",
+      subtitle: "open deals with a flagged blocker",
+      columns: COLUMNS,
+      rows: atRisk,
+      sort: { key: "close", dir: "asc" },
+      detail: (row) => row.risk,
+    }),
+    won: () => ({
+      title: "Won this month",
+      subtitle: "September 2026",
+      columns: COLUMNS,
+      rows: wonNow,
+      sort: { key: "close", dir: "desc" },
+    }),
+  });
+
+  // ---- records: sortable, selectable, the first 10 rows, row detail ----
+  function dealDetail(row) {
+    const dl = document.createElement("dl");
+    dl.className = "wonk-kv";
+    for (const [term, value] of [["ID", row.id], ["Created", fmt.date(row.created)], ["Next step", row.next], ["Blocker", row.risk || "None flagged"]]) {
+      const dt = document.createElement("dt");
+      dt.textContent = term;
+      const dd = document.createElement("dd");
+      dd.textContent = value;
+      dl.append(dt, dd);
+    }
+    return dl;
+  }
+  const dealsHost = $("deals-table");
+  const deals = wonkData.table(dealsHost, {
+    columns: COLUMNS,
+    rows: DEALS,
+    rowKey: "id",
+    sort: { key: "amount", dir: "desc" },
+    caption: "Deals, largest first",
+    captionHidden: true,
+    label: "Deals",
+    select: true,
+    limit: 10,
+    detail: dealDetail,
+  });
+  dealsHost.addEventListener("wonk-data:select", (e) => {
+    const n = e.detail.selected.length;
+    $("deals-selected").textContent = `${fmt.num(n)} selected`;
+    $("deals-download").disabled = $("deals-clear").disabled = n === 0;
+  });
+  $("deals-clear").addEventListener("click", () => {
+    deals.clearSelection();
+    dealsHost.querySelector(".wonk-table-scroll").focus(); // the pressed button is now disabled
+  });
+  $("deals-download").addEventListener("click", () => {
+    const keys = new Set(deals.selected);
+    const rows = deals.rows.filter((row) => keys.has(row.id));
+    const url = URL.createObjectURL(new Blob(["\ufeff", wonkData.toCSV(COLUMNS, rows)], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "selected-deals.csv";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    wonk.toast(`Downloaded ${fmt.num(rows.length)} ${rows.length === 1 ? "deal" : "deals"} as CSV`, "ok");
+  });
+
+  // ---- trend: one line chart; a point, or its row in the table view, opens its deals ----
+  const DAY = 86400000;
+  const weekOf = (iso) => { // the Monday that starts the UTC week of an ISO date
+    const t = Date.parse(iso);
+    return new Date(t - ((new Date(t).getUTCDay() + 6) % 7) * DAY).toISOString().slice(0, 10);
+  };
+  const WEEKS = [];
+  for (let t = Date.parse("2026-07-27"); t <= Date.parse("2026-09-21"); t += 7 * DAY) {
+    const week = new Date(t).toISOString().slice(0, 10);
+    const rows = DEALS.filter((d) => weekOf(d.created) === week);
+    WEEKS.push({ week, deals: rows.length, amount: sum(rows), rows });
+  }
+  const openWeek = (w) => wonkData.drill({
+    title: `Deals created the week of ${fmt.date(w.week)}`,
+    columns: COLUMNS,
+    rows: w.rows,
+    sort: { key: "amount", dir: "desc" },
+  });
+  wonkCharts.plot($("trend-chart"), (t) => ({
+    height: 240,
+    marginLeft: 56,
+    x: { label: null },
+    y: { grid: true, label: null, tickFormat: (v) => fmt.money(v, { compact: true }) },
+    marks: [
+      Plot.ruleY([0], { stroke: t.grid }),
+      Plot.lineY(WEEKS, { x: (d) => new Date(d.week), y: "amount", stroke: t.series[0], strokeWidth: 2 }),
+      Plot.dot(WEEKS, {
+        x: (d) => new Date(d.week), y: "amount", r: 4, fill: t.series[0],
+        tip: { format: { x: (d) => fmt.date(d), y: (v) => fmt.money(v) } },
+      }),
+    ],
+  }), {
+    label: "New pipeline by week, 2026-07-27 to 2026-09-21",
+    table: {
+      columns: [
+        { key: "week", label: "Week of", type: "date" },
+        { key: "deals", label: "Deals", type: "num" },
+        { key: "amount", label: "Amount", type: "money" },
+      ],
+      rows: WEEKS,
+      rowKey: "week",
+      sort: { key: "week", dir: "asc" },
+      onRowAction: openWeek,
+    },
+    onClick: openWeek,
+  });
+});
+</script>
+
+<!-- radio: delete this block if the app has no radio -->
+<section class="wonk-radio wonk-radio--dock" data-wonk-radio data-bucket="aktunes" data-prefix="music/" aria-label="Radio"></section>
+<!-- radio: end of the block -->
+</body>
+</html>

@@ -43,8 +43,8 @@
 .wonk-state[data-state="stale"] { border-color: var(--ak-warn); }
 .wonk-state h3 { font-size: var(--ak-text-lg); }
 /* ---- records table (wonkData.table in wonk-data.js) ---- */
-/* visually hidden, still read by screen readers (captionHidden) */
-.wonk-sr,
+/* captionHidden: .wonk-sr lives in wonk.css; this repeats it so it beats
+   the .wonk-table-scroll caption padding above */
 .wonk-table-scroll caption.wonk-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .wonk-sort-arrow { margin-inline-start: 0.35em; }
 .wonk-sort-arrow:empty { margin: 0; }

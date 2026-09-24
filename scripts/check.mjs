@@ -8,6 +8,9 @@
 // each suite's gallery page in headless Chromium, calls
 // window[global].run() (which returns { passed, failed, results }),
 // prints one line per check, and exits 1 on any failure.
+// A smoke suite ({ smoke: true, selectors: [...] }, no global) loads its
+// page, waits for DOMContentLoaded plus 1s, and passes when every
+// selector matches an element and the page threw no error.
 // Only dependency: playwright.
 // ============================================================
 import http from "node:http";
@@ -27,9 +30,14 @@ const SUITES = [
   { name: "radio",    page: "/demo/radio.html",       global: "wonkRadioChecks" },
   { name: "data",     page: "/demo/index.html",       global: "wonkDataChecks" },
   { name: "charts",   page: "/demo/index.html",       global: "wonkChartsChecks" },
+  {
+    name: "template", page: "/templates/app.html", smoke: true,
+    selectors: [".wonk-shell", "button.wonk-stat", ".wonk-table", "[data-wonk-radio] .wonk-radio-scope", "figure, svg", "#trend-chart > [role='img']"],
+  },
 ];
 
 const GLOBAL_TIMEOUT_MS = 15000;
+const SMOKE_SETTLE_MS = 1000;
 const VIEWPORT = { width: 1280, height: 900 };
 
 // ---- static server ----
@@ -160,6 +168,18 @@ async function runSuite(browser, base, suite) {
     else console.warn(`WARN ${suite.name} › console.error — ${text}`);
   });
   try {
+    if (suite.smoke) {
+      await page.goto(base + suite.page, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(SMOKE_SETTLE_MS);
+      out.ran = true;
+      for (const sel of suite.selectors) {
+        const count = await page.locator(sel).count();
+        console.log(`${count ? "PASS" : "FAIL"} ${suite.name} › selector ${sel} — ${count ? `${count} found` : "no element matches"}`);
+        if (count) out.passed++;
+        else out.failed++;
+      }
+      return out;
+    }
     await page.goto(base + suite.page);
     try {
       await page.waitForFunction((g) => !!window[g], suite.global, { timeout: GLOBAL_TIMEOUT_MS });

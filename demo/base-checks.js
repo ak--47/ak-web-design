@@ -1,7 +1,9 @@
 /* ============================================================
    demo/base-checks.js · browser-callable checks for wonk.js base
    behaviors (window.wonk: idempotent init, reduced motion, toast,
-   setTheme, setPair, tabs, spark, menu, reveal, hints: data-tip /
+   setTheme, setPair, theme.init, wonk:themechange, the theme toggle,
+   the responsive drawer, layout utilities (.wonk-sr, .wonk-grid,
+   .wonk-row, .wonk-main), tabs, spark, menu, reveal, hints: data-tip /
    data-hint / data-term, glossary, wonk.tip, disclosure: .wonk-acc,
    .wonk-fold, row toggles, foldAll, fold keys, formatting: wonk.fmt),
    the delta classes, token contrast, and focus rings.
@@ -300,6 +302,280 @@
       assert(root.getAttribute("data-pair") === "glorpla", `expected data-pair="glorpla", got ${JSON.stringify(root.getAttribute("data-pair"))}`);
     } finally {
       restoreRootAttr("data-pair", original);
+    }
+  });
+
+  // ---- theme helper, pair validation, theme toggle, drawer, layout ----
+  // Loads wonk.js, plus optional stylesheets and fixture markup, into an
+  // off-screen iframe with a real viewport size. The drawer check needs
+  // a 390px viewport for its (max-width: 800px) query; the storage check
+  // needs its own module state (a storage key) and a mocked
+  // prefers-color-scheme; the layout check needs a page with only the
+  // base stylesheets.
+  function loadWonkFrame({ width = 390, height = 600, css = [], body = "", lightScheme = null } = {}) {
+    const url = (p) => new URL(p, document.baseURI).href;
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = `position:fixed; left:-10000px; top:0; width:${width}px; height:${height}px; border:0;`;
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      doc.open();
+      doc.write(
+        `<!doctype html><html class="wonk" data-pair="metathesis"><head>` +
+        css.map((p) => `<link rel="stylesheet" href="${url(p)}">`).join("") +
+        `</head><body>${body}</body></html>`
+      );
+      doc.close();
+      if (lightScheme !== null) {
+        const realMatchMedia = win.matchMedia.bind(win);
+        win.matchMedia = (query) => (query.indexOf("prefers-color-scheme") === -1
+          ? realMatchMedia(query)
+          : { matches: query.indexOf("light") !== -1 ? lightScheme : !lightScheme, media: query, addEventListener() {}, removeEventListener() {} });
+      }
+      const sheets = [...doc.querySelectorAll('link[rel="stylesheet"]')].map((link) => new Promise((ok, fail) => {
+        if (link.sheet) ok();
+        else {
+          link.onload = ok;
+          link.onerror = () => fail(new Error("could not load " + link.href + " into the iframe"));
+        }
+      }));
+      Promise.all(sheets).then(() => {
+        const script = doc.createElement("script");
+        script.src = url("../assets/wonk.js");
+        script.onload = () => resolve({ iframe, win, doc, cleanup() { iframe.remove(); } });
+        script.onerror = () => { iframe.remove(); reject(new Error("could not load wonk.js into the iframe")); };
+        doc.body.appendChild(script);
+      }, (err) => { iframe.remove(); reject(err); });
+    });
+  }
+
+  // polls cond() every frame until it is true or ms runs out
+  async function until(cond, ms, what) {
+    const end = performance.now() + ms;
+    while (!cond()) {
+      if (performance.now() > end) throw new Error(`timed out after ${ms}ms waiting for ${what}`);
+      await frame();
+    }
+  }
+
+  const themeOf = (root) => root.getAttribute("data-theme");
+
+  check("setTheme(\"light\") applies paper (data-theme paper or light, paper --ak-ground); setTheme(\"bogus\") throws", () => {
+    const root = document.documentElement;
+    const original = themeOf(root);
+    const ground = () => getComputedStyle(root).getPropertyValue("--ak-ground").trim();
+    try {
+      root.setAttribute("data-theme", "paper");
+      const paperGround = ground();
+      root.removeAttribute("data-theme");
+      wonk.setTheme("light");
+      assert(themeOf(root) === "paper" || themeOf(root) === "light", `expected data-theme paper or light after setTheme("light"), got ${JSON.stringify(themeOf(root))}`);
+      assert(ground() === paperGround, `expected --ak-ground ${paperGround} (paper) after setTheme("light"), got ${ground()}`);
+      let threw = null;
+      try { wonk.setTheme("bogus"); } catch (err) { threw = err; }
+      assert(threw, "setTheme(\"bogus\") should throw");
+      assert(/dark/.test(threw.message) && /paper/.test(threw.message), `the error should name the valid themes, got ${JSON.stringify(threw.message)}`);
+    } finally {
+      restoreRootAttr("data-theme", original);
+    }
+  });
+
+  check("css: data-theme=\"light\" computes the same tokens as data-theme=\"paper\" for all 5 pairs; dark is unchanged", () => {
+    const TOKENS = ["--ak-ground", "--ak-surface", "--ak-surface-2", "--ak-ink", "--ak-ink-2", "--ak-hairline",
+      "--ak-a1", "--ak-a1-ink", "--ak-a1-text", "--ak-a2-text", "--ak-wash", "--ak-ok", "--ak-warn", "--ak-err", "--ak-info",
+      "--ak-chart-1", "--ak-chart-6"];
+    const probe = document.createElement("div");
+    document.body.appendChild(probe);
+    const read = () => TOKENS.map((t) => getComputedStyle(probe).getPropertyValue(t).trim()).join(" ");
+    try {
+      for (const pair of PAIRS) {
+        probe.setAttribute("data-pair", pair);
+        probe.removeAttribute("data-theme");
+        const dark = read();
+        probe.setAttribute("data-theme", "paper");
+        const paper = read();
+        probe.setAttribute("data-theme", "light");
+        const light = read();
+        assert(light === paper, `${pair}: light tokens differ from paper\n light: ${light}\n paper: ${paper}`);
+        assert(dark !== paper, `${pair}: dark and paper tokens should differ`);
+      }
+    } finally {
+      probe.remove();
+    }
+  });
+
+  check("setPair(\"electric\") throws, names every valid pair, and leaves data-pair alone", () => {
+    const root = document.documentElement;
+    const original = root.getAttribute("data-pair");
+    try {
+      let threw = null;
+      try { wonk.setPair("electric"); } catch (err) { threw = err; }
+      assert(threw, "setPair(\"electric\") should throw");
+      PAIRS.forEach((p) => assert(threw.message.includes(p), `the error should list "${p}", got ${JSON.stringify(threw.message)}`));
+      assert(root.getAttribute("data-pair") === original, `data-pair changed to ${JSON.stringify(root.getAttribute("data-pair"))}`);
+    } finally {
+      restoreRootAttr("data-pair", original);
+    }
+  });
+
+  check("wonk:themechange fires on document for setTheme and setPair with detail.theme and detail.pair", () => {
+    const root = document.documentElement;
+    const theme = themeOf(root);
+    const pair = root.getAttribute("data-pair");
+    const seen = [];
+    const onChange = (e) => seen.push(e.detail);
+    document.addEventListener("wonk:themechange", onChange);
+    try {
+      wonk.setTheme("paper");
+      wonk.setPair("glorpla");
+      wonk.setTheme("dark");
+      assert(seen.length === 3, `expected 3 events, got ${seen.length}: ${JSON.stringify(seen)}`);
+      const want = [{ theme: "paper", pair: "glorpla" }, { theme: "paper", pair: "glorpla" }, { theme: "dark", pair: "glorpla" }];
+      assert(seen[0] && seen[0].theme === "paper", `event 1 detail.theme should be "paper", got ${JSON.stringify(seen[0])}`);
+      assert(seen[1] && seen[1].pair === "glorpla" && seen[1].theme === "paper", `event 2 detail should be ${JSON.stringify(want[1])}, got ${JSON.stringify(seen[1])}`);
+      assert(seen[2] && seen[2].theme === "dark" && seen[2].pair === "glorpla", `event 3 detail should be ${JSON.stringify(want[2])}, got ${JSON.stringify(seen[2])}`);
+    } finally {
+      document.removeEventListener("wonk:themechange", onChange);
+      restoreRootAttr("data-pair", pair);
+      restoreRootAttr("data-theme", theme);
+    }
+  });
+
+  check("theme.init({key}) reads the stored theme, else prefers-color-scheme; after it, setTheme writes the key", async () => {
+    const KEY = "wonk-theme-check";
+    const frames = [];
+    try {
+      localStorage.setItem(KEY, "paper");
+      const stored = await loadWonkFrame({ width: 0, height: 0, lightScheme: false });
+      frames.push(stored);
+      const sroot = stored.doc.documentElement;
+      const got = stored.win.wonk.theme.init({ key: KEY });
+      assert(got === "paper", `init should return the stored "paper", got ${JSON.stringify(got)}`);
+      assert(themeOf(sroot) === "paper", `init should apply the stored theme, data-theme is ${JSON.stringify(themeOf(sroot))}`);
+      stored.win.wonk.setTheme("dark");
+      assert(localStorage.getItem(KEY) === "dark", `setTheme("dark") should write "dark" to ${KEY}, got ${JSON.stringify(localStorage.getItem(KEY))}`);
+      stored.win.wonk.setTheme("paper");
+      assert(localStorage.getItem(KEY) === "paper", `setTheme("paper") should write "paper" to ${KEY}, got ${JSON.stringify(localStorage.getItem(KEY))}`);
+
+      localStorage.removeItem(KEY);
+      const light = await loadWonkFrame({ width: 0, height: 0, lightScheme: true });
+      frames.push(light);
+      assert(light.win.wonk.theme.init({ key: KEY }) === "paper", "with no stored theme and prefers-color-scheme: light, init should return \"paper\"");
+      assert(themeOf(light.doc.documentElement) === "paper", "prefers-color-scheme: light should apply paper");
+      assert(localStorage.getItem(KEY) === null, "init should not write the key; only setTheme persists a choice");
+
+      const dark = await loadWonkFrame({ width: 0, height: 0, lightScheme: false });
+      frames.push(dark);
+      assert(dark.win.wonk.theme.init({ key: KEY }) === "dark", "with no stored theme and no light preference, init should return \"dark\"");
+      assert(!dark.doc.documentElement.hasAttribute("data-theme"), "dark should leave no data-theme");
+    } finally {
+      frames.forEach((f) => f.cleanup());
+      localStorage.removeItem(KEY);
+    }
+  });
+
+  check("[data-wonk-theme-toggle]: init labels it for the current theme; a click flips the theme, its text (Paper/Dark), and aria-pressed", () => {
+    const root = document.documentElement;
+    const original = themeOf(root);
+    const host = withFixture(`<button type="button" class="wonk-btn" data-wonk-theme-toggle>Theme</button>`);
+    const btn = host.querySelector("button");
+    try {
+      wonk.setTheme("dark");
+      wonk.init(host);
+      assert(btn.textContent === "Paper", `in dark the toggle should read "Paper", got ${JSON.stringify(btn.textContent)}`);
+      assert(btn.getAttribute("aria-pressed") === "false", `in dark aria-pressed should be "false", got ${JSON.stringify(btn.getAttribute("aria-pressed"))}`);
+      btn.click();
+      assert(themeOf(root) === "paper", `a click in dark should apply paper, data-theme is ${JSON.stringify(themeOf(root))}`);
+      assert(btn.textContent === "Dark", `in paper the toggle should read "Dark", got ${JSON.stringify(btn.textContent)}`);
+      assert(btn.getAttribute("aria-pressed") === "true", `in paper aria-pressed should be "true", got ${JSON.stringify(btn.getAttribute("aria-pressed"))}`);
+      wonk.init(host); // idempotent: a second init must not add a second listener
+      btn.click();
+      assert(!root.hasAttribute("data-theme"), `a click in paper should apply dark, data-theme is ${JSON.stringify(themeOf(root))}`);
+      assert(btn.textContent === "Paper", `back in dark the toggle should read "Paper", got ${JSON.stringify(btn.textContent)}`);
+    } finally {
+      host.remove();
+      wonk.setTheme(original === "paper" || original === "light" ? "paper" : "dark");
+      restoreRootAttr("data-theme", original);
+    }
+  });
+
+  check("drawer at 390px: the button shows, the closed side is inert; a click opens it; Escape closes it and focuses the button; a link click and an outside click close it; crossing to desktop resets it", async () => {
+    const f = await loadWonkFrame({
+      width: 390,
+      css: ["../assets/wonk-tokens.css", "../assets/wonk.css"],
+      body: `
+        <div class="wonk-shell">
+          <aside class="wonk-side" id="chk-side">
+            <div class="brand">WONK</div>
+            <a class="wonk-navlink" href="#chk-main">Main</a>
+          </aside>
+          <div>
+            <header class="wonk-topbar">
+              <button type="button" class="wonk-btn wonk-drawer-btn" data-wonk-drawer aria-controls="chk-side" aria-expanded="false">Menu</button>
+            </header>
+            <main id="chk-main"><button type="button" id="chk-outside">outside</button></main>
+          </div>
+        </div>`,
+    });
+    try {
+      const { win, doc } = f;
+      const btn = doc.querySelector("[data-wonk-drawer]");
+      const side = doc.getElementById("chk-side");
+      const expanded = () => btn.getAttribute("aria-expanded");
+      assert(win.matchMedia("(max-width: 800px)").matches, `the iframe viewport should be mobile, innerWidth is ${win.innerWidth}`);
+      assert(win.getComputedStyle(btn).display !== "none", "the drawer button should show below 800px");
+      assert(win.getComputedStyle(side).position === "fixed", `the side should be an off-canvas fixed panel below 800px, position is ${win.getComputedStyle(side).position}`);
+      assert(side.inert === true, "the closed side should be inert below 800px");
+      assert(expanded() === "false", `closed: aria-expanded should be "false", got ${expanded()}`);
+
+      btn.click();
+      assert(expanded() === "true", `after a click aria-expanded should be "true", got ${expanded()}`);
+      assert(side.inert === false, "the open side should not be inert");
+
+      doc.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      assert(expanded() === "false", "Escape should close the drawer");
+      assert(side.inert === true, "Escape should make the side inert again");
+      assert(doc.activeElement === btn, `Escape should focus the drawer button, focus is on ${doc.activeElement && doc.activeElement.outerHTML.slice(0, 60)}`);
+
+      btn.click();
+      side.querySelector("a").click();
+      assert(expanded() === "false", "a link click inside the side should close the drawer");
+
+      btn.click();
+      doc.getElementById("chk-outside").click();
+      assert(expanded() === "false", "a click outside the side should close the drawer");
+
+      btn.click();
+      f.iframe.style.width = "1024px";
+      await until(() => !win.matchMedia("(max-width: 800px)").matches, 2000, "the iframe to reach desktop width");
+      await until(() => side.inert === false && expanded() === "false", 2000, "the drawer to reset at desktop width");
+      assert(win.getComputedStyle(btn).display === "none", "the drawer button should hide above 800px");
+      assert(!side.classList.contains("is-open"), "crossing to desktop should drop is-open");
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  check("layout: with only tokens + wonk.css, .wonk-sr is a 1px clipped box, .wonk-grid is grid, .wonk-row is flex, .wonk-main is centered", async () => {
+    const f = await loadWonkFrame({
+      width: 1280,
+      css: ["../assets/wonk-tokens.css", "../assets/wonk.css"],
+      body: `<main class="wonk-main"><span class="wonk-sr">hidden label</span><div class="wonk-grid"><div>a</div></div><div class="wonk-row"><span>b</span></div></main>`,
+    });
+    try {
+      const cs = (sel) => f.win.getComputedStyle(f.doc.querySelector(sel));
+      const sr = f.doc.querySelector(".wonk-sr").getBoundingClientRect();
+      assert(cs(".wonk-sr").position === "absolute", `.wonk-sr position should be absolute, got ${cs(".wonk-sr").position}`);
+      assert(Math.round(sr.width) === 1 && Math.round(sr.height) === 1, `.wonk-sr should be 1x1, got ${sr.width}x${sr.height}`);
+      assert(cs(".wonk-sr").overflow === "hidden", `.wonk-sr overflow should be hidden, got ${cs(".wonk-sr").overflow}`);
+      assert(cs(".wonk-sr").clipPath !== "none", "`.wonk-sr` should be clipped (clip-path)");
+      assert(cs(".wonk-grid").display === "grid", `.wonk-grid display should be grid, got ${cs(".wonk-grid").display}`);
+      assert(cs(".wonk-row").display === "flex", `.wonk-row display should be flex, got ${cs(".wonk-row").display}`);
+      assert(cs(".wonk-row").flexWrap === "wrap", `.wonk-row should wrap, got ${cs(".wonk-row").flexWrap}`);
+      assert(cs(".wonk-main").maxWidth === "1280px", `.wonk-main max-width should be 80rem (1280px), got ${cs(".wonk-main").maxWidth}`);
+    } finally {
+      f.cleanup();
     }
   });
 

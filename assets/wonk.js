@@ -43,6 +43,8 @@
     scope: new WeakMap(),
     secret: new WeakSet(),
     menu: new WeakSet(),
+    themeToggle: new WeakSet(),
+    drawer: new WeakSet(),
   };
   const decorations = new Set();
   // register a decoration and start it unless reduced motion is on. Also
@@ -1385,11 +1387,143 @@
   };
 
   // ---- theme + pair helpers ----
-  const setPair = (name) => document.documentElement.setAttribute("data-pair", name);
-  const setTheme = (name) =>
-    name === "paper"
-      ? document.documentElement.setAttribute("data-theme", "paper")
-      : document.documentElement.removeAttribute("data-theme");
+  // setTheme("dark" | "paper" | "light") -- "light" is an alias of paper
+  // and applies data-theme="paper" (wonk-tokens.css also styles a
+  // hand-written data-theme="light" as paper). setPair(name) takes one of
+  // PAIRS. Both throw on an unknown name, and both dispatch
+  // wonk:themechange on document with {detail: {theme, pair}}.
+  // wonk.theme.init({key = "wonk-theme"}) applies the stored theme, else
+  // paper when prefers-color-scheme is light, else dark, and returns it.
+  // After init, every setTheme stores the choice under key. init itself
+  // stores nothing, so an unchosen theme keeps following the OS.
+  // [data-wonk-theme-toggle] buttons (wired by wonk.init) flip dark and
+  // paper; each reads "Paper" in dark and "Dark" in paper, and
+  // aria-pressed is true in paper.
+  // The no-flash head snippet (README install, references/components.md)
+  // applies a stored paper theme before the first paint.
+  const PAIRS = ["metathesis", "glorpla", "demogorgon", "ancient", "flourish"];
+  const THEMES = { dark: "dark", paper: "paper", light: "paper" };
+  const TOGGLE_SEL = "[data-wonk-theme-toggle]";
+  let themeKey = null;
+
+  const currentTheme = () => {
+    const t = document.documentElement.getAttribute("data-theme");
+    return t === "paper" || t === "light" ? "paper" : "dark";
+  };
+  // no data-pair: :root carries the metathesis values
+  const currentPair = () => document.documentElement.getAttribute("data-pair") || "metathesis";
+
+  function paintToggle(btn) {
+    const paper = currentTheme() === "paper";
+    btn.textContent = paper ? "Dark" : "Paper";
+    btn.setAttribute("aria-pressed", String(paper));
+  }
+  const emitTheme = () => {
+    document.querySelectorAll(TOGGLE_SEL).forEach(paintToggle);
+    document.dispatchEvent(new CustomEvent("wonk:themechange", { detail: { theme: currentTheme(), pair: currentPair() } }));
+  };
+
+  function applyTheme(theme) {
+    if (theme === "paper") document.documentElement.setAttribute("data-theme", "paper");
+    else document.documentElement.removeAttribute("data-theme");
+    emitTheme();
+  }
+
+  function setTheme(name) {
+    if (!Object.prototype.hasOwnProperty.call(THEMES, name)) {
+      throw new TypeError(`wonk.setTheme: unknown theme ${JSON.stringify(name)}; use "dark", "paper", or "light" (an alias of paper)`);
+    }
+    const theme = THEMES[name];
+    if (themeKey !== null) {
+      // storage throws in some sandboxed iframes: the theme still
+      // applies, the warning says it will not persist
+      try {
+        localStorage.setItem(themeKey, theme);
+      } catch (err) {
+        console.warn(`wonk.setTheme: localStorage is not writable, the theme will not survive a reload.`, err);
+      }
+    }
+    applyTheme(theme);
+  }
+
+  function setPair(name) {
+    if (!PAIRS.includes(name)) {
+      throw new TypeError(`wonk.setPair: unknown pair ${JSON.stringify(name)}; use one of ${PAIRS.join(", ")}`);
+    }
+    document.documentElement.setAttribute("data-pair", name);
+    emitTheme();
+  }
+
+  function initTheme({ key = "wonk-theme" } = {}) {
+    if (typeof key !== "string" || !key) {
+      throw new TypeError(`wonk.theme.init({key}): key must be a non-empty string, got ${JSON.stringify(key)}`);
+    }
+    themeKey = key;
+    let stored = null;
+    try {
+      stored = localStorage.getItem(key);
+    } catch (err) {
+      console.warn(`wonk.theme.init: localStorage is not readable, using prefers-color-scheme.`, err);
+    }
+    const theme = Object.prototype.hasOwnProperty.call(THEMES, stored)
+      ? THEMES[stored]
+      : window.matchMedia("(prefers-color-scheme: light)").matches ? "paper" : "dark";
+    applyTheme(theme);
+    return theme;
+  }
+
+  // [data-wonk-theme-toggle]: labeled for the current theme on wiring
+  function themeToggle(btn) {
+    if (WIRED.themeToggle.has(btn)) return;
+    WIRED.themeToggle.add(btn);
+    paintToggle(btn);
+    btn.addEventListener("click", () => setTheme(currentTheme() === "paper" ? "dark" : "paper"));
+  }
+
+  // ---- responsive shell: drawer ----
+  // Markup: button.wonk-drawer-btn[data-wonk-drawer][aria-controls=id]
+  // in the .wonk-topbar, and aside.wonk-side#id. Below 800px the side is
+  // an off-canvas panel (wonk.css). Closed there, it is inert, so a
+  // keyboard or screen-reader user never lands on a link hidden off the
+  // left edge. The button toggles it and keeps aria-expanded; a link
+  // click inside it, Escape, and a click outside it close it (Escape
+  // also returns focus to the button). Crossing the breakpoint resets
+  // it to closed, and the side is never inert above 800px.
+  const DRAWER_QUERY = "(max-width: 800px)";
+  function drawer(btn) {
+    if (WIRED.drawer.has(btn)) return;
+    const id = btn.getAttribute("aria-controls");
+    const side = id ? document.getElementById(id) : null;
+    if (!side) {
+      console.warn(`wonk.drawer: aria-controls=${JSON.stringify(id)} on the [data-wonk-drawer] button does not name an element; the drawer does nothing`);
+      return;
+    }
+    WIRED.drawer.add(btn);
+    const mq = window.matchMedia(DRAWER_QUERY);
+    const isOpen = () => side.classList.contains("is-open");
+    const set = (open) => {
+      side.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+      side.inert = mq.matches && !open;
+    };
+    const sync = () => set(mq.matches && isOpen());
+    sync();
+    btn.addEventListener("click", () => set(!isOpen()));
+    side.addEventListener("click", (e) => {
+      if (e.target instanceof Element && e.target.closest("a")) set(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || !isOpen()) return;
+      set(false);
+      btn.focus();
+    });
+    document.addEventListener("click", (e) => {
+      if (!mq.matches || !isOpen()) return;
+      if (side.contains(e.target) || btn.contains(e.target)) return;
+      set(false);
+    });
+    mq.addEventListener("change", sync);
+  }
 
   // ---- hidden puzzle slot ----
   // Give any element [data-wonk-secret="<message>"]. Seven rapid clicks reveal it.
@@ -1422,6 +1556,8 @@
     scope.querySelectorAll(".wonk-tabs").forEach(tabs);
     scope.querySelectorAll(".wonk-menu").forEach(menu);
     scope.querySelectorAll("[data-wonk-secret]").forEach(secret);
+    scope.querySelectorAll(TOGGLE_SEL).forEach(themeToggle);
+    scope.querySelectorAll("[data-wonk-drawer]").forEach(drawer);
     restoreFolds(scope);
     focusTips(scope);
     reveal(scope);
@@ -1436,5 +1572,6 @@
   window.wonk = {
     toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
     vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState, fmt,
+    theme: { init: initTheme }, drawer,
   };
 })();

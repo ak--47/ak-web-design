@@ -837,6 +837,7 @@ button.wonk-stat:focus-visible,
 
 /* ---- app shell ---- */
 .wonk-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.wonk-shell > * { min-width: 0; } /* a wide table scrolls in its region, never widens the page */
 .wonk-side {
   border-right: var(--ak-hairline-w) solid var(--ak-hairline);
   padding: var(--ak-s6) var(--ak-s4);
@@ -871,6 +872,59 @@ button.wonk-stat:focus-visible,
   gap: var(--ak-s4);
   padding: var(--ak-s3) var(--ak-s6);
   border-bottom: var(--ak-hairline-w) solid var(--ak-hairline);
+}
+
+/* responsive shell: below 800px the shell is one column and .wonk-side
+   is an off-canvas drawer. A button.wonk-drawer-btn[data-wonk-drawer]
+   in the topbar (hidden above 800px) opens it; wonk.js wires it, and
+   keeps the closed drawer inert. */
+.wonk-drawer-btn { display: none; }
+@media (max-width: 800px) {
+  .wonk-shell { grid-template-columns: minmax(0, 1fr); }
+  .wonk-topbar { flex-wrap: wrap; padding: var(--ak-s3) var(--ak-s4); }
+  .wonk-drawer-btn { display: inline-flex; }
+  .wonk-side {
+    position: fixed;
+    inset: 0 20% 0 0;
+    z-index: 45; /* above a radio dock (40) */
+    background: var(--ak-ground);
+    overflow-y: auto;
+    border-right-color: var(--ak-hairline-strong);
+    transform: translateX(-100%);
+    transition: transform var(--ak-t-med) var(--ak-ease);
+  }
+  .wonk-side.is-open { transform: translateX(0); box-shadow: var(--ak-shadow); }
+}
+
+/* ---- layout utilities ----
+   .wonk-main     page padding and a centered 80rem column
+   .wonk-section  one page section: bottom space, anchor offset, and
+                  --ak-s4 between its children
+   .wonk-row      wrapping row of controls or tiles
+   .wonk-grid     auto-fit card grid; set --wonk-grid-min (default 260px)
+   .wonk-sr       visually hidden, still read by screen readers */
+.wonk-main { max-width: 80rem; margin: 0 auto; padding: var(--ak-s8); }
+@media (max-width: 640px) { .wonk-main { padding: var(--ak-s4); } }
+.wonk-section { margin-bottom: var(--ak-s12); scroll-margin-top: var(--ak-s6); }
+/* .wonk .x beats .wonk p / .wonk h2, which reset margin-top to 0 */
+.wonk-section > * + *, .wonk .wonk-section > * + * { margin-top: var(--ak-s4); }
+.wonk-row { display: flex; flex-wrap: wrap; gap: var(--ak-s3); align-items: center; }
+.wonk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--wonk-grid-min, 260px)), 1fr));
+  gap: var(--ak-s4);
+}
+.wonk-grid > * { min-width: 0; }
+.wonk-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* ---- live / loading ---- */

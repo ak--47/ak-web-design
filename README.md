@@ -10,6 +10,12 @@ live demo: **[ak--47.github.io/ak-web-design](https://ak--47.github.io/ak-web-de
 
 ## open a working example
 
+start a new app from [`templates/app.html`](templates/app.html): copy it next
+to a copy of `assets/`, change `../assets/` on its first line to that
+folder, and replace the labeled fixtures. it ships the responsive shell,
+theme toggle, drillable stats, a records table, a chart, state recipes, and
+the radio dock.
+
 visit the live demo above, or serve this directory locally and open
 `/demo/index.html`.
 
@@ -56,10 +62,20 @@ on hover, focus, and tap, and describes it to screen readers. never use
 native `title=` for help text. without JS, only `.wonk-tip[data-tip]` keeps
 a CSS-only fallback.
 
-dark is the default. switch to paper with
-`document.documentElement.setAttribute("data-theme", "paper")` and persist
-the choice, `prefers-color-scheme: light` may pick paper as the initial
-value. never ship a light mode that is plain white, both themes are real.
+dark is the default. paper is `data-theme="paper"` on the root
+(`data-theme="light"` is an alias). call `wonk.theme.init()` once after
+`DOMContentLoaded`: it applies the saved theme, else paper when
+`prefers-color-scheme` is light, and from then on `wonk.setTheme()` and every
+`[data-wonk-theme-toggle]` button save the choice as `wonk-theme`. put this
+no-flash snippet in `<head>`, above the stylesheets, so a saved paper theme
+never flashes dark on load:
+
+```html
+<script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
+```
+
+the `catch` is there only because storage access throws in some sandboxed
+iframes. never ship a light mode that is plain white, both themes are real.
 
 self-host both faces (Space Grotesk, IBM Plex Mono) in production: download
 the woff2 files, `@font-face` them, drop the Google link. every face keeps
