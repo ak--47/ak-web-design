@@ -70,14 +70,15 @@ a real system fallback (`system-ui`, `ui-monospace`).
 | pack | files | needs | reference |
 |---|---|---|---|
 | instruments | `wonk-controls.css`, `wonk-controls.js` | `wonk.css`, `wonk.js` | [instruments.md](references/instruments.md) |
-| data tools | `wonk-data.css` | `wonk.css` | [data-tools.md](references/data-tools.md) |
+| data tools | `wonk-data.css`, `wonk-data.js` | `wonk.css`, `wonk.js` | [data-tools.md](references/data-tools.md) |
 | motion | `wonk-motion.css`, `wonk-motion.js` | `wonk-tokens.css` only | [motion.md](references/motion.md) |
 | code + json editor | `wonk-code.css`, `wonk-code.js`, `assets/vendor/prism/*` | `wonk-tokens.css`, `wonk.css` | [code.md](references/code.md) |
 
 none of the packs add a package dependency, plain script/link tags. load a
-pack's css after the base css, its js after the base js. the data pack
-ships css only, `demo/workbench.js` is example application logic, not a
-reusable module. colors, radii, and motion durations stay in
+pack's css after the base css, its js after the base js. the data pack's
+`wonk-data.js` (`window.wonkData`) renders records tables and drill-down
+dialogs; `demo/workbench.js` is example application logic on top of it, not
+a reusable module. colors, radii, and motion durations stay in
 `wonk-tokens.css`, read it before styling anything.
 
 full load order with every pack (real apps drop what they don't use, css
@@ -99,6 +100,7 @@ before js within each pack, prism core before its grammar files):
 <script src="assets/vendor/prism/prism-sql.min.js"></script>
 <script src="assets/vendor/prism/prism-bash.min.js"></script>
 <script src="assets/wonk.js"></script>
+<script src="assets/wonk-data.js"></script>
 <script src="assets/wonk-controls.js"></script>
 <script src="assets/wonk-motion.js"></script>
 <script src="assets/wonk-code.js"></script>
@@ -181,13 +183,13 @@ choosing and tuning a pair, the semantic tokens, and the chart series: see
 | buttons | `.wonk-btn` + `--primary`/`--danger`/`--quiet` | `#buttons` | components.md |
 | forms | `.wonk-field`, `.wonk-input`, `.wonk-select`, `.wonk-textarea`, `.wonk-check`, `.wonk-toggle`, `.wonk-range` | `#forms` | components.md |
 | navigation | `.wonk-crumbs`, `.wonk-pages`, `.wonk-avatar`, `.wonk-menu`, `.wonk-tabs` | `#nav`, `#tabs` | components.md |
-| data display | `.wonk-card`, `.wonk-stat`, `.wonk-badge`, `.wonk-table`, `.wonk-kv`, `.wonk-pre`, `.wonk-log` | `#cards`, `#table` | components.md |
+| data display | `.wonk-card`, `.wonk-stat`, `button.wonk-stat`, `.wonk-value-link`, `.delta--good`/`--bad`/`--neutral`, `.wonk-badge`, `.wonk-table`, `.wonk-kv`, `.wonk-pre`, `.wonk-log`, `wonk.fmt` | `#cards`, `#table`, `#drill` | components.md |
 | feedback | `.wonk-alert`, `.wonk-acc`, `.wonk-modal`, `data-tip`, `.wonk-term`, `.wonk-hint-btn`, `wonk.toast()`, `wonk.tip()` | `#overlays` | components.md |
 | disclosure | `.wonk-fold`, `.wonk-card--fold`, `.wonk-row-toggle`, `.wonk-more`, `.wonk-fold-all`, `data-fold-key`, `wonk.foldAll()` | `#disclosure` | components.md, hierarchy.md |
 | live/loading | `.wonk-dot--live`, `.wonk-spectrum`, `.wonk-skeleton`, `.wonk-empty` | `#live` | components.md |
 | exotic | VU meter, precision knob, oscilloscope | `#exotic` | components.md |
 | instruments | knob, fader, bounded window, segmented selector, stepper | `demo/instruments.html` | instruments.md |
-| data tools | channel bank, toolbar, filters, table, inspector, jobs | `demo/workbench.html` | data-tools.md |
+| data tools | channel bank, toolbar, filters, records table and drill-down (`wonkData`), inspector, jobs | `demo/workbench.html`, `#drill` | data-tools.md |
 | motion | eight one-shot effects | `demo/motion.html` | motion.md |
 | code + json | syntax highlighting, JSON editor | `#code` | code.md |
 | charts | Observable Plot theming, validated palettes | `#charts` | charts.md |
@@ -198,6 +200,7 @@ base JS API (`window.wonk`), full list in components.md:
 |---|---|
 | `wonk.init(scope?)` | wire all `data-wonk-*` + tabs + menus + reveal in injected DOM; idempotent per element |
 | `wonk.toast(msg, kind?, ms?)` | show a toast (ok/warn/err/info) |
+| `wonk.fmt.num/compact/money/pct/duration/date/delta` | format values as strings; unknown input returns `—` |
 | `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
 
 `wonk.init()` does not initialize any optional pack, each one wires itself.
@@ -323,7 +326,8 @@ grep -n "SECTION:instruments" demo/index.html demo/catalog.js
 then read only between the START and END lines. section names, in document
 order: chrome, hero, type, color, buttons, forms, badges, cards, table,
 tabs, overlays, code, charts, live, nav, alerts, disclosure, exotic, empty,
-instruments, datatools, motion, footer. `boot` is script-only. before committing a change to either file, confirm the count
+instruments, datatools, drill, motion, footer. `boot` is script-only. `drill`
+keeps its script inline in its own section. before committing a change to either file, confirm the count
 of `SECTION:` lines with the START word equals the count with the END word:
 
 ```sh
@@ -349,6 +353,7 @@ any failure or uncaught page error. the GitHub Pages deploy runs it first.
 | `code` | `demo/index.html` | `wonkCodeChecks` |
 | `controls` | `demo/instruments.html` | `wonkControlsChecks` |
 | `motion` | `demo/motion.html` | `wonkMotionChecks` |
+| `data` | `demo/index.html` | `wonkDataChecks` |
 
 the console path still works: serve the repo, open the page, and run
 `await wonkControlsChecks.run()` (or any global above); it returns

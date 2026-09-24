@@ -14,13 +14,14 @@ must wait for `DOMContentLoaded`.
 | pack | catalog | gallery |
 |---|---|---|
 | precision knob, fader, bounded window, segmented selector, stepper | [instruments.md](instruments.md) | `demo/instruments.html` |
-| source channels, query toolbar, applied filters, selectable table, inspector, jobs, result states | [data-tools.md](data-tools.md) | `demo/workbench.html` |
+| source channels, query toolbar, applied filters, records table (`wonkData.table`), drill-down dialog (`wonkData.drill`), inspector, jobs, result states | [data-tools.md](data-tools.md) | `demo/workbench.html`, `demo/index.html#drill` |
 | eight state-change effects, cancellation, live reduced-motion handling | [motion.md](motion.md) | `demo/motion.html` |
 
 load each optional pack after the base assets. `wonkControls.init(scope)` wires
 instruments, including the scope itself. `wonkMotion.play(el, name)` plays one
-explicit effect. data layouts are CSS compositions; their application behavior
-lives in the workbench example.
+explicit effect. `wonkData.table()` and `wonkData.drill()` (`wonk-data.js`) wire
+records tables and drill-downs; the other data layouts are CSS compositions whose
+application behavior lives in the workbench example.
 
 ## Contents
 
@@ -163,8 +164,19 @@ only its panel is visible, whatever `hidden` said in the markup. a tab whose
 <div class="wonk-stat">
   <span class="wonk-label">events / sec</span>
   <span class="wonk-num">48,112</span>
-  <small class="delta-up">▲ 12%</small>          <!-- or delta-down -->
+  <small class="delta--good">▲ 12%</small>        <!-- delta--good / delta--bad / delta--neutral -->
 </div>
+
+<!-- a stat that opens its records: the whole tile is the button -->
+<div class="wonk-card">
+  <button type="button" class="wonk-stat" data-wonk-drill="open-deals">
+    <span class="wonk-label">open deals</span>
+    <span class="wonk-num">12</span>
+  </button>
+</div>
+
+<!-- an inline number or record id that opens something; keeps its case -->
+<button type="button" class="wonk-value-link">evt-004</button>
 
 <span class="wonk-badge">default</span>          <!-- --ok --warn --err --info --accent -->
 
@@ -185,6 +197,59 @@ only its panel is visible, whatever `hidden` said in the markup. a tab whose
 ```
 
 Charts: see [charts.md](charts.md). Sparklines: `wonk.spark(el, values)`.
+
+### deltas
+
+the arrow carries the direction. the color carries the sentiment: a rise in
+errors or latency is bad, so it is red. color is never the only signal.
+
+| class | color | use |
+|---|---|---|
+| `.delta--good` | `--ak-ok` | the change is good for the reader |
+| `.delta--bad` | `--ak-err` | the change is bad for the reader |
+| `.delta--neutral` | `--ak-ink-2` | no change, or unknown |
+
+the classes work on any element, not only in `.wonk-stat`. `.delta-up` and
+`.delta-down` still color by direction inside `.wonk-stat`; they are legacy, so
+use the sentiment classes in new code. `wonk.fmt.delta()` returns both the text
+and the class:
+
+```js
+const d = wonk.fmt.delta(0.12, { higherIsBetter: false }); // p95 latency rose 12%
+el.textContent = `${d.text} vs last week`;                 // "▲ 12% vs last week"
+el.className = d.className;                                // "delta--bad"
+```
+
+### drillable values
+
+- `button.wonk-stat`, or `.wonk-stat--drill` on another element: the tile has
+  no button chrome, keeps left-aligned text, and fills its cell. its
+  `.wonk-num` gets a dotted underline and turns `--ak-a1-text` on hover.
+- `.wonk-value-link` on a `button` or `a`: mono, tabular numbers, original
+  case, `--ak-a1-text`, dotted underline. use it for a clickable number or
+  record id. never put an id in `.wonk-btn--quiet`: buttons are uppercase.
+- open the records with `wonkData.drill()` or `data-wonk-drill`:
+  [data-tools.md § drill-down](data-tools.md#drill-down).
+
+### formatting: wonk.fmt
+
+every helper returns a string. `null`, `undefined`, `""`, and `NaN` return `—`
+(unknown, not zero). `wonk.fmt.locale` (default `"en-US"`) sets the number
+locale. dates are always `YYYY-MM-DD`.
+
+| call | example → result |
+|---|---|
+| `num(n, {digits=0})` | `1234.5` → `"1,235"` |
+| `compact(n, {digits=1})` | `1234` → `"1.2K"`, `2500000` → `"2.5M"`, `950` → `"950"` |
+| `money(n, {currency="USD", compact=false, digits})` | `1234.5` → `"$1,235"`; `{compact:true}` `1234567` → `"$1.2M"` (digits: 0, or 1 when compact) |
+| `pct(ratio, {digits=0})` | `0.123` → `"12%"`; `{digits:1}` → `"12.3%"` |
+| `duration(ms)` | `450` → `"450 ms"`, `1200` → `"1.2 s"`, `200000` → `"3m 20s"`, `5400000` → `"1h 30m"` |
+| `date(value, {tz="UTC", time=false})` | `"2026-09-24T15:04:00Z"` → `"2026-09-24"`; `{time:true}` → `"2026-09-24 15:04 UTC"` |
+| `delta(change, {higherIsBetter=true, format="pct"})` | `0.12` → `{text:"▲ 12%", direction:"up", sentiment:"good", className:"delta--good"}`; `{higherIsBetter:false}` → `sentiment:"bad"`, `className:"delta--bad"`; `0` → `"— 0%"`, `"flat"`, `"neutral"` |
+
+`delta`'s `format` is `"pct"`, `"num"`, `"money"`, or a function that gets the
+absolute change. `digits` and `currency` pass through. a change that formats as
+zero is flat.
 
 ## Feedback & overlays
 
@@ -392,6 +457,7 @@ resume when it turns off.
 | `wonk.foldAll(root, open)` | open (`true`) or close (`false`) every `<details>` and `.wonk-row-toggle` in `root`, `.wonk-menu` excluded; returns how many changed |
 | `wonk.foldState` | the `Map` of remembered `data-fold-key` -> open states; `.clear()` forgets them |
 | `wonk.spark(el, values, {w,h,stroke,dot}?)` | inline sparkline; drops missing values, `[]` empties `el`, one value draws a dot |
+| `wonk.fmt.num` / `.compact` / `.money` / `.pct` / `.duration` / `.date` / `.delta` | format numbers, dates, and deltas as strings; unknown input returns `—`; [formatting](#formatting-wonkfmt) |
 | `wonk.setPair(name)` / `wonk.setTheme("paper"\|"dark")` | switch pair / theme |
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |
 | `wonk.glyph(el)` | glyph morph (`[data-wonk-glyph]`) |

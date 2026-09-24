@@ -48,7 +48,8 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
 8. help text and term definitions use `data-tip` / `.wonk-term`, never
    native `title=`: [components.md § hints](references/components.md#hints-and-terms).
 9. hierarchy: lead with the answer, detail behind `.wonk-fold`, plain copy:
-   [hierarchy.md](references/hierarchy.md).
+   [hierarchy.md](references/hierarchy.md). every count opens its records:
+   [data-tools.md § drill-down](references/data-tools.md#drill-down).
 
 ## modes
 

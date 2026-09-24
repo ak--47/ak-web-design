@@ -20,8 +20,9 @@
   Section names, in document order: chrome, hero, type, color,
   buttons, forms, badges, cards, table, tabs, overlays, code, charts,
   live, nav, alerts, disclosure, exotic, empty, instruments, datatools,
-  motion, footer, boot. footer has no script section. boot runs every
-  render*() function once and wires the sidebar scrollspy.
+  drill, motion, footer, boot. footer has no script section; drill keeps
+  its script inline in its own section. boot runs every render*()
+  function once and wires the sidebar scrollspy.
 
   Validate the markers before committing: the count of "SECTION:"
   lines with the START word must equal the count with the END word
@@ -54,6 +55,8 @@
 
 <!-- base -->
 <script defer src="../assets/wonk.js"></script>
+<!-- data pack: wonkData.table, drill-down dialog, CSV (needs wonk.js) -->
+<script defer src="../assets/wonk-data.js"></script>
 <!-- instruments pack: knob/fader/window/segmented/stepper -->
 <script defer src="../assets/wonk-controls.js"></script>
 <!-- motion pack: eight one-shot effects -->
@@ -76,6 +79,7 @@
      see references/code.md, "browser checks" -->
 <script defer src="code-checks.js"></script>
 <script defer src="base-checks.js"></script>
+<script defer src="data-checks.js"></script>
 <!-- this page's own logic, all of it -->
 <script defer src="catalog.js"></script>
 </head>
@@ -104,6 +108,7 @@
     <a class="wonk-navlink" href="#empty">Empty</a>
     <a class="wonk-navlink" href="#instruments">Instruments</a>
     <a class="wonk-navlink" href="#datatools">Data tools</a>
+    <a class="wonk-navlink" href="#drill">Drill-down</a>
     <a class="wonk-navlink" href="#motion">Motion</a>
   </aside>
 
@@ -273,7 +278,7 @@
             <div class="wonk-stat">
               <span class="wonk-label">events / sec</span>
               <span class="wonk-num">48,112</span>
-              <small class="delta-up">&#9650; 12% vs yesterday</small>
+              <small class="delta--good">&#9650; 12% vs yesterday</small>
               <span id="stat-spark" style="margin-top:var(--ak-s2)"></span>
             </div>
           </div>
@@ -281,7 +286,7 @@
             <div class="wonk-stat">
               <span class="wonk-label">p99 latency</span>
               <span class="wonk-num">212ms</span>
-              <small class="delta-down">&#9660; needs a look</small>
+              <small class="delta--bad">&#9650; 18% vs yesterday</small>
             </div>
           </div>
           <div class="wonk-card">
@@ -942,6 +947,185 @@ order by latency desc;</code></pre>
         </div>
       </section>
       <!-- SECTION:datatools END -->
+
+      <hr class="wonk-rule">
+
+      <!-- SECTION:drill START (no catalog.js section: the inline script below wires it) -->
+      <section class="demo-section wonk-reveal" id="drill">
+        <div class="wonk-label">18b &middot; drill-down &mdash; every number opens its records</div>
+        <h3>Numbers open their records</h3>
+        <p style="max-width:56ch">Select a number to see the records behind it: <button type="button" class="wonk-value-link" data-wonk-drill="demo-risk">3 deals</button> are at risk this quarter. All data here is a local fixture.</p>
+        <div class="demo-grid">
+          <div class="wonk-card wonk-card--accent">
+            <button type="button" class="wonk-stat" data-wonk-drill="demo-pipeline">
+              <span class="wonk-label">open pipeline &middot; this quarter</span>
+              <span class="wonk-num" id="drill-pipeline-total">&mdash;</span>
+              <small id="drill-pipeline-delta"></small>
+            </button>
+          </div>
+          <div class="wonk-card">
+            <button type="button" class="wonk-stat" data-wonk-drill="demo-risk">
+              <span class="wonk-label">deals at risk</span>
+              <span class="wonk-num" id="drill-risk-count">&mdash;</span>
+              <small id="drill-risk-delta"></small>
+            </button>
+          </div>
+          <div class="wonk-card">
+            <button type="button" class="wonk-stat" data-wonk-drill="demo-slow">
+              <span class="wonk-label">requests over 1 s &middot; today</span>
+              <span class="wonk-num" id="drill-slow-count">&mdash;</span>
+              <small id="drill-slow-delta"></small>
+            </button>
+          </div>
+        </div>
+
+        <h4 style="margin-top:var(--ak-s8)">Deltas</h4>
+        <div class="demo-row" style="gap:var(--ak-s8)">
+          <div class="wonk-stat">
+            <span class="wonk-label">p95 latency</span>
+            <span class="wonk-num">840 ms</span>
+            <small class="delta--bad">&#9650; 12% vs last week</small>
+          </div>
+          <div class="wonk-stat">
+            <span class="wonk-label">conversions</span>
+            <span class="wonk-num">1,204</span>
+            <small class="delta--good">&#9650; 9% vs last week</small>
+          </div>
+        </div>
+
+        <h4 style="margin-top:var(--ak-s8)">Accounts</h4>
+        <p style="max-width:56ch">Select an account to open its deals. Every column sorts.</p>
+        <div id="drill-accounts"></div>
+        <script>
+          // fixtures and drills for this section. wonk.js and wonk-data.js
+          // load with defer, so wait for them. Every number shown is
+          // computed from the same rows its drill opens.
+          document.addEventListener("DOMContentLoaded", () => {
+            const deals = [
+              { id: "d-101", deal: "Acme renewal", account: "Acme", owner: "Dana", stage: "negotiation", amount: 820000, close: "2026-10-31", risk: "Security review is still open." },
+              { id: "d-102", deal: "Globex expansion", account: "Globex", owner: "Sam", stage: "proposal", amount: 640000, close: "2026-11-14", risk: null },
+              { id: "d-103", deal: "Umbrella platform", account: "Umbrella", owner: "Lee", stage: "proposal", amount: 510000, close: "2026-12-12", risk: null },
+              { id: "d-104", deal: "Stark analytics", account: "Stark", owner: "Ortiz", stage: "negotiation", amount: 460000, close: "2026-10-20", risk: null },
+              { id: "d-105", deal: "Initech seats", account: "Initech", owner: "Dana", stage: "discovery", amount: 440000, close: "2026-12-02", risk: "No executive sponsor yet." },
+              { id: "d-106", deal: "Hooli proof of concept", account: "Hooli", owner: "Park", stage: "discovery", amount: 380000, close: "2026-12-18", risk: "Budget moved to the next fiscal year." },
+              { id: "d-107", deal: "Wayne renewal", account: "Wayne", owner: "Sam", stage: "closing", stageKind: "ok", amount: 300000, close: "2026-10-09", risk: null },
+              { id: "d-108", deal: "Cyberdyne pilot", account: "Cyberdyne", owner: "Lee", stage: "proposal", amount: 210000, close: "2026-11-30", risk: null },
+              { id: "d-109", deal: "Soylent add-on", account: "Soylent", owner: "Park", stage: "closing", stageKind: "ok", amount: 190000, close: "2026-10-15", risk: null },
+              { id: "d-110", deal: "Tyrell seats", account: "Tyrell", owner: "Ortiz", stage: "discovery", amount: 150000, close: "2026-12-20", risk: null },
+              { id: "d-111", deal: "Wonka expansion", account: "Wonka", owner: "Dana", stage: "proposal", amount: 100000, close: "2026-11-05", risk: null },
+            ];
+            const requests = [
+              { id: "req-01", route: "GET /api/reports/export", status: "200", ms: 8400, at: "2026-09-24T14:02:11Z" },
+              { id: "req-02", route: "POST /api/query", status: "504", statusKind: "err", ms: 30000, at: "2026-09-24T13:48:40Z" },
+              { id: "req-03", route: "GET /api/dashboards/42", status: "200", ms: 2150, at: "2026-09-24T13:31:05Z" },
+              { id: "req-04", route: "POST /api/query", status: "200", ms: 4720, at: "2026-09-24T12:57:19Z" },
+              { id: "req-05", route: "GET /api/cohorts", status: "200", ms: 1380, at: "2026-09-24T11:12:44Z" },
+              { id: "req-06", route: "POST /api/import", status: "500", statusKind: "err", ms: 12600, at: "2026-09-24T10:03:02Z" },
+              { id: "req-07", route: "GET /api/reports/export", status: "200", ms: 95000, at: "2026-09-24T09:44:37Z" },
+              { id: "req-08", route: "GET /api/users/search", status: "200", ms: 1040, at: "2026-09-24T08:21:50Z" },
+              { id: "req-09", route: "POST /api/query", status: "429", statusKind: "warn", ms: 1210, at: "2026-09-24T07:15:26Z" },
+            ];
+            const accounts = [
+              { id: "acme", account: "Acme", plan: "enterprise", planKind: "accent", arr: 1240000, seats: 1800, growth: 0.124, p95: 840, lastActive: "2026-09-23", site: "acme.example", url: "https://example.com/acme" },
+              { id: "globex", account: "Globex", plan: "growth", arr: 860000, seats: 950, growth: 0.031, p95: 410, lastActive: "2026-09-24", site: "globex.example", url: "https://example.com/globex" },
+              { id: "umbrella", account: "Umbrella", plan: "enterprise", planKind: "accent", arr: 720000, seats: 1100, growth: -0.042, p95: 1320, lastActive: "2026-09-22", site: "umbrella.example", url: "https://example.com/umbrella" },
+              { id: "stark", account: "Stark", plan: "enterprise", planKind: "accent", arr: 690000, seats: 640, growth: 0.087, p95: 290, lastActive: "2026-09-24", site: "stark.example", url: "https://example.com/stark" },
+              { id: "initech", account: "Initech", plan: "growth", arr: 410000, seats: 520, growth: 0, p95: 655, lastActive: "2026-09-19", site: "initech.example", url: "https://example.com/initech" },
+              { id: "wayne", account: "Wayne", plan: "growth", arr: 350000, seats: 380, growth: 0.015, p95: 505, lastActive: "2026-09-21", site: "wayne.example", url: "https://example.com/wayne" },
+              { id: "hooli", account: "Hooli", plan: "starter", arr: 180000, seats: 210, growth: -0.118, p95: 2400, lastActive: null, site: "hooli.example", url: "https://example.com/hooli" },
+              { id: "vandelay", account: "Vandelay", plan: "starter", arr: 60000, seats: 45, growth: null, p95: null, lastActive: "2026-08-30", site: "vandelay.example", url: "https://example.com/vandelay" },
+            ];
+            const dealColumns = [
+              { key: "deal", label: "deal" },
+              { key: "account", label: "account" },
+              { key: "stage", label: "stage", type: "badge" },
+              { key: "owner", label: "owner" },
+              { key: "amount", label: "amount", type: "money", hint: "List price, before discounts" },
+              { key: "close", label: "close date", type: "date" },
+            ];
+            const atRisk = deals.filter((d) => d.risk);
+            const slow = requests.filter((r) => r.ms > 1000);
+            const total = deals.reduce((sum, d) => sum + d.amount, 0);
+
+            // the tiles: numbers and deltas from wonk.fmt
+            const paint = (id, text, className) => {
+              const el = document.getElementById(id);
+              el.textContent = text;
+              if (className) el.className = className;
+            };
+            const delta = (d, suffix) => [`${d.text} ${suffix}`, d.className];
+            paint("drill-pipeline-total", wonk.fmt.money(total, { compact: true }));
+            paint("drill-pipeline-delta", ...delta(wonk.fmt.delta(0.08), "vs last week"));
+            paint("drill-risk-count", wonk.fmt.num(atRisk.length));
+            paint("drill-risk-delta", ...delta(wonk.fmt.delta(-1, { format: "num", higherIsBetter: false }), "vs last week"));
+            paint("drill-slow-count", wonk.fmt.num(slow.length));
+            paint("drill-slow-delta", ...delta(wonk.fmt.delta(0.12, { higherIsBetter: false }), "vs yesterday"));
+
+            // declarative drills: a click on [data-wonk-drill="name"] opens these
+            wonkData.drills({
+              "demo-pipeline": () => ({
+                title: "Open pipeline",
+                subtitle: "this quarter · fixture",
+                columns: dealColumns,
+                rows: deals,
+                sort: { key: "amount", dir: "desc" },
+                download: "open-pipeline.csv",
+              }),
+              "demo-risk": () => ({
+                title: "Deals at risk",
+                subtitle: "open a row for the risk",
+                columns: dealColumns,
+                rows: atRisk,
+                sort: { key: "close", dir: "asc" },
+                detail: (row) => row.risk,
+                foldKey: (row) => `demo-risk-${row.id}`,
+              }),
+              "demo-slow": () => ({
+                title: "Requests over 1 s",
+                subtitle: "today · UTC",
+                columns: [
+                  { key: "route", label: "route" },
+                  { key: "status", label: "status", type: "badge" },
+                  { key: "ms", label: "duration", type: "duration" },
+                  { key: "at", label: "time", type: "date", format: { time: true } },
+                ],
+                rows: slow,
+                sort: { key: "ms", dir: "desc" },
+                limit: 5,
+              }),
+            });
+
+            // a records table: typed columns, header hints, a limit, and a
+            // value link per row that opens a drill
+            wonkData.table(document.getElementById("drill-accounts"), {
+              label: "Accounts",
+              caption: "Accounts, one row per account. Fixture data.",
+              captionHidden: true,
+              limit: 4,
+              sort: { key: "arr", dir: "desc" },
+              onRowAction: (row) => wonkData.drill({
+                title: `${row.account} deals`,
+                subtitle: "this quarter · fixture",
+                columns: dealColumns,
+                rows: deals.filter((d) => d.account === row.account),
+                sort: { key: "amount", dir: "desc" },
+              }),
+              columns: [
+                { key: "account", label: "account" },
+                { key: "plan", label: "plan", type: "badge" },
+                { key: "arr", label: "ARR", type: "money", hint: "Annual recurring revenue at list price" },
+                { key: "seats", label: "seats", type: "num", total: true },
+                { key: "growth", label: "growth", type: "pct", format: { digits: 1 }, hint: "Seat growth over the last 90 days" },
+                { key: "p95", label: "p95", type: "duration", hint: "95th percentile API latency, last 7 days" },
+                { key: "lastActive", label: "last active", type: "date" },
+                { key: "site", label: "site", type: "link", href: (row) => row.url },
+              ],
+              rows: accounts,
+            });
+          });
+        </script>
+      </section>
+      <!-- SECTION:drill END -->
 
       <hr class="wonk-divider">
 

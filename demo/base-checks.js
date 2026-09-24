@@ -3,8 +3,8 @@
    behaviors (window.wonk: idempotent init, reduced motion, toast,
    setTheme, setPair, tabs, spark, menu, reveal, hints: data-tip /
    data-hint / data-term, glossary, wonk.tip, disclosure: .wonk-acc,
-   .wonk-fold, row toggles, foldAll, fold keys), token contrast, and
-   focus rings.
+   .wonk-fold, row toggles, foldAll, fold keys, formatting: wonk.fmt),
+   the delta classes, token contrast, and focus rings.
    Runs headless via `npm test` (or `npm test -- base`). By hand:
    load it on any page that already has wonk.js loaded (e.g.
    demo/index.html), then call:
@@ -1184,6 +1184,111 @@
       assert(!rowOpen(clearedRow), "after wonk.foldState.clear() a fresh keyed row toggle should stay collapsed");
     } finally {
       if (window.wonk && wonk.foldState && typeof wonk.foldState.clear === "function") wonk.foldState.clear();
+      host.remove();
+    }
+  });
+
+  // ---- formatting: wonk.fmt, and the delta classes ----
+  // Every example row of the fmt table in references/components.md.
+  // Unknown input (null, undefined, "", NaN) formats as "—", never as 0.
+  const UNKNOWN = "—";
+  const eq = (got, want, label) =>
+    assert(got === want, `${label}: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`);
+
+  check("fmt: num, compact, money, and pct format the documented examples", () => {
+    const f = wonk.fmt;
+    assert(f && typeof f.num === "function", "wonk.fmt.num should be a function");
+    eq(f.num(1234.5), "1,235", "num(1234.5)");
+    eq(f.num(1234.5, { digits: 1 }), "1,234.5", "num(1234.5, {digits:1})");
+    eq(f.num(0), "0", "num(0): zero is a measurement, not unknown");
+    eq(f.compact(1234), "1.2K", "compact(1234)");
+    eq(f.compact(2500000), "2.5M", "compact(2500000)");
+    eq(f.compact(950), "950", "compact(950)");
+    eq(f.money(1234.5), "$1,235", "money(1234.5)");
+    eq(f.money(1234567, { compact: true }), "$1.2M", "money(1234567, {compact:true})");
+    eq(f.money(0), "$0", "money(0)");
+    eq(f.pct(0.123), "12%", "pct(0.123)");
+    eq(f.pct(0.123, { digits: 1 }), "12.3%", "pct(0.123, {digits:1})");
+  });
+
+  check("fmt: duration reads 450 ms, 1.2 s, 3m 20s, 1h 30m", () => {
+    const f = wonk.fmt;
+    assert(f && typeof f.duration === "function", "wonk.fmt.duration should be a function");
+    eq(f.duration(450), "450 ms", "duration(450)");
+    eq(f.duration(1200), "1.2 s", "duration(1200)");
+    eq(f.duration(200000), "3m 20s", "duration(200000)");
+    eq(f.duration(5400000), "1h 30m", "duration(5400000)");
+  });
+
+  check("fmt: date is YYYY-MM-DD in UTC by default; {time:true} adds HH:MM UTC; a bad date is unknown", () => {
+    const f = wonk.fmt;
+    assert(f && typeof f.date === "function", "wonk.fmt.date should be a function");
+    eq(f.date("2026-09-24T15:04:00Z"), "2026-09-24", "date(iso)");
+    eq(f.date("2026-09-24T15:04:00Z", { time: true }), "2026-09-24 15:04 UTC", "date(iso, {time:true})");
+    eq(f.date(new Date("2026-09-24T23:30:00Z")), "2026-09-24", "date(Date) in UTC");
+    eq(f.date("not a date"), UNKNOWN, "date(\"not a date\")");
+  });
+
+  check("fmt: null, undefined, NaN, and \"\" format as — (unknown, not zero) in every helper", () => {
+    const f = wonk.fmt;
+    const helpers = ["num", "compact", "money", "pct", "duration", "date"];
+    for (const name of helpers) {
+      assert(typeof f[name] === "function", `wonk.fmt.${name} should be a function`);
+      for (const value of [null, undefined, NaN, ""]) {
+        eq(f[name](value), UNKNOWN, `${name}(${value === "" ? "\"\"" : String(value)})`);
+      }
+    }
+    for (const value of [null, undefined, NaN, ""]) {
+      const d = f.delta(value);
+      eq(d.text, UNKNOWN, `delta(${value === "" ? "\"\"" : String(value)}).text`);
+      eq(d.sentiment, "neutral", `delta(${String(value)}).sentiment`);
+    }
+  });
+
+  check("fmt: the locale defaults to en-US; setting wonk.fmt.locale changes it", () => {
+    const f = wonk.fmt;
+    const original = f.locale;
+    try {
+      eq(original, "en-US", "default wonk.fmt.locale");
+      f.locale = "de-DE";
+      eq(f.num(1234.5), "1.235", "num(1234.5) with locale de-DE");
+    } finally {
+      f.locale = original;
+    }
+    eq(f.num(1234.5), "1,235", "num(1234.5) after restoring en-US");
+  });
+
+  check("fmt.delta: the arrow follows the sign, sentiment follows higherIsBetter, the class follows sentiment", () => {
+    const f = wonk.fmt;
+    assert(typeof f.delta === "function", "wonk.fmt.delta should be a function");
+    const same = (got, want, label) => eq(JSON.stringify(got), JSON.stringify(want), label);
+    same(f.delta(0.12), { text: "▲ 12%", direction: "up", sentiment: "good", className: "delta--good" }, "delta(0.12)");
+    same(f.delta(0.12, { higherIsBetter: false }), { text: "▲ 12%", direction: "up", sentiment: "bad", className: "delta--bad" }, "delta(0.12, {higherIsBetter:false})");
+    same(f.delta(-0.05), { text: "▼ 5%", direction: "down", sentiment: "bad", className: "delta--bad" }, "delta(-0.05)");
+    same(f.delta(-0.05, { higherIsBetter: false }), { text: "▼ 5%", direction: "down", sentiment: "good", className: "delta--good" }, "delta(-0.05, {higherIsBetter:false})");
+    same(f.delta(0), { text: "— 0%", direction: "flat", sentiment: "neutral", className: "delta--neutral" }, "delta(0)");
+    eq(f.delta(1500, { format: "num" }).text, "▲ 1,500", "delta(1500, {format:\"num\"}).text");
+    eq(f.delta(-1234.5, { format: "money" }).text, "▼ $1,235", "delta(-1234.5, {format:\"money\"}).text");
+    eq(f.delta(3, { format: (n) => `${n} pts` }).text, "▲ 3 pts", "delta(3, {format: fn}).text");
+  });
+
+  check("delta CSS: .delta--good/--bad/--neutral color any element (ok/err/ink-2); legacy .delta-up/.delta-down still work in .wonk-stat", () => {
+    const host = withFixture(`
+      <small class="delta--good">a</small>
+      <span class="delta--bad">b</span>
+      <p class="delta--neutral">c</p>
+      <div class="wonk-stat"><small class="delta-up">d</small><small class="delta-down">e</small></div>
+      <span class="p-ok" style="color:var(--ak-ok)">p</span>
+      <span class="p-err" style="color:var(--ak-err)">p</span>
+      <span class="p-ink2" style="color:var(--ak-ink-2)">p</span>`);
+    try {
+      const color = (sel) => getComputedStyle(host.querySelector(sel)).color;
+      eq(color("small.delta--good"), color(".p-ok"), "small.delta--good color (must beat .wonk small)");
+      eq(color("span.delta--bad"), color(".p-err"), "span.delta--bad color");
+      eq(color("p.delta--neutral"), color(".p-ink2"), "p.delta--neutral color (must beat .wonk p)");
+      eq(color(".delta-up"), color(".p-ok"), "legacy .wonk-stat .delta-up color");
+      eq(color(".delta-down"), color(".p-err"), "legacy .wonk-stat .delta-down color");
+    } finally {
       host.remove();
     }
   });

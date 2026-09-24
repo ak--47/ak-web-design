@@ -2,8 +2,9 @@
 
 read this before building a dashboard, event explorer, import tool, or query console.
 `demo/workbench.html` is the working reference. its 12 records are local fixtures.
-`assets/wonk-data.css` is the reusable layout and component pack. `demo/workbench.js`
-is example application logic, not a generic query engine.
+`assets/wonk-data.css` is the reusable layout and component pack. `assets/wonk-data.js`
+(`window.wonkData`) renders records tables and drill-down dialogs. `demo/workbench.js`
+is example application logic on top of them, not a generic query engine.
 
 ## keep the instrument useful
 
@@ -30,6 +31,8 @@ say the estimate is unavailable. never invent a scan count or completion percent
 | bounded meter | `meter.wonk-meter` | known bounded measurement; real `min`, `max`, `value`, visible label and units |
 | query toolbar | `.wonk-toolbar` | wrapping labeled inputs and explicit Run/Reset buttons |
 | applied filter chip | `.wonk-filter-list`, `.wonk-filter-chip` | removable applied condition; name the remove button; restore focus after removal |
+| records table | `wonkData.table(host, opts)` | typed, sortable, selectable table with totals, row detail, and a row limit: [table module](#table-module) |
+| drill-down dialog | `dialog.wonk-drill`, `wonkData.drill()`, `[data-wonk-drill]` | the records behind a number, in a modal table with CSV download: [drill-down](#drill-down) |
 | results region | `.wonk-table-scroll` | local horizontal scrolling, sticky headers, caption, keyboard focus |
 | sortable header | `button.wonk-sort` | update the owning `th[aria-sort]`; preserve numeric sorting |
 | row selection | `tr[data-selected]`, `.wonk-selection-bar` | native checkboxes, mixed select-all state, count, explicit bulk action |
@@ -39,9 +42,10 @@ say the estimate is unavailable. never invent a scan count or completion percent
 | job queue | `.wonk-job-list`, `.wonk-job` | ordered jobs with named state and native progress |
 | result state | `.wonk-state[data-state]` | separate empty, stale, failed, unconfigured, and permission states |
 
-these are styled compositions. table filtering, sorting, selection, downloads, and
-inspection are wired in `demo/workbench.js`. copy the relevant behavior into the app's
-state model. the CSS alone does not wire them.
+`wonk-data.js` wires the records table and the drill-down: sorting, selection, totals,
+row detail, the row limit, and CSV download. the other rows are styled compositions.
+the app wires them and keeps filtering, the query, and the inspector in its own state
+model; `demo/workbench.js` shows one way.
 
 ## copy a section
 
@@ -63,6 +67,131 @@ load `wonk-data.css` after `wonk.css`. use controls and motion packs only when n
 </section>
 ```
 
+## table module
+
+`wonkData.table(host, opts)` renders a records table into `host`: a
+`div.wonk-table-scroll[role=region]` holding a `table.wonk-table` with sortable
+headers, typed cells, totals, selection, row detail, and a row limit. load
+`wonk-data.css` and `wonk-data.js` after the base files. it renders through DOM
+APIs and `textContent` only, so data never reaches `innerHTML`.
+
+```html
+<div id="deals"></div>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const host = document.getElementById("deals");
+    const deals = wonkData.table(host, {
+      caption: "Open deals, this quarter",
+      columns: [
+        { key: "name", label: "deal" },
+        { key: "stage", label: "stage", type: "badge" },   // stageKind: "ok" adds wonk-badge--ok
+        { key: "amount", label: "amount", type: "money", hint: "List price, before discounts" },
+        { key: "close", label: "close date", type: "date" },
+        { key: "site", label: "site", type: "link", href: (row) => row.url },
+      ],
+      rows,                                   // plain objects, each with an id
+      sort: { key: "amount", dir: "desc" },
+      select: true,
+      limit: 20,
+      onRowAction: (row) => openDeal(row),     // the first column becomes a .wonk-value-link
+    });
+    host.addEventListener("wonk-data:select", (e) => {
+      count.textContent = `${e.detail.selected.length} selected`;
+    });
+  });
+</script>
+```
+
+| column option | what it does |
+|---|---|
+| `key`, `label` | the row property, and the header text (default: the key) |
+| `type` | `text` (default), `num`, `money`, `pct`, `duration`, `date`, `badge`, `link`. numeric types right-align, format with `wonk.fmt`, and sort as numbers. `date` sorts by time |
+| `format` | options for the type's `wonk.fmt` call, in cells and totals: `{ digits: 1 }`, `{ currency: "EUR" }`, `{ time: true }` |
+| `hint` | the header's definition, shown as a `data-tip` hint |
+| `render(row)` | a Node, or a string shown as text. wins over `type` formatting |
+| `value(row)` | the sort, total, and CSV value when it differs from `row[key]` |
+| `href(row)` | the `link` URL. only `http:` and `https:` URLs become links. anything else is plain text |
+| `total` | `money` totals by default (`total: false` turns it off). any other column totals with `total: true`. the `tfoot` total covers every row, also rows past the limit |
+| `sortable` | `false` keeps the header as plain text |
+| `align`, `width` | `"left"`, `"center"`, or `"right"`; a CSS width (a number means px) |
+
+| table option | what it does |
+|---|---|
+| `rows`, `rowKey` | the rows, and the property that identifies a row (default `"id"`; a row without it uses its index) |
+| `sort` | `{ key, dir }`. a header click toggles it. the first click sorts numbers and dates descending, text ascending. ties keep `rowKey` order. unknown values sort last in both directions |
+| `caption`, `captionHidden`, `label` | the caption (visually hidden with `captionHidden: true`). `label` names the scroll region; the default is the caption |
+| `select` | a checkbox column. select-all means the visible rows. sorting keeps selections by key. rows that leave with `setRows` leave the selection. the host fires `wonk-data:select` with `detail.selected` |
+| `detail(row)` | a Node or string. the first cell becomes a `.wonk-row-toggle` for a hidden detail row. return `null` for a row with no detail. `foldKey(row)` sets `data-fold-key`, so an open row stays open across `setRows` |
+| `limit` | show the first N sorted rows and a `.wonk-more` line with a Show all button |
+| `empty` | the zero-row copy, default "No records match.", in one full-width cell. `null` or `false` renders no empty row: use it when the app shows its own empty state with a recovery action, so the reader sees one message |
+| `onRowAction(row)` | the first column's value becomes a `.wonk-value-link` button that calls it. never make the whole row the only click target |
+
+the controller has `setRows(rows)`, `setSort(key, dir)`, `rows` (sorted),
+`selected` (keys, in row order), `sort`, `clearSelection()`, and `destroy()`. a
+header click fires `wonk-data:sort` with `detail: { key, dir }`. a second
+`wonkData.table()` on the same host destroys the first.
+
+the module is for arrays already in memory: hundreds to low thousands of rows.
+server pagination and virtual scrolling stay the app's job (see [tables need a
+declared selection policy](#tables-need-a-declared-selection-policy)).
+
+## drill-down
+
+every number that counts records opens those records
+([hierarchy.md](hierarchy.md#numbers-lead-to-records)). `wonkData.drill(opts)`
+opens a native modal `dialog.wonk-drill` with the title, a count line
+("12 rows · this quarter"), and a `wonkData.table` with the same `columns`,
+`rows`, `sort`, `limit`, `detail`, `foldKey`, and `onRowAction` options.
+
+```html
+<div class="wonk-card">
+  <button type="button" class="wonk-stat" data-wonk-drill="pipeline">
+    <span class="wonk-label">open pipeline</span>
+    <span class="wonk-num">$4.2M</span>
+    <small class="delta--good">▲ 8% vs last week</small>
+  </button>
+</div>
+<p><button type="button" class="wonk-value-link" data-wonk-drill="at-risk">3 deals</button> are at risk.</p>
+```
+
+```js
+wonkData.drills({
+  pipeline: () => ({
+    title: "Open pipeline",
+    subtitle: "this quarter",
+    columns: dealColumns,
+    rows: openDeals,                 // the same rows the tile sums
+    sort: { key: "amount", dir: "desc" },
+    download: "open-pipeline.csv",   // adds a Download CSV button
+  }),
+  "at-risk": (el) => ({ title: "Deals at risk", columns: dealColumns, rows: atRisk, detail: (row) => row.risk }),
+});
+
+// or open one directly, from a row action or a chart mark:
+wonkData.drill({ title: "Acme deals", columns: dealColumns, rows: acmeDeals });
+```
+
+- `wonkData.drills({ name: (el) => opts })` registers drills. a click on any
+  `[data-wonk-drill="name"]` opens one. the listener is on the document, so
+  elements rendered later work. the factory gets the clicked element. an
+  unknown name warns once in the console.
+- Escape, the Close button (focused on open), and a click on the backdrop close
+  the drill. closing removes the dialog and destroys its table. focus returns to
+  the opener, or to `<body>` when the opener is gone.
+- one drill at a time: opening a second closes the first.
+- `wonkData.drill()` returns `{ close, table, dialog }`.
+- the dialog is `min(72rem, 96vw)` wide and at most `88vh` tall. the head stays
+  in place, the table scrolls, and the totals row stays at the bottom.
+- the number and the drill come from the same rows: a total of 12 deals opens
+  those 12 deals.
+- a money column totals by default. when one record repeats across rows (a deal
+  listed once per owner), set `total: false` so the total does not double-count.
+
+`wonkData.toCSV(columns, rows)` returns the CSV that Download CSV saves: a header
+of labels, raw values (not formatted, `value(row)` when given), ISO dates, every
+field quoted. a string that starts with `=`, `+`, `-`, `@`, tab, or CR gets a
+leading `'`, so a spreadsheet never runs it as a formula. numbers stay as they are.
+
 ## measurement, progress, and missing data differ
 
 ```html
@@ -82,7 +211,9 @@ capacity or a bounded score. neither is a replacement for a time-series chart.
 
 for a telemetry bank, put the number beside the meter. expose sample interval,
 denominator, and time window. a rejected record count must have a rejection label.
-never label all positive deltas green; an increase in errors is a worse result.
+never label all positive deltas green; an increase in errors is a worse result. use
+`wonk.fmt.delta(change, { higherIsBetter: false })` and the `.delta--good` /
+`.delta--bad` classes: [components.md § deltas](components.md#deltas).
 
 ## keep query state explicit
 
@@ -104,8 +235,9 @@ use a native table until a spreadsheet interaction genuinely needs a grid.
 put a real button in a sortable header and a real link or button in the record cell.
 never make a whole row clickable as the only way to inspect it.
 
-in the workbench, select-all means **visible records**. filtering clears selections
-that leave the result. sorting preserves selections by record ID. production apps
+in the workbench (and in every `wonkData.table` with `select: true`), select-all
+means **visible records**. filtering clears selections that leave the result.
+sorting preserves selections by record ID. production apps
 must say if selection instead spans pages or the full query. downloads use only the
 selected set and stay disabled when it is empty.
 

@@ -494,8 +494,73 @@ details.wonk-acc[open] > summary::after { transform: rotate(45deg); color: var(-
 
 .wonk-stat { display: flex; flex-direction: column; gap: var(--ak-s1); }
 .wonk-stat .wonk-num { font-size: var(--ak-text-2xl); line-height: 1.1; }
+/* legacy aliases: .delta-up / .delta-down color by direction. new code
+   uses the sentiment classes below (wonk.fmt.delta returns them). */
 .wonk-stat .delta-up { color: var(--ak-ok); }
 .wonk-stat .delta-down { color: var(--ak-err); }
+
+/* deltas: the arrow glyph carries the direction, the color carries the
+   sentiment (a rise in errors is bad), so color is never the only
+   signal. Usable on any element; .wonk .x beats .wonk small / .wonk p. */
+.delta--good, .wonk .delta--good { color: var(--ak-ok); }
+.delta--bad, .wonk .delta--bad { color: var(--ak-err); }
+.delta--neutral, .wonk .delta--neutral { color: var(--ak-ink-2); }
+
+/* drillable values: a stat or a number that opens its records.
+   button.wonk-stat / .wonk-stat--drill: the whole tile is the button.
+   .wonk-value-link: an inline number or record id, original case. */
+button.wonk-stat,
+.wonk-stat--drill {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  background: transparent;
+  border: 0;
+  border-radius: var(--ak-radius);
+  cursor: pointer;
+}
+button.wonk-stat .wonk-num,
+.wonk-stat--drill .wonk-num {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--ak-ink-3);
+  text-underline-offset: 0.2em;
+  transition: color var(--ak-t-fast) var(--ak-ease);
+}
+button.wonk-stat:hover .wonk-num,
+.wonk-stat--drill:hover .wonk-num { color: var(--ak-a1-text); }
+button.wonk-stat:focus-visible,
+.wonk-stat--drill:focus-visible { outline: 2px solid var(--ak-a1-text); outline-offset: 4px; }
+
+.wonk-value-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-family: var(--ak-font-mono);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ak-a1-text);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  background: none;
+  border: 0;
+  border-radius: var(--ak-radius);
+  cursor: pointer;
+}
+.wonk a.wonk-value-link,
+.wonk a.wonk-value-link:hover { border-bottom: 0; } /* .wonk a draws its own underline */
+.wonk-value-link:hover { text-decoration-style: solid; }
+.wonk-value-link:focus-visible { outline: 2px solid var(--ak-a1-text); outline-offset: 2px; }
 
 /* connective vertical hairline between stacked blocks (aktunes idiom) */
 .wonk-stack > * + * { position: relative; margin-top: var(--ak-s12); }

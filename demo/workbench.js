@@ -11,9 +11,7 @@
   ].map(([event, source, latency, status], i) => ({ id: `evt-${String(i + 1).padStart(3, "0")}`, event, source, latency, status }));
   const get = (id) => document.getElementById(id);
   const threshold = get("threshold").wonkKnob;
-  const selected = new Set();
   let applied = { search: "", source: "all", minimumLatency: 0 };
-  let descending = true;
   let visible = [];
   const node = (tag, text, className) => {
     const el = document.createElement(tag);
@@ -35,15 +33,9 @@
     markDraft();
   }
   function updateSelection() {
-    get("selection-count").textContent = `${selected.size} selected`;
-    get("export-selection").disabled = get("clear-selection").disabled = !selected.size;
-    get("select-all").disabled = !visible.length;
-    get("select-all").checked = visible.length > 0 && visible.every((row) => selected.has(row.id));
-    get("select-all").indeterminate = selected.size > 0 && !get("select-all").checked;
-    get("result-rows").querySelectorAll("tr").forEach((tr) => {
-      tr.dataset.selected = String(selected.has(tr.dataset.id));
-      tr.querySelector("input").checked = selected.has(tr.dataset.id);
-    });
+    const count = results.selected.length;
+    get("selection-count").textContent = `${count} selected`;
+    get("export-selection").disabled = get("clear-selection").disabled = !count;
   }
   function inspect(row) {
     get("inspector-title").textContent = row.id;
@@ -55,30 +47,34 @@
     wonkCode.render(payloadEl, row, "json");
     get("inspector").showModal();
   }
+  // the results table: sorting (every column), selection by record ID,
+  // and the record button come from wonkData.table (assets/wonk-data.js).
+  // select-all means visible records; filtering drops selections that
+  // leave the result; sorting keeps selections by record ID.
+  const results = wonkData.table(get("results"), {
+    label: "Event results, scroll horizontally for all columns",
+    caption: "Latency in milliseconds. Each row represents one event. Select a record ID to inspect its payload.",
+    select: true,
+    onRowAction: inspect,
+    sort: { key: "latency", dir: "desc" },
+    empty: null, // #no-results below owns the empty state and its recovery button
+    columns: [
+      { key: "id", label: "record" },
+      { key: "event", label: "event" },
+      { key: "source", label: "source" },
+      { key: "latency", label: "latency", type: "num" },
+      { key: "status", label: "status", type: "badge" },
+    ],
+  });
+  get("results").addEventListener("wonk-data:select", updateSelection);
+  get("results").addEventListener("wonk-data:sort", () => renderFilters());
   function renderRows() {
     visible = rows.filter((row) => (applied.source === "all" || row.source === applied.source)
       && row.latency >= applied.minimumLatency
-      && `${row.id} ${row.event}`.toLowerCase().includes(applied.search.toLowerCase()))
-      .sort((a, b) => descending ? b.latency - a.latency : a.latency - b.latency);
-    for (const id of selected) if (!visible.some((row) => row.id === id)) selected.delete(id);
-    get("result-rows").replaceChildren();
-    for (const row of visible) {
-      const tr = node("tr"); tr.dataset.id = row.id;
-      const selectCell = node("td");
-      const checkbox = node("input"); checkbox.type = "checkbox"; checkbox.setAttribute("aria-label", `Select ${row.id}`);
-      checkbox.addEventListener("change", () => { checkbox.checked ? selected.add(row.id) : selected.delete(row.id); updateSelection(); });
-      selectCell.append(checkbox);
-      const recordCell = node("td");
-      const button = node("button", row.id, "wonk-btn wonk-btn--quiet"); button.type = "button";
-      button.addEventListener("click", () => inspect(row)); recordCell.append(button);
-      const statusCell = node("td"); statusCell.append(node("span", row.status, "wonk-badge"));
-      tr.append(selectCell, recordCell, node("td", row.event), node("td", row.source), node("td", String(row.latency), "num"), statusCell);
-      get("result-rows").append(tr);
-    }
+      && `${row.id} ${row.event}`.toLowerCase().includes(applied.search.toLowerCase()));
+    results.setRows(visible);
     get("result-count").textContent = `${visible.length} / ${rows.length} records`;
     get("no-results").hidden = visible.length !== 0;
-    get("sort-latency").textContent = `latency ${descending ? "↓" : "↑"}`;
-    get("sort-latency").closest("th").setAttribute("aria-sort", descending ? "descending" : "ascending");
     updateSelection();
   }
   function renderFilters() {
@@ -96,7 +92,8 @@
       });
       chip.append(remove); get("filter-chips").append(chip);
     }
-    const spec = { dataset: "local-events", filters: applied, orderBy: { latency: descending ? "desc" : "asc" } };
+    const sort = results.sort;
+    const spec = { dataset: "local-events", filters: applied, orderBy: { [sort.key]: sort.dir } };
     const specEl = get("query-spec");
     wonkCode.render(specEl, spec, "json");
   }
@@ -120,13 +117,13 @@
   });
   get("reset").addEventListener("click", () => setDraft(defaults()));
   get("clear-filters").addEventListener("click", () => { applied = defaults(); setDraft(applied); render(); get("search").focus(); });
-  get("sort-latency").addEventListener("click", () => { descending = !descending; render(); });
-  get("select-all").addEventListener("change", () => {
-    visible.forEach((row) => get("select-all").checked ? selected.add(row.id) : selected.delete(row.id)); updateSelection();
+  get("clear-selection").addEventListener("click", () => {
+    results.clearSelection();
+    get("results").querySelector("thead input[type=checkbox]").focus();
   });
-  get("clear-selection").addEventListener("click", () => { selected.clear(); updateSelection(); get("select-all").focus(); });
   get("export-selection").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(visible.filter((row) => selected.has(row.id)), null, 2)], { type: "application/json" });
+    const keys = new Set(results.selected);
+    const blob = new Blob([JSON.stringify(results.rows.filter((row) => keys.has(row.id)), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = node("a"); link.href = url; link.download = "wonk-selected-events.json";
     document.body.append(link); link.click(); link.remove();

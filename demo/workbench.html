@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="../assets/wonk-motion.css">
   <link rel="stylesheet" href="../assets/wonk-code.css">
   <script defer src="../assets/wonk.js"></script>
+  <script defer src="../assets/wonk-data.js"></script>
   <script defer src="../assets/wonk-controls.js"></script>
   <script defer src="../assets/wonk-motion.js"></script>
   <!-- code pack vendor: Prism 1.29.0, must load in this exact order
@@ -76,20 +77,8 @@
 
   <section class="wonk-rack" aria-labelledby="results-title">
     <header class="wonk-rack-head"><h2 id="results-title">Results</h2><output id="result-count" class="wonk-num" aria-live="polite" aria-atomic="true"></output></header>
-    <div class="wonk-table-scroll" role="region" aria-label="Event results, scroll horizontally for all columns" tabindex="0">
-      <table class="wonk-table" id="results-table">
-        <caption>Latency in milliseconds. Each row represents one event. Select a record ID to inspect its payload.</caption>
-        <thead>
-          <tr>
-            <th scope="col"><input id="select-all" type="checkbox" aria-label="Select all visible records"></th>
-            <th scope="col">record</th><th scope="col">event</th><th scope="col">source</th>
-            <th scope="col" class="num" aria-sort="descending"><button class="wonk-sort" id="sort-latency" type="button">latency &darr;</button></th>
-            <th scope="col">status</th>
-          </tr>
-        </thead>
-        <tbody id="result-rows"></tbody>
-      </table>
-    </div>
+    <!-- wonkData.table renders the scroll region, caption, sortable headers, and selection here -->
+    <div id="results"></div>
     <div class="wonk-state" id="no-results" hidden><h3>No records match.</h3><p>The source contains 12 records. Remove a filter or lower the latency threshold.</p><button type="button" class="wonk-btn" id="clear-filters">Clear applied filters</button></div>
     <div class="wonk-selection-bar">
       <output id="selection-count" aria-live="polite">0 selected</output>

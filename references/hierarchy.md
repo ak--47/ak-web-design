@@ -36,7 +36,7 @@ keeps each record open or closed across renders.
 
 every number that counts records is clickable. it opens the records behind
 it: a total of 12 deals opens those 12 deals. see
-[data-tools.md](data-tools.md), drill-down.
+[data-tools.md § drill-down](data-tools.md#drill-down).
 
 ## copy
 

@@ -23,7 +23,7 @@
 .wonk-table-scroll .wonk-table { min-width: 40rem; }
 .wonk-table-scroll th { position: sticky; top: 0; z-index: 1; background: var(--ak-surface-2); color: var(--ak-ink-2); }
 .wonk-table-scroll caption { text-align: left; padding: var(--ak-s3); color: var(--ak-ink-2); }
-.wonk-sort { border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; min-height: 2.75rem; cursor: pointer; text-align: inherit; }
+.wonk-sort { border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; min-height: 2.75rem; padding-inline: 0; cursor: pointer; text-align: inherit; }
 .wonk-table tr[data-selected="true"] td { background: var(--ak-wash); }
 .wonk-table input[type="checkbox"] { accent-color: var(--ak-a1-text); width: 1.25rem; height: 1.25rem; }
 .wonk-selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ak-s3); padding: var(--ak-s3) var(--ak-s4); background: var(--ak-wash); border-top: var(--ak-hairline-w) solid var(--ak-hairline); }
@@ -42,6 +42,51 @@
 .wonk-state[data-state="error"] { border-color: var(--ak-err); }
 .wonk-state[data-state="stale"] { border-color: var(--ak-warn); }
 .wonk-state h3 { font-size: var(--ak-text-lg); }
+/* ---- records table (wonkData.table in wonk-data.js) ---- */
+/* visually hidden, still read by screen readers (captionHidden) */
+.wonk-sr,
+.wonk-table-scroll caption.wonk-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wonk-sort-arrow { margin-inline-start: 0.35em; }
+.wonk-sort-arrow:empty { margin: 0; }
+.wonk-table th[data-align="left"], .wonk-table td[data-align="left"] { text-align: left; }
+.wonk-table th[data-align="center"], .wonk-table td[data-align="center"] { text-align: center; }
+.wonk-table th[data-align="right"], .wonk-table td[data-align="right"] { text-align: right; }
+.wonk-table .wonk-select-cell { width: 2.75rem; }
+/* a date or a duration reads as one unit: never split it across lines */
+.wonk-table td[data-type="date"], .wonk-table td[data-type="duration"] { white-space: nowrap; }
+.wonk-table .wonk-table-empty td { color: var(--ak-ink-2); padding-block: var(--ak-s6); }
+.wonk-table .wonk-table-empty:hover td { background: transparent; }
+.wonk-table tfoot td { color: var(--ak-ink); font-weight: 600; border-top: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-bottom: 0; }
+.wonk-table tfoot .wonk-total-label { font-family: var(--ak-font-mono); font-size: var(--ak-text-xs); font-weight: 500; letter-spacing: var(--ak-track-label); text-transform: uppercase; color: var(--ak-ink-2); }
+/* totals stay in view while a long table scrolls */
+.wonk-table-scroll tfoot td { position: sticky; bottom: 0; z-index: 1; background: var(--ak-surface-2); }
+.wonk-table tfoot tr:hover td { background: var(--ak-surface-2); }
+.wonk-table-scroll + .wonk-more { margin: var(--ak-s3) 0 0; }
+
+/* ---- drill-down dialog (wonkData.drill) ----
+   The dialog has no padding, so a click whose target is the dialog is
+   a click on the backdrop. The head stays put; the table scrolls. */
+dialog.wonk-drill[open] {
+  display: flex;
+  flex-direction: column;
+  width: min(72rem, 96vw);
+  max-width: none;
+  max-height: 88vh;
+  padding: 0;
+  overflow: hidden;
+}
+.wonk-drill-head { flex: none; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--ak-s3) var(--ak-s4); padding: var(--ak-s6) var(--ak-s6) var(--ak-s4); border-bottom: var(--ak-hairline-w) solid var(--ak-hairline); }
+.wonk-drill-head h2 { margin: 0; font-size: var(--ak-text-xl); }
+.wonk-drill-head .wonk-drill-count { margin: var(--ak-s1) 0 0; font-family: var(--ak-font-mono); font-size: var(--ak-text-sm); font-variant-numeric: tabular-nums; color: var(--ak-ink-2); }
+.wonk-drill-actions { display: flex; flex-wrap: wrap; gap: var(--ak-s2); }
+.wonk-drill-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 0 var(--ak-s6) var(--ak-s4); }
+.wonk-drill-body > .wonk-table-scroll { flex: 1 1 auto; min-height: 0; max-height: none; }
+.wonk-drill-body > .wonk-more { flex: none; }
+@media (max-width: 640px) {
+  .wonk-drill-head { padding: var(--ak-s4) var(--ak-s4) var(--ak-s3); }
+  .wonk-drill-body { padding: 0 var(--ak-s3) var(--ak-s3); }
+}
+
 .wonk-workbench .wonk-label { color: var(--ak-ink-2); }
 .wonk-workbench .wonk-btn { min-height: 2.75rem; }
 .wonk-workbench [hidden] { display: none !important; }

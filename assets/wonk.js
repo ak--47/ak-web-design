@@ -1292,6 +1292,98 @@
     foldAll(target, btn.getAttribute("data-wonk-fold-all") === "open");
   });
 
+  // ---- formatting: wonk.fmt ----
+  // Every helper returns a string. null, undefined, "", NaN, and
+  // +-Infinity are unknown and format as "—", never as 0. Numeric
+  // strings are accepted. wonk.fmt.locale (default "en-US") applies to
+  // every number; dates are always YYYY-MM-DD.
+  //   num(n, {digits=0})                     1234.5 -> "1,235"
+  //   compact(n, {digits=1})                 1234 -> "1.2K"
+  //   money(n, {currency="USD", compact=false, digits=0 (1 if compact)})
+  //   pct(ratio, {digits=0})                 0.123 -> "12%"
+  //   duration(ms)                           200000 -> "3m 20s"
+  //   date(value, {tz="UTC", time=false})    "2026-09-24 15:04 UTC" with time
+  //   delta(change, {higherIsBetter=true, format="pct"|"num"|"money"|fn, digits, currency})
+  //     -> {text, direction, sentiment, className}. The arrow carries the
+  //     direction and the class carries the sentiment, so color is never
+  //     the only signal. A change that formats as zero is flat.
+  const UNKNOWN = "—";
+  const toNumber = (v) => {
+    if (v === null || v === undefined || v === "") return NaN;
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const numberFormat = (options) => new Intl.NumberFormat(fmt.locale, options);
+  const fixed = (digits) => ({ minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const fmt = {
+    locale: "en-US",
+    num(n, { digits = 0 } = {}) {
+      const v = toNumber(n);
+      return Number.isNaN(v) ? UNKNOWN : numberFormat(fixed(digits)).format(v);
+    },
+    compact(n, { digits = 1 } = {}) {
+      const v = toNumber(n);
+      return Number.isNaN(v) ? UNKNOWN : numberFormat({ notation: "compact", maximumFractionDigits: digits }).format(v);
+    },
+    money(n, { currency = "USD", compact = false, digits } = {}) {
+      const v = toNumber(n);
+      if (Number.isNaN(v)) return UNKNOWN;
+      const options = compact
+        ? { style: "currency", currency, notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: digits ?? 1 }
+        : { style: "currency", currency, ...fixed(digits ?? 0) };
+      return numberFormat(options).format(v);
+    },
+    pct(ratio, { digits = 0 } = {}) {
+      const v = toNumber(ratio);
+      return Number.isNaN(v) ? UNKNOWN : numberFormat({ style: "percent", ...fixed(digits) }).format(v);
+    },
+    duration(ms) {
+      const v = toNumber(ms);
+      if (Number.isNaN(v)) return UNKNOWN;
+      if (v < 0) return `-${fmt.duration(-v)}`;
+      const whole = (n) => numberFormat(fixed(0)).format(n);
+      if (v < 999.5) return `${whole(Math.round(v))} ms`;
+      if (v < 59950) return `${numberFormat({ maximumFractionDigits: 1 }).format(v / 1000)} s`;
+      const secs = Math.round(v / 1000);
+      if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+      const mins = Math.round(v / 60000);
+      if (mins < 1440) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+      const hours = Math.round(v / 3600000);
+      return `${whole(Math.floor(hours / 24))}d ${hours % 24}h`;
+    },
+    date(value, { tz = "UTC", time = false } = {}) {
+      if (value === null || value === undefined || value === "") return UNKNOWN;
+      const d = value instanceof Date ? value : new Date(typeof value === "number" ? value : String(value));
+      if (Number.isNaN(d.getTime())) return UNKNOWN;
+      const parts = {};
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZoneName: "short",
+      }).formatToParts(d).forEach((p) => { parts[p.type] = p.value; });
+      const day = `${parts.year}-${parts.month}-${parts.day}`;
+      if (!time) return day;
+      const zone = tz === "UTC" ? "UTC" : parts.timeZoneName;
+      return `${day} ${parts.hour}:${parts.minute} ${zone}`;
+    },
+    delta(change, { higherIsBetter = true, format = "pct", digits, currency } = {}) {
+      const v = toNumber(change);
+      if (Number.isNaN(v)) return { text: UNKNOWN, direction: "flat", sentiment: "neutral", className: "delta--neutral" };
+      const opts = {};
+      if (digits !== undefined) opts.digits = digits;
+      if (currency !== undefined) opts.currency = currency;
+      let render;
+      if (typeof format === "function") render = (n) => String(format(n));
+      else if (format === "pct" || format === "num" || format === "money") render = (n) => fmt[format](n, opts);
+      else throw new TypeError(`wonk.fmt.delta: format must be "pct", "num", "money", or a function, got ${JSON.stringify(format)}`);
+      const text = render(Math.abs(v));
+      const direction = v === 0 || text === render(0) ? "flat" : v > 0 ? "up" : "down";
+      if (direction === "flat") return { text: `— ${render(0)}`, direction, sentiment: "neutral", className: "delta--neutral" };
+      const good = (direction === "up") === higherIsBetter;
+      const sentiment = good ? "good" : "bad";
+      return { text: `${direction === "up" ? "▲" : "▼"} ${text}`, direction, sentiment, className: `delta--${sentiment}` };
+    },
+  };
+
   // ---- theme + pair helpers ----
   const setPair = (name) => document.documentElement.setAttribute("data-pair", name);
   const setTheme = (name) =>
@@ -1343,6 +1435,6 @@
 
   window.wonk = {
     toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
-    vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState,
+    vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState, fmt,
   };
 })();
