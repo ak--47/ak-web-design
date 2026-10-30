@@ -44,6 +44,17 @@
             assert(fold.querySelector("tfoot").textContent.includes("186,400"), "drill total matches headline");
           }
         });
+        await check("folds: Escape closes inline evidence and returns focus to its summary", () => {
+          for (const variant of ["a", "b"]) {
+            const fold = document.querySelector(`#reading-${variant} .evidence`);
+            const sort = fold.querySelector(".wonk-sort");
+            sort.focus();
+            sort.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+            assert(!fold.open, "Escape closes the fold");
+            assert(document.activeElement === fold.querySelector("summary"), "focus returns to summary");
+            assert(!fold.querySelector("[data-wonk-motion-state]"), "no lingering fold motion");
+          }
+        });
         await check("forms: blank, malformed email, and hidden advanced errors block save", () => {
           selectRound("forms");
           for (const variant of ["a", "b"]) {
@@ -94,6 +105,38 @@
             scope.querySelector('[type="button"]').click();
           }
         });
+        await check("forms: focused validation errors stay still and native select Escape is preserved", async () => {
+          const scope = document.getElementById("forms-b");
+          const form = scope.querySelector("form");
+          const advanced = scope.querySelector(".settings-advanced");
+          const email = form.elements.namedItem("email");
+          advanced.open = false;
+          edit(email, "invalid");
+          form.requestSubmit();
+          await tick();
+          assert(document.activeElement === email, "invalid email gets focus");
+          same(advanced.querySelector(".body").getAnimations().length, 0, "focused error is not animated");
+          const retry = form.elements.namedItem("retries");
+          retry.focus();
+          const event = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+          retry.dispatchEvent(event);
+          assert(!event.defaultPrevented && advanced.open, "select Escape is left to the browser");
+          scope.querySelector('[type="button"]').click();
+        });
+        await check("motion: hiding a round cancels its effects without discarding drafts", () => {
+          const scope = document.getElementById("forms-a");
+          const form = scope.querySelector("form");
+          const name = form.elements.namedItem("name");
+          edit(name, "Motion checkpoint");
+          form.requestSubmit();
+          assert(scope.querySelector("output").getAnimations().length > 0, "save feedback starts");
+          edit(name, "Keep this draft");
+          selectRound("reading");
+          same(scope.querySelector("output").getAnimations().length, 0, "hidden feedback cancelled");
+          selectRound("forms");
+          same(name.value, "Keep this draft", "navigation retains draft");
+          scope.querySelector('[type="button"]').click();
+        });
         await check("workspace: search and state filter select exact fixture rows", () => {
           selectRound("workspace");
           for (const variant of ["a", "b"]) {
@@ -120,6 +163,25 @@
             same(scope.querySelectorAll(".batch-choice").length, 12, "recovery rows");
             assert(document.activeElement === search, "focus returns to search");
           }
+        });
+        await check("workspace: selection is announced, same selection preserves details, hidden motion stops", () => {
+          const scope = document.getElementById("workspace-b");
+          const button = scope.querySelector('.batch-choice[data-id="batch-11-3"]');
+          button.click();
+          const inspector = scope.querySelector(".record-inspector");
+          same(button.getAttribute("aria-controls"), inspector.id, "selection controls inspector");
+          assert(scope.querySelector("[data-selection-status]").textContent.includes("Mobile, 11:00 UTC, failed"), "selection announced");
+          const snapshot = inspector.querySelector("details");
+          snapshot.open = true;
+          button.click();
+          assert(inspector.querySelector("details") === snapshot && snapshot.open, "same selection keeps open snapshot");
+          const view = document.querySelector('input[name="review-view"][value="a"]');
+          view.checked = true;
+          view.dispatchEvent(new Event("change", { bubbles: true }));
+          assert(!scope.querySelector("[data-wonk-motion-state]"), "hidden inspector motion cancelled");
+          const both = document.querySelector('input[name="review-view"][value="both"]');
+          both.checked = true;
+          both.dispatchEvent(new Event("change", { bubbles: true }));
         });
         await check("routing: unknown hash falls back, view mode hides correct candidate", () => {
           selectRound("unknown");

@@ -10,7 +10,8 @@ rounds 1-7. [the glyph comparison](compare.html) remains available.
 these pages are local fixtures. forms save to the current page's memory only;
 reload clears those edits. no import, retry, notification, or backend request
 runs. no shipped asset, version, or skill rule changed. work continues on
-`refine/wonk-design-studies`; the pull request stays in draft until review.
+`refine/wonk-design-studies` in [draft PR #1](https://github.com/ak--47/ak-web-design/pull/1).
+the pull request stays in draft until review.
 
 ## choices still open
 
@@ -56,15 +57,25 @@ npm test -- studies study-baseline
 npm test
 ```
 
-the new suites contain 14 checks. they cover matching reading content, exact
+the new suites contain 18 checks. they cover matching reading content, exact
 count drills, hidden validation errors, local save/discard, empty-state recovery,
 keyboard selection, unique IDs, grouped entry, full-width inline evidence, two
-complete glyph shuffle cycles, and approved motion timing.
+complete glyph shuffle cycles, and approved motion timing. the polish checks
+cover Escape and focus return, stationary focused fields, selection announcements,
+and cancellation of hidden effects without losing drafts.
+
+selecting the current batch again keeps its open snapshot. moving to another
+record announces the source, time, status, and record count. Escape closes the
+current inline fold and returns to its summary; native select menus keep their
+own Escape behavior.
 
 browser checks also exercised dark/paper at 320, 390, 768, and 1,440px; full-width
 comparison modes; reduced motion at startup and during an effect; and resource
 loading. the glyph pool rendered without missing-character boxes in local
 Chromium. other operating systems' font coverage is not established.
+
+the repository's workflow runs on `main` pushes, not pull requests. the draft
+records local test results; no remote CI result is implied.
 
 ## promotion needs a separate pass
 

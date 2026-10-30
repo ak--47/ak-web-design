@@ -41,10 +41,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function animateFold(fold, body) {
     fold.addEventListener("toggle", () => {
-      if (fold.open && !body.contains(document.activeElement)) wonkMotion.play(body, "panel-enter");
+      if (fold.open && body.getClientRects().length && !body.contains(document.activeElement)) wonkMotion.play(body, "panel-enter");
       else wonkMotion.cancel(body);
     });
     body.addEventListener("focusin", () => wonkMotion.cancel(body));
+    fold.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented || !fold.open || event.target.matches("select")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      wonkMotion.cancel(body);
+      fold.open = false;
+      fold.querySelector(":scope > summary").focus();
+    });
   }
   function evidence(host, title, rows) {
     const fold = node("details", "evidence");
@@ -144,6 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {
     highlights.forEach((animation) => animation.cancel());
     highlights.clear();
   });
+  function cancelMotion(scope) {
+    scope.querySelectorAll("[data-wonk-motion-state]").forEach((element) => wonkMotion.cancel(element));
+    highlights.forEach((animation, element) => {
+      if (!scope.contains(element)) return;
+      animation.cancel();
+      highlights.delete(element);
+    });
+  }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) cancelMotion(document); });
+  window.addEventListener("pagehide", () => cancelMotion(document));
   const settingsDefaults = { name: "Mobile imports", source: "mobile", cadence: "hourly", email: "operator@example.test", retries: "2", retention: "30" };
   const fieldDefinitions = [
     { key: "name", label: "Import name", type: "text", required: true, maxLength: 80 },
@@ -297,14 +315,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = node("ul", "batch-list");
     list.setAttribute("aria-label", "Batches");
     const inspector = node("section", "record-inspector");
+    inspector.id = `workspace-inspector-${variant}`;
     inspector.setAttribute("aria-label", "Selected batch");
+    inspector.addEventListener("focusin", () => wonkMotion.cancel(inspector));
+    const announcement = node("output", "wonk-sr");
+    announcement.setAttribute("aria-live", "polite");
+    announcement.setAttribute("aria-atomic", "true");
+    announcement.dataset.selectionStatus = "";
     const empty = node("div", "workspace-empty");
     empty.hidden = true;
     const clear = node("button", "wonk-btn", "Clear filters");
     clear.type = "button";
     empty.append(node("h4", "", "No batches match."), node("p", "", "No source or batch ID matches these filters."), clear);
     main.append(list, inspector);
-    body.append(toolbar, count, empty, main);
+    body.append(toolbar, count, announcement, empty, main);
     let selected = "batch-12-3";
     let visible = [...batches].reverse();
     function showSelected(animate = true) {
@@ -312,6 +336,9 @@ document.addEventListener("DOMContentLoaded", () => {
       wonkMotion.cancel(inspector);
       inspector.replaceChildren();
       list.querySelectorAll("button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.id === selected)));
+      announcement.textContent = batch
+        ? `${wonk.fmt.num(visible.length)} batches. Selected ${batch.source}, ${batch.time} UTC, ${batch.state.toLowerCase()}, ${wonk.fmt.num(batch.written)} records written.`
+        : "No batches match. No batch selected.";
       if (!batch) return;
       inspector.append(node("h4", "", `${batch.source} / ${batch.time} UTC`));
       const fields = node("dl", "record-fields");
@@ -320,8 +347,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       inspector.append(fields, node("p", "record-next", batch.state === "Failed" ? "Correct user_id in the source payload before retrying. No records were written." : "All records in this batch passed validation and were written."));
       const snapshot = node("details");
-      snapshot.append(node("summary", "", "Batch snapshot"), node("pre", "", JSON.stringify(batch, null, 2)));
+      const payload = node("pre", "", JSON.stringify(batch, null, 2));
+      snapshot.append(node("summary", "", "Batch snapshot"), payload);
       inspector.append(snapshot);
+      animateFold(snapshot, payload);
       if (animate) wonkMotion.play(inspector, "panel-enter");
     }
     function renderList() {
@@ -335,10 +364,15 @@ document.addEventListener("DOMContentLoaded", () => {
         button.type = "button";
         button.dataset.id = batch.id;
         button.setAttribute("aria-label", `Inspect ${batch.source} batch at ${batch.time} UTC`);
+        button.setAttribute("aria-controls", inspector.id);
         const name = node("span");
         name.append(node("strong", "", `${batch.source} / ${batch.time}`), node("small", "", batch.state));
         button.append(name, node("span", "", wonk.fmt.num(batch.written)));
-        button.addEventListener("click", () => { selected = batch.id; showSelected(); });
+        button.addEventListener("click", () => {
+          if (selected === batch.id) return;
+          selected = batch.id;
+          showSelected();
+        });
         item.append(button);
         list.append(item);
       }
@@ -367,7 +401,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function showRound() {
     const requested = location.hash.slice(1);
     const active = Object.hasOwn(rounds, requested) ? requested : "reading";
-    for (const name of Object.keys(rounds)) document.getElementById(name).hidden = name !== active;
+    for (const name of Object.keys(rounds)) {
+      const round = document.getElementById(name);
+      if (name !== active) cancelMotion(round);
+      round.hidden = name !== active;
+    }
     document.querySelectorAll("[data-round]").forEach((link) => {
       if (link.dataset.round === active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
@@ -378,7 +416,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.addEventListener("hashchange", showRound);
   document.querySelectorAll('input[name="review-view"]').forEach((input) => {
-    input.addEventListener("change", () => document.querySelectorAll(".round-grid").forEach((grid) => { grid.dataset.view = input.value; }));
+    input.addEventListener("change", () => document.querySelectorAll(".round-grid").forEach((grid) => {
+      grid.querySelectorAll("[data-variant]").forEach((candidate) => {
+        if (input.value !== "both" && candidate.dataset.variant !== input.value) cancelMotion(candidate);
+      });
+      grid.dataset.view = input.value;
+    }));
   });
   showRound();
 });
