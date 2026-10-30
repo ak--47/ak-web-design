@@ -30,6 +30,8 @@ const SUITES = [
   { name: "radio",    page: "/demo/radio.html",       global: "wonkRadioChecks" },
   { name: "data",     page: "/demo/index.html",       global: "wonkDataChecks" },
   { name: "charts",   page: "/demo/index.html",       global: "wonkChartsChecks" },
+  { name: "studies", page: "/demo/review.html", global: "wonkStudyChecks" },
+  { name: "study-baseline", page: "/demo/compare.html", global: "wonkStudyChecks" },
   {
     name: "template", page: "/templates/app.html", smoke: true,
     selectors: [".wonk-shell", "button.wonk-stat", ".wonk-table", "[data-wonk-radio] .wonk-radio-scope", "#trend-chart > [role='img']"],
