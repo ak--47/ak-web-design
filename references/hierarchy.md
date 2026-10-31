@@ -38,6 +38,22 @@ every number that counts records is clickable. it opens the records behind
 it: a total of 12 deals opens those 12 deals. see
 [data-tools.md § drill-down](data-tools.md#drill-down).
 
+## approved compositions
+
+- Reading: `.wonk-reading` with section headings in `.wonk-fold`, plus
+  expand/collapse all for longer briefs. Keep the answer outside the folds.
+- Forms: core fields remain visible; advanced settings use
+  `details.wonk-advanced`. Reveal invalid fields before focusing them.
+- Workspaces: `.wonk-workspace` stacks `.wonk-workspace-list` above
+  `.wonk-workspace-detail`. Use compact rows and preserve selection by ID.
+- Counts: open matching records with `wonkData.inline(host, opts)`. Full
+  quantities are comma-grouped; compact K/M output remains appropriate.
+
+See [data-tools.md](data-tools.md#inline-is-the-default-for-new-record-workflows)
+for the classes and API, and [instruments.md](instruments.md#grouped-exact-entry-and-console-geometry)
+for grouped quantity editing. Validation, save/discard, and filter state belong
+to the app. [Chosen examples](../demo/review.html?chosen=1) show those workflows.
+
 ## copy
 
 - plain, concise, imperative. write "Remove a filter", not "You might want

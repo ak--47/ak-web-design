@@ -55,6 +55,17 @@
         same(root.style.getPropertyValue("--ak-a1"), "", "generated override removed");
         same(JSON.parse(localStorage.getItem("refined-palette")).pair, "ancient", "preset persisted");
       });
+      await check("palette: external data-theme changes repaint generated tokens", async () => {
+        wonk.setTheme("dark");
+        const palette = wonk.palette.roll({ seed: 87654321 });
+        root.dataset.theme = "light";
+        await frame();
+        same(root.style.getPropertyValue("--ak-a1"), palette.paper["--ak-a1"], "external light accent");
+        same(root.style.getPropertyValue("--ak-chart-1"), palette.paper["--ak-chart-1"], "external light chart");
+        root.dataset.theme = "dark";
+        await frame();
+        same(root.style.getPropertyValue("--ak-a1"), palette.dark["--ak-a1"], "external dark accent");
+      });
       await check("palette: blocked local storage falls back to session; blocked both stays usable", () => {
         const original = Storage.prototype.setItem;
         try {
@@ -124,6 +135,54 @@
         assert(!api.valid, "bounds enforced");
         api.destroy(); input.remove();
       });
+      await check("number input: large integer increments and tiny decimals retain precision", () => {
+        const input = document.createElement("input");
+        document.body.append(input);
+        const api = wonkControls.numberInput(input);
+        try {
+          api.set(100000000000000);
+          input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+          same(api.value, 100000000000001, "large exact increment");
+          for (const value of [1e-13, -1e-13, Number.MIN_VALUE, 0.12345678901234567]) {
+            api.set(value);
+            same(api.value, value, "numeric round trip");
+          }
+        } finally { api.destroy(); input.remove(); }
+        const decimal = document.createElement("input");
+        decimal.value = "0.1";
+        document.body.append(decimal);
+        const fraction = wonkControls.numberInput(decimal, { min: -1, max: 1, step: 0.2 });
+        decimal.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+        same(fraction.value, 0.3, "decimal step does not accumulate binary tail");
+        fraction.destroy(); decimal.remove();
+      });
+      await check("number input: separator deletion progresses and native reset revalidates", async () => {
+        const form = document.createElement("form");
+        const input = document.createElement("input");
+        input.defaultValue = "1234";
+        form.append(input); document.body.append(form);
+        const api = wonkControls.numberInput(input, { min: 0, max: 5000 });
+        try {
+          input.focus(); input.setSelectionRange(1, 1);
+          input.dispatchEvent(new InputEvent("beforeinput", { inputType: "deleteContentForward", bubbles: true }));
+          same([input.selectionStart, input.selectionEnd], [1, 3], "separator and adjacent digit selected");
+          input.setRangeText("", input.selectionStart, input.selectionEnd, "start");
+          input.dispatchEvent(new InputEvent("input", { inputType: "deleteContentForward", bubbles: true }));
+          same(input.value, "134", "forward delete progresses");
+          input.value = "bad"; input.dispatchEvent(new Event("input"));
+          assert(!form.checkValidity(), "invalid before reset");
+          form.reset(); await Promise.resolve();
+          assert(form.checkValidity(), "reset clears invalid state");
+          same(input.value, "1,234", "reset groups default value");
+          input.value = "bad"; input.dispatchEvent(new Event("input"));
+          const prevent = (event) => event.preventDefault();
+          form.addEventListener("reset", prevent);
+          form.reset(); await Promise.resolve();
+          same(input.value, "bad", "cancelled reset keeps draft");
+          assert(!form.checkValidity(), "cancelled reset keeps validity");
+          form.removeEventListener("reset", prevent);
+        } finally { api.destroy(); form.remove(); }
+      });
       await check("number input: readonly and disabled keys do nothing; destroy restores authored attributes", () => {
         const host = document.createElement("fieldset");
         const input = document.createElement("input");
@@ -164,6 +223,58 @@
         second.element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
         assert(!second.element.open && document.activeElement === opener, "Escape closes and restores focus");
         second.destroy(); host.remove();
+      });
+      await check("inline drills: failed replacement preserves note and close finds usable focus", () => {
+        const host = document.createElement("section");
+        const opener = document.createElement("button");
+        opener.textContent = "Inspect";
+        const note = document.createElement("p");
+        note.textContent = "Original context";
+        document.body.append(opener, host);
+        const opts = { title: "Rows", subtitle: "October snapshot", columns: [{ key: "value" }], rows: [{ value: 1 }], opener, note };
+        const drill = wonkData.inline(host, opts);
+        try {
+          let rejected = false;
+          try { wonkData.inline(host, { ...opts, columns: [] }); } catch { rejected = true; }
+          assert(rejected && drill.element.contains(note), "invalid replacement preserves caller note");
+          assert(drill.element.textContent.includes("October snapshot"), "inline subtitle retained");
+          opener.disabled = true;
+          drill.element.querySelector(".wonk-sort").focus();
+          drill.close();
+          assert(document.activeElement === drill.element.querySelector("summary"), "disabled opener falls back to summary");
+          opener.disabled = false; opener.hidden = true;
+          drill.open(); drill.close();
+          assert(document.activeElement === drill.element.querySelector("summary"), "hidden opener falls back to summary");
+        } finally { drill.destroy(); host.remove(); opener.remove(); }
+      });
+      await check("motion: inherited effect names reject without cancelling the active effect", async () => {
+        const element = document.createElement("span");
+        document.body.append(element);
+        const pending = wonkMotion.play(element, "value-changed");
+        try {
+          for (const name of ["constructor", "toString", "__proto__"]) {
+            let rejected = false;
+            try { await wonkMotion.play(element, name); } catch { rejected = true; }
+            assert(rejected, "inherited effect rejected");
+            same(element.dataset.wonkMotionState, "running", "current effect remains");
+          }
+        } finally { wonkMotion.cancel(element); await pending; element.remove(); }
+      });
+      await check("workbench: filtered-out records remove the previous inline inspector", async () => {
+        const iframe = document.createElement("iframe");
+        iframe.style.cssText = "position:absolute;left:-10000px;width:900px;height:700px";
+        iframe.src = "workbench.html";
+        try {
+          const loaded = new Promise((resolve, reject) => { iframe.onload = resolve; iframe.onerror = reject; });
+          document.body.append(iframe); await loaded;
+          const doc = iframe.contentDocument;
+          doc.querySelector("#results .wonk-value-link").click();
+          assert(doc.querySelector("#inspector details[open]"), "inspector opened");
+          doc.getElementById("search").value = "missing-record";
+          doc.getElementById("query-form").requestSubmit();
+          assert(!doc.querySelector("#inspector details"), "stale inspector removed");
+          assert(!doc.getElementById("no-results").hidden, "empty results visible");
+        } finally { iframe.remove(); }
       });
       await check("glyph: 561 unique symbols, nonrepeating cycles, idempotent API and cleanup", () => {
         const button = document.createElement("button");

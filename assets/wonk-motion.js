@@ -124,7 +124,7 @@
    * must trace back to a real user action or a real data change.
    */
   function play(el, name) {
-    const def = EFFECTS[name];
+    const def = typeof name === "string" && Object.hasOwn(EFFECTS, name) ? EFFECTS[name] : null;
     if (!def) {
       return Promise.reject(
         new Error(`wonkMotion.play: unknown effect "${name}". Use one of: ${EFFECT_NAMES.join(", ")}`)

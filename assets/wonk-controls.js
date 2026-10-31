@@ -71,7 +71,34 @@
     input.setAttribute("role", "spinbutton");
     input.setAttribute("aria-valuemin", String(min));
     input.setAttribute("aria-valuemax", String(max));
-    const format = new Intl.NumberFormat("en-US", { maximumFractionDigits: 12 });
+    const integers = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+    function decimalText(number) {
+      const negative = number < 0;
+      const [coefficient, exponent = "0"] = Math.abs(number).toString().split("e");
+      const [whole, fraction = ""] = coefficient.split(".");
+      const digits = whole + fraction;
+      const point = whole.length + Number(exponent);
+      const text = point <= 0 ? `0.${"0".repeat(-point)}${digits}`
+        : point >= digits.length ? digits + "0".repeat(point - digits.length)
+        : `${digits.slice(0, point)}.${digits.slice(point)}`;
+      return `${negative ? "-" : ""}${text}`;
+    }
+    const format = { format(number) {
+      const [whole, fraction] = decimalText(number).split(".");
+      return `${whole === "-0" ? "-0" : integers.format(BigInt(whole))}${fraction === undefined ? "" : `.${fraction}`}`;
+    } };
+    function addStep(number, movement) {
+      const left = decimalText(number);
+      const right = decimalText(movement);
+      const places = Math.max(left.split(".")[1]?.length || 0, right.split(".")[1]?.length || 0);
+      const scaled = (text) => {
+        const [whole, fraction = ""] = text.split(".");
+        return BigInt(whole + fraction.padEnd(places, "0"));
+      };
+      const sum = scaled(left) + scaled(right);
+      const digits = (sum < 0n ? -sum : sum).toString().padStart(places + 1, "0");
+      return Number(`${sum < 0n ? "-" : ""}${places ? `${digits.slice(0, -places)}.${digits.slice(-places)}` : digits}`);
+    }
     const value = () => /^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(input.value.trim()) ? Number(input.value.replaceAll(",", "")) : NaN;
     function validate() {
       const number = value();
@@ -98,7 +125,7 @@
       if (parseable && Math.abs(Number(raw.replaceAll(",", ""))) <= Number.MAX_SAFE_INTEGER) {
         const caretUnits = input.value.slice(0, input.selectionStart).replaceAll(",", "").length;
         const [integer, decimals] = raw.replaceAll(",", "").split(".");
-        input.value = `${integer === "-0" ? "-0" : format.format(Number(integer))}${decimals === undefined ? "" : `.${decimals}`}`;
+        input.value = `${integer === "-0" ? "-0" : integers.format(BigInt(integer))}${decimals === undefined ? "" : `.${decimals}`}`;
         let caret = 0;
         let units = 0;
         while (caret < input.value.length && units < caretUnits) { if (input.value[caret] !== ",") units++; caret++; }
@@ -111,9 +138,25 @@
       if (movement === undefined || input.readOnly || input.matches(":disabled")) return;
       event.preventDefault();
       if (!validate() || !Number.isFinite(value())) return;
-      api.set(Math.max(min, Math.min(max, Number((value() + movement).toPrecision(14)))));
+      api.set(Math.max(min, Math.min(max, addStep(value(), movement))));
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function beforeInput(event) {
+      if (input.readOnly || input.matches(":disabled") || input.selectionStart !== input.selectionEnd) return;
+      const position = input.selectionStart;
+      if (event.inputType === "deleteContentForward" && input.value[position] === ",") {
+        input.setSelectionRange(position, position + 2);
+      } else if (event.inputType === "deleteContentBackward" && input.value[position - 1] === ",") {
+        input.setSelectionRange(Math.max(0, position - 2), position);
+      }
+    }
+    const form = input.form;
+    let destroyed = false;
+    function reset(event) {
+      queueMicrotask(() => {
+        if (!event.defaultPrevented && !destroyed) paint();
+      });
     }
     const api = {
       get value() { return value(); },
@@ -124,7 +167,10 @@
         validate();
       },
       destroy() {
+        destroyed = true;
         input.removeEventListener("input", paint);
+        input.removeEventListener("beforeinput", beforeInput);
+        form?.removeEventListener("reset", reset);
         input.removeEventListener("compositionend", paint);
         input.removeEventListener("change", validate);
         input.removeEventListener("keydown", keydown);
@@ -140,6 +186,8 @@
       },
     };
     input.addEventListener("input", paint);
+    input.addEventListener("beforeinput", beforeInput);
+    form?.addEventListener("reset", reset);
     input.addEventListener("compositionend", paint);
     input.addEventListener("change", validate);
     input.addEventListener("keydown", keydown);

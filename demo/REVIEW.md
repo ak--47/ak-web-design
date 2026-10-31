@@ -12,9 +12,9 @@ these pages are local fixtures. forms save to the current page's memory only;
 reload clears those edits. no import, retry, notification, or backend request
 runs. the combined review was approved and the selected behaviors now ship in
 the reusable packs. [refined components](refined.html) exercises those APIs,
-including the new saved dice palette. work continues on
-`refine/wonk-design-studies` in [draft PR #1](https://github.com/ak--47/ak-web-design/pull/1).
-the pull request stays in draft until review.
+including the new saved dice palette. the implementation and release review are
+tracked in [PR #1](https://github.com/ak--47/ak-web-design/pull/1).
+AK approved merging and shipping after the release review.
 
 ## review the chosen behavior together
 
@@ -24,7 +24,8 @@ selected. empty results clear the old inspector.
 
 the individual choices and combined preview are approved. the alternatives
 remain for comparison; the shared components and skill defaults now use the
-approved direction. no merge or deployment has been requested.
+approved direction. the release workflow tests the merged revision before
+deploying the public gallery to GitHub Pages.
 
 ## decisions already made
 
@@ -64,6 +65,18 @@ cover Escape and focus return, stationary focused fields, selection announcement
 and cancellation of hidden effects without losing drafts.
 the chosen-design check pins B reading, B editing, and A workspace.
 
+## release review
+
+the complete local suite passes 254 checks. dependency audit reports no known
+vulnerabilities. the review fixed numeric precision loss, comma-boundary
+deletion, stale validity after native reset, external theme-switcher palette
+repainting, reduced-motion glyph starts, inline focus and failed-replacement
+safety, stale workbench details, and invalid motion-name handling. regression
+checks cover each change; real browser input verified deletion and focus.
+
+the Pages artifact includes only public assets, demos, templates, references,
+and root documentation. development tooling and repository metadata are excluded.
+
 selecting the current batch again keeps its open snapshot. moving to another
 record announces the source, time, status, and record count. Escape closes the
 current inline fold and returns to its summary; native select menus keep their
@@ -74,8 +87,8 @@ comparison modes; reduced motion at startup and during an effect; and resource
 loading. the glyph pool rendered without missing-character boxes in local
 Chromium. other operating systems' font coverage is not established.
 
-the repository's workflow runs on `main` pushes, not pull requests. the draft
-records local test results; no remote CI result is implied.
+the repository's workflow runs on `main` pushes, not pull requests. local results
+are recorded here; the Pages workflow run is the remote deployment gate.
 
 ## reusable APIs
 

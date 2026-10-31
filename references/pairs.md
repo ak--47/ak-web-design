@@ -66,6 +66,18 @@ native select and named dice button support keyboard use. Mount it manually
 with `wonk.palette.mount(host)` when using a framework; call the returned
 `destroy()` before removing the host. Repeated mounting is idempotent.
 
+Auto-mounting restores the default storage key. For an app-specific key, use
+a plain host without `data-wonk-palette`, then initialize and mount in order:
+
+```js
+wonk.palette.init({ key: "my-app-palette" });
+const picker = wonk.palette.mount(document.querySelector("#my-palette"));
+```
+
+A standalone `data-wonk-palette-roll` button only rolls. Call `palette.init()`
+explicitly on page load if that is the only palette control and reloads should
+restore the saved choice.
+
 ```js
 wonk.theme.init();
 wonk.palette.init({ key: "my-app-palette" });
@@ -77,12 +89,15 @@ wonk.setPair("metathesis");
 
 `generate(seed)` is pure with respect to the active root theme and returns
 `{ version, seed, chartPair, dark, paper }`. It requires the token stylesheet
-to resolve chart colors. Seeds are unsigned 32-bit integers. `roll()` adds
+to resolve chart colors in a browser DOM (ordinary server-side JavaScript is
+not sufficient). Seeds are unsigned 32-bit integers. `roll()` adds
 `storage: "localStorage" | "sessionStorage" | "memory"` to its result.
 `init()` restores the active selection; it does not generate a new palette.
 `setPair("dice")` reuses the current generated seed when available; use
 `roll()` for a fresh one. `setTheme()` keeps that seed and chooses its other
-mode. Charts receive the same `wonk:themechange` event on every roll.
+mode. External root `data-theme` changes also repaint generated tokens on the
+next mutation-observer turn. Charts receive `wonk:themechange` on every roll
+and generated-mode change.
 
 Only `{version: 1, pair, seed}` is stored, never executable CSS. The default
 key is `wonk-palette`. Writes try local storage, then session storage; if both
@@ -101,6 +116,7 @@ Custom surface overrides need their own contrast checks.
 
 The existing no-flash snippet restores dark/paper only. Call palette `init`
 as early as your loaded styles and script permit; a generated palette restores
-when base initialization runs, rather than through an unvalidated inline CSS
-snapshot. Apps with strict first-paint requirements can precompute with
-`generate(seed)` in their own rendering pipeline.
+when `palette.init()` runs, explicitly or through picker mounting, rather than
+through an unvalidated inline CSS snapshot. Apps with strict first-paint
+requirements can precompute with `generate(seed)` in a browser or headless
+browser using the same stylesheet, then apply those trusted values before paint.

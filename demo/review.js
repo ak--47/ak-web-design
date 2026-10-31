@@ -394,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
       else link.removeAttribute("aria-current");
     });
     document.getElementById("question").textContent = chosen ? chosenTitles[active] : rounds[active][0];
-    document.getElementById("comparison-note").textContent = chosen ? "Chosen design / final review before promotion" : rounds[active][1];
+    document.getElementById("comparison-note").textContent = chosen ? "Approved design / promoted in WONK 0.4.0" : rounds[active][1];
     const modeLink = document.getElementById("review-mode-link");
     modeLink.textContent = chosen ? "Compare alternatives" : "Chosen designs";
     modeLink.href = chosen ? `review.html#${active}` : `review.html?chosen=1#${active}`;

@@ -257,7 +257,7 @@ rules:
 
 dark is the default, ground `#0f1214`. paper is the light mode, warm bone
 `#ece4d4` with ink text, the printed record to dark's stage. one poster pair
-per app, set once at the root, never mixed:
+active at the root, never mixed across sections:
 
 ```html
 <html data-pair="metathesis" class="wonk">

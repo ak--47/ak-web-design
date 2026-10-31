@@ -171,6 +171,17 @@ spinbutton role because native number inputs cannot display commas. Call
 `destroy()` before removal; it restores the original input type and role.
 Use this for quantities, not IDs, dates, or raw serialized data.
 
+Pass bounds explicitly: the adapter does not read native `min`, `max`, or
+`step` attributes. Defaults are plus/minus `Number.MAX_SAFE_INTEGER` and a
+keyboard step of 1. Typed off-step values are valid; only faders snap on commit.
+The adapter retains JavaScript Number precision when formatting and uses decimal
+step arithmetic, without imposing a 12-decimal or 14-significant-digit cap.
+Values beyond the safe-integer magnitude are rejected. It is not an arbitrary-
+precision decimal store; use strings or a decimal library for that contract.
+Delete/Backspace cross grouping separators. Native form reset restores grouping
+and validity on the next microtask, unless the reset was canceled. Call `valid`
+when setting `.value` programmatically without an input event, or use `set()`.
+
 ## bounded time/range window (`.wonk-window`)
 
 two plain inputs, `date`, `datetime-local`, or `number`, kept mutually

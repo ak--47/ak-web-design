@@ -43,6 +43,12 @@ remain available as reference material. No new package or external service is
 required. Generated-palette restoration occurs during base initialization;
 the existing no-flash snippet still restores only dark/paper.
 
+Release review also covered external theme-switcher repainting, numeric
+precision and comma-boundary editing, native reset validity, reduced-motion
+glyph starts, and inline focus/replacement safety. Inline subtitles remain
+visible, and the workbench clears an inspector when its record leaves the
+applied result. Invalid motion names reject without interrupting a valid effect.
+
 ## 0.3.0 (2026-09-24)
 
 Upgrading from 0.2: copy the whole `assets/` folder again, bump the pinned

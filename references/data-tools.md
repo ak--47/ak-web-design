@@ -165,8 +165,11 @@ records.destroy();
 `inline(host, opts)` returns `{element, table, open, close, destroy}`. It appends
 a full-width fold, preserves the host's existing content, and replaces only
 the prior inline drill owned by that host. Counts and tables use the same rows.
-Escape closes the fold and returns focus to the opener. Bad options leave the
-previous drill intact. Call `destroy()` before removing its host. Motion is
+Opening reveals and focuses the summary. Escape closes the fold and returns
+focus to a usable opener, or to the summary if that opener is hidden, disabled,
+inert, or gone. `subtitle` appears above the table, and `note` accepts text or a
+Node. Bad table options leave the previous drill and its note intact. Call
+`destroy()` before removing its host. Motion is
 optional and uses the shared pack when loaded.
 
 `drill({target: host, ...opts})` uses the same inline implementation. Registered
@@ -210,6 +213,7 @@ accessible description.
 ```js
 wonkData.drills({
   pipeline: () => ({
+    presentation: "modal",
     title: "Open pipeline",
     subtitle: "this quarter",
     columns: dealColumns,
@@ -217,7 +221,7 @@ wonkData.drills({
     sort: { key: "amount", dir: "desc" },
     download: "open-pipeline.csv",   // adds a Download CSV button
   }),
-  "at-risk": (el) => ({ title: "Deals at risk", columns: dealColumns, rows: atRisk, detail: (row) => row.risk }),
+  "at-risk": (el) => ({ presentation: "modal", title: "Deals at risk", columns: dealColumns, rows: atRisk, detail: (row) => row.risk }),
 });
 
 // or open one directly, from a row action or a chart mark:

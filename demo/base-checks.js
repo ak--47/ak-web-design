@@ -175,6 +175,22 @@
     }
   });
 
+  check("glyph public start and next respect reduced motion", async () => {
+    const iso = await loadIsolatedWonk();
+    try {
+      iso.setReduced(true);
+      const element = iso.doc.createElement("span");
+      iso.doc.body.append(element);
+      const glyph = iso.win.wonk.glyph(element);
+      const before = element.textContent;
+      const { calls } = withTimerSpy(iso.win, "setInterval", () => glyph.start());
+      assert(calls.length === 0, "public start cannot schedule an idle timer while reduced");
+      glyph.next();
+      assert(element.textContent === before, "next keeps reduced glyph still");
+      glyph.destroy();
+    } finally { iso.cleanup(); }
+  });
+
   check("reduced motion flipped on mid-session stops live and vu loops; flipped off resumes them", async () => {
     const iso = await loadIsolatedWonk();
     try {

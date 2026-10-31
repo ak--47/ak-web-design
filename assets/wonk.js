@@ -155,14 +155,14 @@
     // swapping forever in the background
     const swap = () => {
       if (!el.isConnected) { d.destroy(); return; }
-      if (document.hidden || trigger.matches(":disabled")) return;
+      if (reduced() || document.hidden || trigger.matches(":disabled")) return;
       paint();
     };
     el.textContent = next();
     const d = {
       el,
       start() {
-        if (running) return;
+        if (running || reduced()) return;
         running = true;
         if (idle && !document.hidden) slow = setInterval(swap, idle);
       },
@@ -1602,6 +1602,7 @@
   let paletteSeed = null;
   let paletteMemory = null;
   let generatedPalette = null;
+  let paintedPaletteTheme = null;
   const paletteOriginal = new Map();
   const palettePickers = new WeakMap();
 
@@ -1716,6 +1717,7 @@
   }
   function paintPalette() {
     if (!generatedPalette || currentPair() !== "dice") return;
+    paintedPaletteTheme = currentTheme();
     const style = document.documentElement.style;
     for (const [key, value] of Object.entries(generatedPalette[currentTheme()])) {
       if (!paletteOriginal.has(key)) paletteOriginal.set(key, [style.getPropertyValue(key), style.getPropertyPriority(key)]);
@@ -1729,6 +1731,7 @@
       else style.removeProperty(key);
     }
     paletteOriginal.clear();
+    paintedPaletteTheme = null;
   }
   function rollPalette({ seed } = {}) {
     if (seed === undefined) {
@@ -1831,6 +1834,12 @@
     document.querySelectorAll(TOGGLE_SEL).forEach(paintToggle);
     document.dispatchEvent(new CustomEvent("wonk:themechange", { detail: { theme: currentTheme(), pair: currentPair() } }));
   };
+  new MutationObserver(() => {
+    if (currentPair() === "dice" && generatedPalette && paintedPaletteTheme !== currentTheme()) {
+      paintPalette();
+      emitTheme();
+    }
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   function applyTheme(theme) {
     if (theme === "paper") document.documentElement.setAttribute("data-theme", "paper");

@@ -678,13 +678,14 @@
     const body = make("div", "body");
     const tableHost = make("div");
     const opener = opts.opener instanceof Element ? opts.opener : document.activeElement;
+    const controller = table(tableHost, { ...opts, caption: opts.title, captionHidden: true });
+    if (opts.subtitle) body.append(make("p", "wonk-drill-count", String(opts.subtitle)));
     if (opts.note !== undefined && opts.note !== null) {
       const note = make("div", "wonk-drill-note");
       note.append(toContent(opts.note));
       body.append(note);
     }
     body.append(tableHost);
-    const controller = table(tableHost, { ...opts, caption: opts.title, captionHidden: true });
     if (opts.download) {
       const download = make("button", "wonk-btn", "Download CSV");
       download.type = "button";
@@ -697,8 +698,17 @@
     let destroyed = false;
     const api = Object.freeze({
       element: fold, table: controller,
-      close() { fold.open = false; window.wonkMotion?.cancel(body); if (opener?.isConnected) opener.focus(); else summary.focus(); },
-      open() { fold.open = true; summary.focus({ preventScroll: true }); },
+      close() {
+        fold.open = false;
+        window.wonkMotion?.cancel(body);
+        if (opener instanceof HTMLElement && opener.isConnected && !opener.matches(":disabled") && !opener.closest("[inert]") && opener.getClientRects().length) opener.focus();
+        if (document.activeElement !== opener || !opener?.getClientRects().length || opener.matches(":disabled")) summary.focus();
+      },
+      open() {
+        fold.open = true;
+        summary.focus({ preventScroll: true });
+        summary.scrollIntoView({ block: "nearest" });
+      },
       destroy() {
         if (destroyed) return;
         destroyed = true;
