@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WONK / next studies</title>
+  <script>if(new URLSearchParams(location.search).get("chosen")==="1")document.documentElement.dataset.review="chosen";</script>
   <link rel="icon" href="data:,">
   <script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
   <link rel="stylesheet" href="../assets/wonk-fonts.css">
@@ -20,7 +21,7 @@
 </head>
 <body class="review">
   <header class="review-head">
-    <div><h1>WONK / next studies</h1><p>Rounds 08-10 / awaiting your choices</p></div>
+    <div><h1>WONK / design studies</h1><p>Rounds 08-10 / choices recorded</p></div>
     <button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button>
   </header>
   <nav class="review-nav" aria-label="Design studies">
@@ -28,6 +29,7 @@
     <a href="#forms" data-round="forms">09 / Editing</a>
     <a href="#workspace" data-round="workspace">10 / Workspace</a>
     <a href="compare.html?approved=1">Approved baseline</a>
+    <a href="review.html?chosen=1#workspace" id="review-mode-link">Chosen designs</a>
   </nav>
   <main>
     <header class="review-question">
@@ -52,6 +54,6 @@
       <article class="candidate" data-variant="b"><header class="candidate-label"><span>B</span><h3>Split workspace</h3></header><div class="preview" id="workspace-b"></div></article>
     </section>
   </main>
-  <footer class="review-footer">Local fixtures / no backend requests or production changes / unreviewed compositions</footer>
+  <footer class="review-footer">Local fixtures / no backend requests or production changes / chosen designs await combined review</footer>
 </body>
 </html>

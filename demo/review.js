@@ -26,6 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
     forms: ["How many settings should appear at once?", "Same fields and save behavior. Only advanced-field disclosure changes."],
     workspace: ["Where should the selected record live?", "Same records and details. Stacked versus side-by-side, never a modal."],
   };
+  const chosen = document.documentElement.dataset.review === "chosen";
+  const chosenTitles = { reading: "Sectioned reading", forms: "Core + advanced editing", workspace: "Stacked batch workspace" };
+  if (chosen) {
+    document.querySelector(".review-head h1").textContent = "WONK / chosen designs";
+    document.querySelector(".review-head p").textContent = "All ten choices recorded / combined review";
+  }
   function node(tag, className, text) {
     const element = document.createElement(tag);
     if (className) element.className = className;
@@ -410,9 +416,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (link.dataset.round === active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
     });
-    document.getElementById("question").textContent = rounds[active][0];
-    document.getElementById("comparison-note").textContent = rounds[active][1];
-    document.title = `WONK / ${active} study`;
+    document.getElementById("question").textContent = chosen ? chosenTitles[active] : rounds[active][0];
+    document.getElementById("comparison-note").textContent = chosen ? "Chosen design / final review before promotion" : rounds[active][1];
+    const modeLink = document.getElementById("review-mode-link");
+    modeLink.textContent = chosen ? "Compare alternatives" : "Chosen designs";
+    modeLink.href = chosen ? `review.html#${active}` : `review.html?chosen=1#${active}`;
+    document.title = `WONK / ${active} ${chosen ? "chosen design" : "study"}`;
   }
   window.addEventListener("hashchange", showRound);
   document.querySelectorAll('input[name="review-view"]').forEach((input) => {

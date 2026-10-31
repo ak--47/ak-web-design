@@ -183,6 +183,23 @@
           both.checked = true;
           both.dispatchEvent(new Event("change", { bubbles: true }));
         });
+        await check("chosen review: only B reading, B editing, and A workspace are visible", () => {
+          const original = document.documentElement.dataset.review;
+          document.documentElement.dataset.review = "chosen";
+          try {
+            for (const [round, selected] of [["reading", "b"], ["forms", "b"], ["workspace", "a"]]) {
+              selectRound(round);
+              const winner = document.querySelector(`#${round} [data-variant="${selected}"]`);
+              const other = document.querySelector(`#${round} [data-variant="${selected === "a" ? "b" : "a"}"]`);
+              assert(getComputedStyle(winner).display !== "none", "chosen candidate visible");
+              same(getComputedStyle(other).display, "none", "alternative hidden");
+            }
+            same(getComputedStyle(document.querySelector(".review-view")).display, "none", "comparison controls hidden");
+          } finally {
+            if (original === undefined) delete document.documentElement.dataset.review;
+            else document.documentElement.dataset.review = original;
+          }
+        });
         await check("routing: unknown hash falls back, view mode hides correct candidate", () => {
           selectRound("unknown");
           assert(!document.getElementById("reading").hidden, "unknown hash falls back to reading");

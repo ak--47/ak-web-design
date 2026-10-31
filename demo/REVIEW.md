@@ -1,12 +1,12 @@
-# resume at round 10
+# final combined review
 
-open [the next studies](review.html#workspace). workspace is the final A/B round.
-round 08 is decided: B, sectioned reading. round 09 is also B, core fields with
-advanced settings folded inline. use A + B for comparison, or A/B to see one
-candidate at full width. dark and paper both work.
+all ten A/B choices are recorded. open [the chosen designs](review.html?chosen=1#workspace):
+sectioned reading (B), core + advanced editing (B), and stacked workspace (A).
+each opens at full width. dark and paper both work.
 
 [the approved baseline](compare.html?approved=1) combines the decisions from
-rounds 1-7. [the glyph comparison](compare.html) remains available.
+rounds 1-7 and links back to the chosen designs. [the alternatives](review.html)
+and [the glyph comparison](compare.html) remain available.
 
 these pages are local fixtures. forms save to the current page's memory only;
 reload clears those edits. no import, retry, notification, or backend request
@@ -14,20 +14,15 @@ runs. no shipped asset, version, or skill rule changed. work continues on
 `refine/wonk-design-studies` in [draft PR #1](https://github.com/ak--47/ak-web-design/pull/1).
 the pull request stays in draft until review.
 
-## choices still open
+## review the chosen behavior together
 
-| round | A | B | try |
-|---|---|---|---|
-| 10 / workspace | list above inspector | list beside inspector | search for Mobile, filter Failed, select with arrow keys, clear an empty search |
+the stacked workspace puts the list above its inline inspector. selection stays
+when it still matches the filters; otherwise the first remaining record becomes
+selected. empty results clear the old inspector.
 
-the split workspace stacks on narrow screens. compare its desktop or full-width
-view before choosing. neither version uses a modal inspector. both retain the
-same selection when it still matches the filters; otherwise they select the
-first remaining record. empty results clear the old inspector.
-
-the workspace composition is not approved yet. both options hold the type,
-data, and shared controls steady. choose one, then review the combined baseline
-before promoting changes into WONK.
+review the chosen designs and baseline before promoting changes into WONK.
+the individual choices are approved; the combined implementation still needs
+the final review. no new design decision is required by this page.
 
 ## decisions already made
 
@@ -45,6 +40,7 @@ before promoting changes into WONK.
 | variety | 561 unique symbols in a persistent shuffle bag; no repeat within a cycle or adjacent repeat across its boundary |
 | reading | sectioned briefs: visible headlines with inline expandable explanations and expand/collapse all |
 | editing | core fields visible; advanced settings folded inline, with explicit save/discard and hidden errors revealed on validation |
+| workspace | stacked batch list above the inline inspector; keep compact rows and keyboard selection |
 
 geometric pattern morphs remain a liked alternate. idle glyph behavior is still
 experimental: the prototype stays still until interaction, while the shipped
@@ -58,12 +54,13 @@ npm test -- studies study-baseline
 npm test
 ```
 
-the new suites contain 18 checks. they cover matching reading content, exact
+the new suites contain 19 checks. they cover matching reading content, exact
 count drills, hidden validation errors, local save/discard, empty-state recovery,
 keyboard selection, unique IDs, grouped entry, full-width inline evidence, two
 complete glyph shuffle cycles, and approved motion timing. the polish checks
 cover Escape and focus return, stationary focused fields, selection announcements,
 and cancellation of hidden effects without losing drafts.
+the chosen-design check pins B reading, B editing, and A workspace.
 
 selecting the current batch again keeps its open snapshot. moving to another
 record announces the source, time, status, and record count. Escape closes the
