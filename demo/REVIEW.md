@@ -1,8 +1,8 @@
-# resume at round 08
+# resume at round 09
 
-open [the next studies](review.html#reading). reading is first. editing and
-workspace are ready in the same page. use A + B for comparison, or A/B to see
-one candidate at full width. dark and paper both work.
+open [the next studies](review.html#forms). editing is next, then workspace.
+round 08 is decided: B, sectioned reading. use A + B for comparison, or A/B
+to see one candidate at full width. dark and paper both work.
 
 [the approved baseline](compare.html?approved=1) combines the decisions from
 rounds 1-7. [the glyph comparison](compare.html) remains available.
@@ -17,7 +17,6 @@ the pull request stays in draft until review.
 
 | round | A | B | try |
 |---|---|---|---|
-| 08 / reading | continuous brief | sections behind folds | read the same brief, expand sections, inspect both headline counts |
 | 09 / editing | all fields visible | core fields with advanced settings folded | change a name, save, discard another edit, submit an invalid email |
 | 10 / workspace | list above inspector | list beside inspector | search for Mobile, filter Failed, select with arrow keys, clear an empty search |
 
@@ -26,7 +25,7 @@ view before choosing. neither version uses a modal inspector. both retain the
 same selection when it still matches the filters; otherwise they select the
 first remaining record. empty results clear the old inspector.
 
-none of these three compositions is approved yet. they intentionally hold the
+neither remaining composition is approved yet. they intentionally hold the
 type, data, and shared controls steady. review them in order, then review the
 combined baseline before promoting changes into WONK.
 
@@ -44,6 +43,7 @@ combined baseline before promoting changes into WONK.
 | changed results | 800ms accent: 80ms rise, 160ms hold, 560ms fade; actual values update immediately |
 | glyph | unframed symbol shuffle; 200ms cadence, 120ms movement, keyboard/touch activation |
 | variety | 561 unique symbols in a persistent shuffle bag; no repeat within a cycle or adjacent repeat across its boundary |
+| reading | sectioned briefs: visible headlines with inline expandable explanations and expand/collapse all |
 
 geometric pattern morphs remain a liked alternate. idle glyph behavior is still
 experimental: the prototype stays still until interaction, while the shipped
