@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="../assets/wonk-tokens.css">
 <link rel="stylesheet" href="../assets/wonk.css">
 <link rel="stylesheet" href="../assets/wonk-data.css">
+<link rel="stylesheet" href="../assets/wonk-motion.css">
 <!-- radio: delete with the radio block -->
 <link rel="stylesheet" href="../assets/wonk-radio.css">
 <!-- charts: d3, then Plot, both before wonk-charts.js -->
@@ -28,6 +29,7 @@
 <script defer src="../assets/vendor/plot/plot.umd.min.js"></script>
 <script defer src="../assets/wonk.js"></script>
 <script defer src="../assets/wonk-data.js"></script>
+<script defer src="../assets/wonk-motion.js"></script>
 <script defer src="../assets/wonk-charts.js"></script>
 <!-- radio: delete with the radio block -->
 <script defer src="../assets/wonk-radio.js"></script>
@@ -36,7 +38,7 @@
 
 <div class="wonk-shell">
   <nav class="wonk-side" id="app-nav" aria-label="Main">
-    <div class="brand" data-wonk-secret="seven clicks. persistence closes deals."><span data-wonk-glyph aria-hidden="true">&#8767;</span> Pipeline</div>
+    <div class="brand" data-wonk-secret="seven clicks. persistence closes deals."><button type="button" class="wonk-glyph" aria-label="Cycle symbols"><span data-wonk-glyph data-glyph-idle="0" aria-hidden="true">&#8767;</span></button> Pipeline</div>
     <a class="wonk-navlink active" href="#overview" aria-current="page">Overview</a>
     <a class="wonk-navlink" href="#records">Deals</a>
     <a class="wonk-navlink" href="#trend">Trend</a>
@@ -50,6 +52,7 @@
       </div>
       <div class="wonk-row">
         <span class="wonk-label" id="pair-label">pair: metathesis</span>
+        <div data-wonk-palette></div>
         <button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button>
       </div>
     </header>
@@ -308,6 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
     WEEKS.push({ week, deals: rows.length, amount: sum(rows), rows });
   }
   const openWeek = (w) => wonkData.drill({
+    target: document.getElementById("trend"),
     title: `Deals created the week of ${fmt.date(w.week)}`,
     columns: COLUMNS,
     rows: w.rows,

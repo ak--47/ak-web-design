@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WONK / refined components</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../assets/wonk-fonts.css">
+  <link rel="stylesheet" href="../assets/wonk-tokens.css">
+  <link rel="stylesheet" href="../assets/wonk.css">
+  <link rel="stylesheet" href="../assets/wonk-controls.css">
+  <link rel="stylesheet" href="../assets/wonk-data.css">
+  <link rel="stylesheet" href="../assets/wonk-motion.css">
+  <script defer src="../assets/vendor/d3/d3.min.js"></script>
+  <script defer src="../assets/vendor/plot/plot.umd.min.js"></script>
+  <script defer src="../assets/wonk.js"></script>
+  <script defer src="../assets/wonk-controls.js"></script>
+  <script defer src="../assets/wonk-data.js"></script>
+  <script defer src="../assets/wonk-motion.js"></script>
+  <script defer src="../assets/wonk-charts.js"></script>
+  <script defer src="refined.js"></script>
+  <script defer src="refined-checks.js"></script>
+  <style>
+    .refined { max-width: 72rem; margin: auto; padding: 24px; }
+    .refined-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--ak-hairline); }
+    .refined-brand { display: flex; align-items: center; gap: 12px; }
+    .wonk .refined h1 { margin: 0; font-size: 23px; }
+    .refined-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+    .refined-nav { display: flex; flex-wrap: wrap; gap: 20px; padding-block: 16px; }
+    .refined section { margin-top: 24px; min-width: 0; }
+    .refined-answer { padding-left: 16px; border-left: 3px solid var(--ak-err); }
+    .wonk .refined h2 { font-size: 22px; }
+    .refined-form { max-width: 42rem; padding-block: 20px; border-block: 1px solid var(--ak-hairline); }
+    .refined-form .wonk-fader { margin-bottom: 16px; }
+    .refined-result { min-height: 32px; line-height: 1.7; border-radius: var(--ak-radius); }
+    .refined-footer { color: var(--ak-ink-2); font: 12px/1.6 var(--ak-font-mono); padding-top: 24px; }
+    @media (max-width: 480px) { .refined { padding: 16px; } .refined-tools { width: 100%; } }
+  </style>
+</head>
+<body>
+<main class="refined">
+  <header class="refined-head">
+    <div class="refined-brand"><button type="button" class="wonk-glyph" aria-label="Cycle symbols" data-tip="Cycle symbols"><span data-wonk-glyph data-glyph-idle="0" aria-hidden="true">&#8767;</span></button><h1>Import workbench</h1></div>
+    <div class="refined-tools"><div data-wonk-palette></div><button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button></div>
+  </header>
+  <nav class="refined-nav" aria-label="Component examples"><a href="index.html">Component library</a><a href="review.html?chosen=1#reading">Reading</a><a href="review.html?chosen=1#forms">Editing</a><a href="review.html?chosen=1#workspace">Batch workspace</a></nav>
+  <section class="refined-answer" aria-labelledby="answer-title"><h2 id="answer-title">Mobile imports need attention.</h2><p><button class="wonk-value-link" type="button" data-wonk-drill="refined-failed">3 batches failed validation.</button> Web and server imports completed.</p></section>
+  <section aria-label="Volume threshold">
+    <form id="threshold-form" class="refined-form">
+      <fieldset class="wonk-fader" data-grouped data-min="0" data-max="30000" data-step="1000" data-value="20000" id="threshold-fader">
+        <legend class="wonk-label">Flag batches below / records</legend>
+        <div class="wonk-fader-row"><input type="range" class="wonk-range"><input type="text" class="wonk-fader-exact"></div>
+      </fieldset>
+      <div class="wonk-row"><button type="submit" class="wonk-btn wonk-btn--primary">Apply</button><output id="draft-state" aria-live="polite">Applied</output></div>
+    </form>
+    <p id="threshold-result" class="refined-result"><button type="button" class="wonk-value-link" id="threshold-count"></button><span id="threshold-description"></span></p>
+    <div id="threshold-records"></div>
+  </section>
+  <section aria-labelledby="trend-title"><h2 id="trend-title">Records written</h2><div id="refined-chart"></div><div id="chart-records"></div></section>
+  <section aria-labelledby="records-title"><h2 id="records-title">Batch records</h2><div id="refined-table"></div></section>
+  <section class="wonk-reading" aria-labelledby="rules-title"><h2 id="rules-title">Validation</h2><details class="wonk-fold"><summary>Required fields</summary><div class="body"><p>Each record needs an event name and a user ID. A failed batch writes no records.</p></div></details><details class="wonk-fold"><summary>Before retrying</summary><div class="body"><p>Correct the source payload and validate it before retrying only the failed batches.</p></div></details></section>
+  <footer class="refined-footer">Local fixture / 30 Oct 2026, 12:05 UTC / no backend requests</footer>
+</main>
+</body>
+</html>

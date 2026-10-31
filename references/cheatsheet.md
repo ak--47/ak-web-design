@@ -14,6 +14,9 @@ injected DOM. "auto" means no call is needed.
 | section divider | `.wonk-divider`, `.wonk-rule` | — | [components.md § layout](components.md#layout--dividers) |
 | dark / paper toggle | `data-wonk-theme-toggle` | `wonk.theme.init()`, `wonk.setTheme("paper")` | [components.md § theme](components.md#theme) |
 | poster pair | `data-pair` on `<html>` | `wonk.setPair(name)` | [pairs.md](pairs.md) |
+| saved generated palette | `data-wonk-palette`, `data-wonk-palette-roll` | `wonk.palette.init()` / `.roll()` / `.mount(host)` | [pairs.md](pairs.md#saved-dice-palettes) |
+| grouped exact quantity | `.wonk-fader[data-grouped]` or text input | `wonkControls.numberInput(input, opts)` | [instruments.md](instruments.md#grouped-exact-entry-and-console-geometry) |
+| inline record drill | `.wonk-inline-drill` | `wonkData.inline(host, opts)` | [data-tools.md](data-tools.md#inline-is-the-default-for-new-record-workflows) |
 | page title, label, number | `.wonk-title`, `.wonk-label`, `.wonk-num` | — | [components.md § typography](components.md#typography) |
 | formatted value | — | `wonk.fmt.num` / `.compact` / `.money` / `.pct` / `.duration` / `.date` / `.delta` | [components.md § wonk.fmt](components.md#formatting-wonkfmt) |
 | button | `.wonk-btn`, `.wonk-btn--primary`, `.wonk-btn--danger`, `.wonk-btn--quiet` | — | [components.md § buttons](components.md#buttons) |

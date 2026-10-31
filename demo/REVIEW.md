@@ -1,4 +1,4 @@
-# final combined review
+# approved and promoted
 
 all ten A/B choices are recorded. open [the chosen designs](review.html?chosen=1#workspace):
 sectioned reading (B), core + advanced editing (B), and stacked workspace (A).
@@ -10,7 +10,9 @@ and [the glyph comparison](compare.html) remain available.
 
 these pages are local fixtures. forms save to the current page's memory only;
 reload clears those edits. no import, retry, notification, or backend request
-runs. no shipped asset, version, or skill rule changed. work continues on
+runs. the combined review was approved and the selected behaviors now ship in
+the reusable packs. [refined components](refined.html) exercises those APIs,
+including the new saved dice palette. work continues on
 `refine/wonk-design-studies` in [draft PR #1](https://github.com/ak--47/ak-web-design/pull/1).
 the pull request stays in draft until review.
 
@@ -20,9 +22,9 @@ the stacked workspace puts the list above its inline inspector. selection stays
 when it still matches the filters; otherwise the first remaining record becomes
 selected. empty results clear the old inspector.
 
-review the chosen designs and baseline before promoting changes into WONK.
-the individual choices are approved; the combined implementation still needs
-the final review. no new design decision is required by this page.
+the individual choices and combined preview are approved. the alternatives
+remain for comparison; the shared components and skill defaults now use the
+approved direction. no merge or deployment has been requested.
 
 ## decisions already made
 
@@ -75,15 +77,17 @@ Chromium. other operating systems' font coverage is not established.
 the repository's workflow runs on `main` pushes, not pull requests. the draft
 records local test results; no remote CI result is implied.
 
-## promotion needs a separate pass
+## reusable APIs
 
-the approved behaviors currently live in the prototype, not in reusable packs.
-after the final review, move them into their owning components with focused
-tests, references, gallery examples, and a version update where needed.
+WONK 0.4.0 promotes the console fader, grouped quantity adapter, inline drill,
+compact rows, reading/advanced/workspace classes, long result accent, and
+561-symbol shuffle. The starter template and refined gallery use these packs.
 
-the longer result accent currently uses a local Web Animations implementation.
-the shared motion pack's fixed 250ms safety budget would cut off a CSS-only
-extension. promotion must update the animation lifecycle as well as its duration.
+The shared motion pack now owns the 800ms accent and its matching safety budget.
+The review pages use that shared implementation. Copy the new
+`--ak-t-feedback` token with the pack. The new palette API saves a validated
+seed with local/session/in-memory fallback; its chart slots come from existing
+validated presets. Full color and storage details live in the pairs reference.
 
 grouped numeric entry uses formatted text with explicit validation because native
 number inputs cannot display commas. keep tests for character-by-character

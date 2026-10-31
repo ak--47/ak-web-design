@@ -5,6 +5,44 @@ This file is the upgrade guide for apps that vendor a copy of `assets/`.
 `--wonk-version` token always carry the same number; `npm test` fails when
 they differ.
 
+## 0.4.0 (2026-10-30)
+
+Copy the complete `assets/` folder and update the consuming app's version pin.
+The design-study choices are now reusable APIs and styles.
+
+- **Saved dice palettes.** `wonk.palette.init`, `generate`, `roll`, and
+  `mount`, plus `data-wonk-palette`, provide the five presets and a generated
+  accent pair. Seeds persist in local storage, then session storage, with an
+  in-memory fallback. Dark/paper surfaces remain stable. Generated text and
+  button colors pass contrast checks; chart slots retain one validated preset
+  set. Repeated rolls emit `wonk:themechange` and repaint charts.
+- **Console faders and grouped entry.** Faders use an 8px track and 24 x 32px
+  grip. `data-grouped` enables comma-separated exact entry. The new
+  `wonkControls.numberInput` adapter supports standalone quantities; use its
+  numeric `value`, not the formatted string. Faders add `draftValue`.
+  Existing non-grouped number fields retain their contract.
+- **Inline records.** `wonkData.inline(host, opts)` owns one fold per host.
+  Declarative drill triggers inside a section or rack open inline by default.
+  Factories can supply a dedicated `target`. Direct `drill()` without a target
+  retains its modal behavior for compatibility; `presentation: "modal"`
+  explicitly opts a declarative trigger back in. New record workflows use inline.
+- **Motion.** Panel entrance is 6px over 250ms. Value-change feedback lasts
+  800ms with a held peak and slow fade, without scaling text. The new required
+  `--ak-t-feedback` token and script budget ship together. Copy tokens, CSS,
+  and JS together; custom isolated test documents must include this token.
+- **Glyphs.** The base pack includes 561 symbols with nonrepeating shuffle
+  cycles, 200ms hover cadence, finite click/keyboard bursts, and a disposable
+  handle. `.wonk-glyph` is unframed. `data-glyph-idle="0"` disables idle
+  cycling; the legacy 1500ms idle default remains available.
+- **Compositions.** Compact table rows, `.wonk-reading`, `.wonk-advanced`,
+  and the stacked `.wonk-workspace` family encode the approved defaults.
+  Application-specific validation, filtering, and save logic remain in the app.
+
+Start with `demo/refined.html` for the shipped APIs. The design comparisons
+remain available as reference material. No new package or external service is
+required. Generated-palette restoration occurs during base initialization;
+the existing no-flash snippet still restores only dark/paper.
+
 ## 0.3.0 (2026-09-24)
 
 Upgrading from 0.2: copy the whole `assets/` folder again, bump the pinned

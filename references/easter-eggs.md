@@ -35,10 +35,27 @@ an incident view.
 
 ## Motion eggs
 
-The glyph morph (`data-wonk-glyph`) is the sanctioned toy: slow 1500ms cycle,
-random glyph + color + a small springy scale/rotate wobble; hover turns it
-into the 100–180ms irregular strobe. Use it in brand corners, footers, empty
-states — one per view, not one per component.
+The glyph morph (`data-wonk-glyph`) uses 561 mathematical, musical, technical,
+arrow, and geometric symbols. A shuffled bag exhausts every symbol before
+reuse and prevents a repeat at the reshuffle boundary. Hover cycles at 200ms;
+each symbol moves 2px over 120ms. Leaving keeps the last symbol and shuffle
+position. Click or keyboard activation plays a six-symbol burst. Escape stops
+it, and reduced motion suppresses cycling. Color follows the surrounding
+accent rather than implying a status.
+
+```html
+<button type="button" class="wonk-glyph" aria-label="Cycle symbols">
+  <span data-wonk-glyph data-glyph-idle="0" aria-hidden="true">&#8767;</span>
+</button>
+```
+
+The button is unframed with a stable 56px target and visible keyboard focus.
+`data-glyph-idle="0"` stays still until interaction. Omit it to retain the
+legacy 1500ms idle cycle. `wonk.glyph(el)` returns an idempotent handle with
+`stop()`, `start()`, `next()`, and `destroy()`; dispose it before framework
+unmount. `wonk.glyphs` exposes the frozen symbol pool. Font coverage depends
+on the platform; the local Chromium rendering audit passes. Use one in a
+brand corner or footer, not on every record or incident indicator.
 
 The type scatter (`data-wonk-scatter`) makes a short display word spring
 apart letter-by-letter on hover and snap back on leave. Hero titles and

@@ -31,6 +31,7 @@ npm test                    # every check suite, headless
 | [motion](demo/motion.html) | eight replayable state-change effects and browser checks |
 | [radio](demo/radio.html) | shuffle player on a public GCS bucket, dock variant, browser checks |
 | [app template](templates/app.html) | the starter: shell, drawer, theme toggle, drillable stats, records table, chart, radio dock |
+| [refined components](demo/refined.html) | saved dice palettes, grouped console fader, inline drills, compact records, shared motion, large symbol shuffle |
 
 all examples use labeled local fixtures. the workbench does not execute SQL or
 call a backend. the template loads the self-hosted fonts (`wonk-fonts.css`);
@@ -109,7 +110,7 @@ const SKILL = path.join(os.homedir(), ".agents/skills/ak-web-design/assets");
 const LOCAL = path.resolve("public/wonk");
 const FILES = ["wonk-fonts.css", "wonk-tokens.css", "wonk.css", "wonk.js"];
 
-const PINNED = "0.3.0"; // the WONK version this app vendors
+const PINNED = "0.4.0"; // the WONK version this app vendors
 
 test("vendored WONK files match the skill",
   { skip: !existsSync(SKILL) && `no skill checkout at ${SKILL} (CI): drift not checked` },
@@ -181,8 +182,8 @@ media-src 'self' https://storage.googleapis.com
 
 none of the packs add a package dependency, plain script/link tags. load a
 pack's css after the base css, its js after the base js. the data pack's
-`wonk-data.js` (`window.wonkData`) renders records tables and drill-down
-dialogs; `demo/workbench.js` is example application logic on top of it, not
+`wonk-data.js` (`window.wonkData`) renders records tables and inline drill-downs
+(with a legacy modal API); `demo/workbench.js` is example application logic on top of it, not
 a reusable module. colors, radii, and motion durations stay in
 `wonk-tokens.css`, read it before styling anything.
 
@@ -262,8 +263,13 @@ per app, set once at the root, never mixed:
 <html data-pair="metathesis" class="wonk">
 ```
 
-five pairs exist: metathesis (default), glorpla, demogorgon, ancient,
-flourish. never use a raw accent (`--ak-a1`, `--ak-a2`) as text, use the
+five presets exist: metathesis (default), glorpla, demogorgon, ancient,
+flourish. Apps can also expose `<div data-wonk-palette></div>` for saved dice
+palettes. The generator keeps dark/paper surfaces, validates accent contrast,
+and uses existing validated chart sets. `wonk.palette.init()` restores the
+selection; `wonk.palette.roll()` creates a fresh seed. Storage falls back from
+local to session to in-memory state. See [pairs.md](references/pairs.md#saved-dice-palettes).
+Never use a raw accent (`--ak-a1`, `--ak-a2`) as text, use the
 `-text` variant instead, it is the one shifted to pass 4.5:1 on the ground.
 choosing and tuning a pair, the semantic tokens, and the chart series: see
 [references/pairs.md](references/pairs.md).
@@ -470,6 +476,9 @@ any failure or uncaught page error. the GitHub Pages deploy runs it first.
 | `data` | `demo/index.html` | `wonkDataChecks` |
 | `charts` | `demo/index.html` | `wonkChartsChecks` |
 | `template` | `templates/app.html` | smoke: page loads with no errors and key selectors exist |
+| `refined` | `demo/refined.html` | `wonkRefinedChecks`: palette contrast/persistence, grouped entry, inline drills, glyph lifecycle |
+| `studies` | `demo/review.html` | `wonkStudyChecks`: selected reading, editing and workspace interactions |
+| `study-baseline` | `demo/compare.html` | `wonkStudyChecks`: approved baseline contracts |
 
 the console path still works: serve the repo, open the page, and run
 `await wonkControlsChecks.run()` (or any global above); it returns
@@ -489,7 +498,7 @@ grep -rEn "bg-gray-|text-slate-|border-zinc-" src/             # tailwind defaul
 
 self-audit before calling anything done:
 
-- [ ] zero colors outside `wonk-tokens.css`
+- [ ] static colors live in `wonk-tokens.css`; generated colors come only from the validated palette API
 - [ ] both themes screenshotted, nothing unreadable in either
 - [ ] labels mono/uppercase/tracked, headings mixed-case, numbers tabular mono
 - [ ] charts themed from chart tokens, legend and tooltip present

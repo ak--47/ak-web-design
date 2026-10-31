@@ -160,6 +160,7 @@
     </div>
     <div class="study-tools">
       <a href="review.html?chosen=1#workspace">Chosen designs</a>
+      <a href="refined.html">Refined components</a>
       <fieldset class="study-view" aria-label="Comparison view">
         <legend class="wonk-sr">Comparison view</legend>
         <label><input type="radio" name="view" value="both" checked><span>A + B</span></label>
@@ -256,31 +257,6 @@
       wonk.theme.init();
       const glyphStops = [];
       const glyphMotion = matchMedia("(prefers-reduced-motion: reduce)");
-      const symbolRanges = [
-        [0x2190, 0x21ff],
-        [0x2200, 0x22ff],
-        [0x25a0, 0x25ef],
-      ];
-      const symbolCodes = [
-        0x223f, 0x2301, 0x2325, 0x29c9,
-        0x0393, 0x0394, 0x0398, 0x039b, 0x039e, 0x03a0, 0x03a3, 0x03a6, 0x03a8, 0x03a9,
-        0x03b1, 0x03b2, 0x03b3, 0x03b4, 0x03b5, 0x03b6, 0x03b7, 0x03b8, 0x03b9,
-        0x03ba, 0x03bb, 0x03bc, 0x03bd, 0x03be, 0x03c0, 0x03c1, 0x03c3, 0x03c4,
-        0x03c5, 0x03c6, 0x03c7, 0x03c8, 0x03c9,
-        0x2300, 0x2302, 0x2303, 0x2304, 0x2305, 0x2306, 0x2307, 0x2308, 0x2309,
-        0x230a, 0x230b, 0x2310, 0x2312, 0x2313, 0x2314, 0x2315, 0x2316, 0x2317,
-        0x2318, 0x2319, 0x231c, 0x231d, 0x231e, 0x231f, 0x2320, 0x2321,
-        0x2322, 0x2323, 0x2324, 0x2326, 0x2327, 0x232b, 0x2370, 0x2371,
-        0x2372, 0x2373, 0x2374, 0x2375, 0x2376, 0x2377, 0x2378, 0x2379, 0x237a,
-        0x23b0, 0x23b1, 0x23b4, 0x23b5, 0x23b6, 0x23b7,
-        0x2605, 0x2606, 0x2609, 0x263c, 0x2669, 0x266a, 0x266b, 0x266c, 0x266d, 0x266e, 0x266f,
-        0x27c0, 0x27c1, 0x27c2, 0x27c3, 0x27c4, 0x27c5, 0x27c6,
-        0x27d0, 0x27d1, 0x27d2, 0x27d3, 0x27d4, 0x27d5, 0x27d6, 0x27d7, 0x27d8, 0x27d9,
-      ];
-      for (const [first, last] of symbolRanges) {
-        for (let code = first; code <= last; code++) symbolCodes.push(code);
-      }
-      const symbols = [...new Set(symbolCodes)].map((code) => String.fromCodePoint(code));
       const patterns = [
         ["00100", "01110", "11111", "01110", "00100"],
         ["10001", "01010", "00100", "01010", "10001"],
@@ -310,33 +286,20 @@
         }
         trigger.append(art);
         specimen.querySelector(".specimen-caption").prepend(trigger);
+        if (!isPattern) {
+          art.dataset.wonkGlyph = "";
+          art.dataset.glyphIdle = "0";
+          const glyph = wonk.glyph(art);
+          glyphStops.push(() => glyph.stop());
+          continue;
+        }
         let frame = 0;
         let timer;
         let remaining;
         let running = false;
-        let symbolBag = [];
-        let lastSymbol = null;
-        function nextSymbol() {
-          if (!symbolBag.length) {
-            symbolBag = symbols.map((symbol, index) => index);
-            for (let index = symbolBag.length - 1; index > 0; index--) {
-              const swapIndex = Math.floor(Math.random() * (index + 1));
-              [symbolBag[index], symbolBag[swapIndex]] = [symbolBag[swapIndex], symbolBag[index]];
-            }
-            if (symbolBag.at(-1) === lastSymbol) {
-              const lastIndex = symbolBag.length - 1;
-              [symbolBag[0], symbolBag[lastIndex]] = [symbolBag[lastIndex], symbolBag[0]];
-            }
-          }
-          lastSymbol = symbolBag.pop();
-          return lastSymbol;
-        }
-        if (!isPattern) frame = nextSymbol();
         function paint() {
           trigger.dataset.frame = String(frame);
-          if (isPattern) {
-            [...art.children].forEach((cell, index) => { cell.dataset.lit = String(patterns[frame][index] === "1"); });
-          } else art.textContent = symbols[frame];
+          [...art.children].forEach((cell, index) => { cell.dataset.lit = String(patterns[frame][index] === "1"); });
         }
         function stop() {
           clearTimeout(timer);
@@ -353,14 +316,10 @@
             stop();
             return;
           }
-          frame = isPattern ? (frame + 1) % patterns.length : nextSymbol();
+          frame = (frame + 1) % patterns.length;
           paint();
-          if (!isPattern) {
-            for (const animation of art.getAnimations()) animation.cancel();
-            art.animate([{ opacity: 0.6, transform: "translateY(2px)" }, { opacity: 1, transform: "none" }], { duration: 120, easing: "ease-out" });
-          }
           if (remaining !== null) remaining--;
-          timer = setTimeout(advance, isPattern ? 400 : 200);
+          timer = setTimeout(advance, 400);
         }
         function start(burst) {
           stop();
@@ -550,7 +509,7 @@
         const exact = document.createElement("input");
         exact.type = "text";
         exact.inputMode = "numeric";
-        exact.className = "wonk-input threshold-exact";
+        exact.className = "wonk-input wonk-fader-exact threshold-exact";
         exact.id = `threshold-${variant.dataset.variant}`;
         exact.required = true;
         exact.autocomplete = "off";
@@ -576,29 +535,9 @@
         form.append(control, actions);
         const result = document.createElement("p");
         result.className = "threshold-result";
-        const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-        let highlightAnimation;
         function highlightResult() {
-          highlightAnimation?.cancel();
-          highlightAnimation = undefined;
-          if (reducedMotion.matches) return;
-          const wash = getComputedStyle(result).getPropertyValue("--ak-wash").trim();
-          const animation = result.animate([
-            { backgroundColor: "transparent", offset: 0 },
-            { backgroundColor: wash, offset: 0.1 },
-            { backgroundColor: wash, offset: 0.3 },
-            { backgroundColor: "transparent", offset: 1 },
-          ], { duration: 800, easing: "linear" });
-          highlightAnimation = animation;
-          animation.onfinish = () => {
-            if (highlightAnimation === animation) highlightAnimation = undefined;
-          };
+          wonkMotion.play(result, "value-changed");
         }
-        reducedMotion.addEventListener("change", () => {
-          if (!reducedMotion.matches) return;
-          highlightAnimation?.cancel();
-          highlightAnimation = undefined;
-        });
         const matches = document.createElement("button");
         matches.type = "button";
         matches.className = "wonk-value-link";
@@ -608,77 +547,22 @@
         variant.querySelector(".answer").after(section);
         wonkControls.init(control);
         const fader = field.wonkFader;
-        const numberFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
         function draftValue() {
-          const text = exact.value.trim();
-          return /^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(text) ? Number(text.replaceAll(",", "")) : NaN;
+          return fader.draftValue;
         }
         function validateDraft() {
-          const value = draftValue();
-          const error = !Number.isSafeInteger(value) ? "Enter a whole number, such as 25,000."
-            : value < 0 || value > 30000 ? "Enter a value from 0 to 30,000."
-            : value % 1000 !== 0 ? "Use increments of 1,000." : "";
-          exact.setCustomValidity(error);
-          exact.setAttribute("aria-invalid", String(Boolean(error)));
-          if (error) {
-            exact.removeAttribute("aria-valuenow");
-            exact.removeAttribute("aria-valuetext");
-          } else {
-            exact.setAttribute("aria-valuenow", String(value));
-            exact.setAttribute("aria-valuetext", numberFormat.format(value));
-          }
-          state.textContent = !error && value === appliedThreshold ? "Applied" : "Unapplied changes";
-          return !error;
+          const valid = fader.valid;
+          state.textContent = valid && draftValue() === appliedThreshold ? "Applied" : "Unapplied changes";
+          return valid;
         }
         function paintRange() {
           range.style.setProperty("--fader-fill", `${fader.value / 30000 * 100}%`);
-          range.setAttribute("aria-valuetext", numberFormat.format(fader.value));
-        }
-        function formatEntry(event) {
-          const localEdit = event?.inputType?.startsWith("delete") || (event?.inputType === "insertText" && event.data?.length === 1);
-          const value = localEdit && /^[\d,]+$/.test(exact.value) && /\d/.test(exact.value)
-            ? Number(exact.value.replaceAll(",", "")) : draftValue();
-          if (Number.isSafeInteger(value) && !/^0\d/.test(exact.value)) {
-            const digitsBeforeCaret = exact.value.slice(0, exact.selectionStart).replace(/\D/g, "").length;
-            exact.value = numberFormat.format(value);
-            let caret = 0;
-            let digits = 0;
-            while (caret < exact.value.length && digits < digitsBeforeCaret) {
-              if (/\d/.test(exact.value[caret])) digits++;
-              caret++;
-            }
-            if (document.activeElement === exact) exact.setSelectionRange(caret, caret);
-          }
-          validateDraft();
         }
         range.addEventListener("input", () => {
-          exact.value = numberFormat.format(fader.value);
           validateDraft();
           paintRange();
         });
-        exact.addEventListener("input", (event) => { if (!event.isComposing) formatEntry(event); });
-        exact.addEventListener("compositionend", formatEntry);
-        exact.addEventListener("change", () => {
-          if (!validateDraft()) return;
-          fader.set(draftValue());
-          exact.value = numberFormat.format(fader.value);
-          paintRange();
-        });
-        exact.addEventListener("keydown", (event) => {
-          const movement = { ArrowUp: 1000, ArrowDown: -1000, PageUp: 10000, PageDown: -10000 }[event.key];
-          if (movement !== undefined) {
-            event.preventDefault();
-            if (!validateDraft()) return;
-            fader.set(draftValue() + movement);
-            exact.value = numberFormat.format(fader.value);
-            validateDraft();
-            paintRange();
-          } else if (event.key === "Enter") {
-            event.preventDefault();
-            if (exact.reportValidity()) exact.blur();
-          }
-        });
-        exact.value = numberFormat.format(fader.value);
+        exact.addEventListener("input", validateDraft);
         validateDraft();
         paintRange();
         const selectedBatches = () => batches.filter((batch) => batch.written < appliedThreshold);
@@ -694,7 +578,7 @@
           const changed = appliedThreshold !== draftValue();
           appliedThreshold = draftValue();
           fader.set(appliedThreshold);
-          exact.value = numberFormat.format(appliedThreshold);
+          appliedThreshold = fader.value;
           paintRange();
           state.textContent = "Applied";
           updateResult();

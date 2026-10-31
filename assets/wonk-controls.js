@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.3.0 · wonk-controls.js · instrument controls pack for WONK data tools
+   WONK v0.4.0 · wonk-controls.js · instrument controls pack for WONK data tools
    Depends on wonk.js (loaded first) and wonk-controls.css.
    Dependency-free otherwise. Safe to load once per page.
 
@@ -61,6 +61,93 @@
   // range updates the number, typing an exact number updates the range.
   // Fires native "input" (while moving) and "change" (on commit) on BOTH
   // inputs, same as any native range -- there is no custom event to learn.
+  function numberInput(input, { min = -Number.MAX_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER, step = 1 } = {}) {
+    if (!(input instanceof HTMLInputElement) || ![min, max, step].every(Number.isFinite) || min >= max || step <= 0) throw new TypeError("wonkControls.numberInput: valid input, bounds and positive step required");
+    if (input.wonkNumber) return input.wonkNumber;
+    const originalType = input.type;
+    const originalAttributes = new Map(["role", "inputmode", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-valuetext", "aria-invalid"].map((name) => [name, input.getAttribute(name)]));
+    input.type = "text";
+    input.inputMode = "decimal";
+    input.setAttribute("role", "spinbutton");
+    input.setAttribute("aria-valuemin", String(min));
+    input.setAttribute("aria-valuemax", String(max));
+    const format = new Intl.NumberFormat("en-US", { maximumFractionDigits: 12 });
+    const value = () => /^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(input.value.trim()) ? Number(input.value.replaceAll(",", "")) : NaN;
+    function validate() {
+      const number = value();
+      const optionalEmpty = !input.required && input.value === "";
+      const error = optionalEmpty ? "" : !Number.isFinite(number) ? "Enter a number, such as 25,000."
+        : Math.abs(number) > Number.MAX_SAFE_INTEGER ? "This number is too large to represent exactly."
+        : number < min || number > max ? `Enter a value from ${format.format(min)} to ${format.format(max)}.` : "";
+      input.setCustomValidity(error);
+      input.setAttribute("aria-invalid", String(Boolean(error)));
+      if (!error && !optionalEmpty) {
+        input.setAttribute("aria-valuenow", String(number));
+        input.setAttribute("aria-valuetext", format.format(number));
+      } else {
+        input.removeAttribute("aria-valuenow");
+        input.removeAttribute("aria-valuetext");
+      }
+      return !error;
+    }
+    function paint(event) {
+      if (event?.isComposing) return;
+      const local = event?.inputType?.startsWith("delete") || (event?.inputType === "insertText" && event.data?.length === 1);
+      const raw = local ? input.value.replaceAll(",", "") : input.value;
+      const parseable = /^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?$/.test(raw);
+      if (parseable && Math.abs(Number(raw.replaceAll(",", ""))) <= Number.MAX_SAFE_INTEGER) {
+        const caretUnits = input.value.slice(0, input.selectionStart).replaceAll(",", "").length;
+        const [integer, decimals] = raw.replaceAll(",", "").split(".");
+        input.value = `${integer === "-0" ? "-0" : format.format(Number(integer))}${decimals === undefined ? "" : `.${decimals}`}`;
+        let caret = 0;
+        let units = 0;
+        while (caret < input.value.length && units < caretUnits) { if (input.value[caret] !== ",") units++; caret++; }
+        if (document.activeElement === input) input.setSelectionRange(caret, caret);
+      }
+      validate();
+    }
+    function keydown(event) {
+      const movement = { ArrowUp: step, ArrowDown: -step, PageUp: step * 10, PageDown: -step * 10 }[event.key];
+      if (movement === undefined || input.readOnly || input.matches(":disabled")) return;
+      event.preventDefault();
+      if (!validate() || !Number.isFinite(value())) return;
+      api.set(Math.max(min, Math.min(max, Number((value() + movement).toPrecision(14)))));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    const api = {
+      get value() { return value(); },
+      get valid() { return validate(); },
+      set(number) {
+        if (typeof number !== "number" || !Number.isFinite(number) || Math.abs(number) > Number.MAX_SAFE_INTEGER || number < min || number > max) throw new TypeError("wonkControls.numberInput.set: finite in-range number required");
+        input.value = format.format(number);
+        validate();
+      },
+      destroy() {
+        input.removeEventListener("input", paint);
+        input.removeEventListener("compositionend", paint);
+        input.removeEventListener("change", validate);
+        input.removeEventListener("keydown", keydown);
+        const raw = Number.isFinite(value()) ? String(value()) : input.value;
+        input.type = originalType;
+        input.value = raw;
+        for (const [name, value] of originalAttributes) {
+          if (value === null) input.removeAttribute(name);
+          else input.setAttribute(name, value);
+        }
+        input.setCustomValidity("");
+        delete input.wonkNumber;
+      },
+    };
+    input.addEventListener("input", paint);
+    input.addEventListener("compositionend", paint);
+    input.addEventListener("change", validate);
+    input.addEventListener("keydown", keydown);
+    input.wonkNumber = api;
+    paint();
+    return api;
+  }
+
   function fader(el) {
     if (el.wonkFader) return el.wonkFader;
     const range = el.querySelector(".wonk-range, input[type=range]");
@@ -99,28 +186,34 @@
       if (exact && !exact.hasAttribute("aria-label")) exact.setAttribute("aria-label", `${legendText} exact value`);
     }
 
+    const grouped = exact && (el.hasAttribute("data-grouped") || exact.type === "text") ? numberInput(exact, { min, max, step }) : null;
+
     const clamp = (v) => Math.max(min, Math.min(max, v));
     const snap = (v) => clamp(Math.round((v - min) / step) * step + min);
 
     const onRangeInput = () => {
-      if (exact) exact.value = range.value;
+      if (grouped) grouped.set(Number(range.value));
+      else if (exact) exact.value = range.value;
+      range.style.setProperty("--wonk-fader-fill", `${(Number(range.value) - min) / (max - min) * 100}%`);
+      range.setAttribute("aria-valuetext", new Intl.NumberFormat("en-US", { maximumFractionDigits: 12 }).format(Number(range.value)));
     };
+    onRangeInput();
     // commit path used by both the exact input's native "change" (fires on
     // blur once the value actually changed) and Enter (which just calls
     // exact.blur() below) -- a single path means Enter can never double-fire
     // this alongside the native change event.
     const onExactCommit = (event) => {
       event.stopPropagation();
-      if (!exact.checkValidity() || exact.value === "") {
+      if ((grouped && !grouped.valid) || !exact.checkValidity() || exact.value === "") {
         // retain and report the invalid/empty text as typed -- never
         // silently revert to the last good value or clamp it away. Native
         // :invalid styling (wonk-controls.css) already reflects the
         // problem; nothing commits to the range until it is fixed.
         return;
       }
-      const snapped = snap(exact.valueAsNumber);
+      const snapped = snap(grouped ? grouped.value : exact.valueAsNumber);
       range.value = String(snapped); // browser clamps to min/max here too
-      exact.value = range.value; // sync back through the authoritative range value
+      onRangeInput();
       range.dispatchEvent(new Event("input", { bubbles: true }));
       range.dispatchEvent(new Event("change", { bubbles: true }));
     };
@@ -140,13 +233,14 @@
 
     const api = {
       get value() { return parseFloat(range.value); },
-      get valid() { return !exact || (exact.value !== "" && exact.checkValidity()); },
+      get draftValue() { return grouped ? grouped.value : exact ? exact.valueAsNumber : Number(range.value); },
+      get valid() { return !exact || (exact.value !== "" && (!grouped || grouped.valid) && exact.checkValidity()); },
       set(v) {
         const n = parseFloat(v);
         if (!Number.isFinite(n)) throw new Error(`wonkControls.fader.set: value (${v}) must be a finite number`);
         const clamped = snap(n);
         range.value = String(clamped);
-        if (exact) exact.value = range.value;
+        onRangeInput();
       },
       destroy() {
         range.removeEventListener("input", onRangeInput);
@@ -154,6 +248,7 @@
           exact.removeEventListener("change", onExactCommit);
           exact.removeEventListener("keydown", onExactKeydown);
         }
+        grouped?.destroy();
         delete el.wonkFader;
       },
     };
@@ -519,5 +614,5 @@
     init();
   }
 
-  window.wonkControls = { init, destroy, fader, window: windowControl, segmented, stepper };
+  window.wonkControls = { init, destroy, fader, numberInput, window: windowControl, segmented, stepper };
 })();

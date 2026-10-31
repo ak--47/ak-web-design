@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.3.0 · wonk.js · behaviors for the WONK design system
+   WONK v0.4.0 · wonk.js · behaviors for the WONK design system
    Dependency-free. Safe to load once per page.
    Everything respects prefers-reduced-motion.
    ============================================================ */
@@ -102,59 +102,116 @@
   // ---- glyph morph ----
   // Slow cycle through glyphs + token colors; strobes on hover.
   // Apply to any element with [data-wonk-glyph].
-  const GLYPHS = ["∿", "⌁", "♪", "⚙", "λ", "⌥", "∫", "⧉", "♭", "№", "⚡", "✄"];
+  const glyphCodes = [
+    0x223f, 0x2301, 0x2325, 0x29c9,
+    0x0393, 0x0394, 0x0398, 0x039b, 0x039e, 0x03a0, 0x03a3, 0x03a6, 0x03a8, 0x03a9,
+    0x03b1, 0x03b2, 0x03b3, 0x03b4, 0x03b5, 0x03b6, 0x03b7, 0x03b8, 0x03b9,
+    0x03ba, 0x03bb, 0x03bc, 0x03bd, 0x03be, 0x03c0, 0x03c1, 0x03c3, 0x03c4,
+    0x03c5, 0x03c6, 0x03c7, 0x03c8, 0x03c9,
+    0x2300, 0x2302, 0x2303, 0x2304, 0x2305, 0x2306, 0x2307, 0x2308, 0x2309,
+    0x230a, 0x230b, 0x2310, 0x2312, 0x2313, 0x2314, 0x2315, 0x2316, 0x2317,
+    0x2318, 0x2319, 0x231c, 0x231d, 0x231e, 0x231f, 0x2320, 0x2321,
+    0x2322, 0x2323, 0x2324, 0x2326, 0x2327, 0x232b, 0x2370, 0x2371,
+    0x2372, 0x2373, 0x2374, 0x2375, 0x2376, 0x2377, 0x2378, 0x2379, 0x237a,
+    0x23b0, 0x23b1, 0x23b4, 0x23b5, 0x23b6, 0x23b7,
+    0x2605, 0x2606, 0x2609, 0x263c, 0x2669, 0x266a, 0x266b, 0x266c, 0x266d, 0x266e, 0x266f,
+    0x27c0, 0x27c1, 0x27c2, 0x27c3, 0x27c4, 0x27c5, 0x27c6,
+    0x27d0, 0x27d1, 0x27d2, 0x27d3, 0x27d4, 0x27d5, 0x27d6, 0x27d7, 0x27d8, 0x27d9,
+  ];
+  for (const [first, last] of [[0x2190, 0x21ff], [0x2200, 0x22ff], [0x25a0, 0x25ef]]) {
+    for (let code = first; code <= last; code++) glyphCodes.push(code);
+  }
+  const GLYPHS = Object.freeze([...new Set(glyphCodes)].map((code) => String.fromCodePoint(code)));
   function glyph(el) {
     const known = WIRED.glyph.get(el);
-    if (known) { engage(known); return; }
+    if (known) { engage(known); return known; }
+    const idle = Number(el.dataset.glyphIdle ?? 1500);
+    if (!Number.isFinite(idle) || idle < 0) throw new TypeError("wonk.glyph: data-glyph-idle must be a non-negative duration");
     let slow = null, strobe = null, running = false;
+    let bag = [];
+    let previous = null;
+    let animation;
+    const trigger = el.closest("button") || el;
+    function next() {
+      if (!bag.length) {
+        bag = [...GLYPHS];
+        for (let index = bag.length - 1; index > 0; index--) {
+          const swapIndex = Math.floor(Math.random() * (index + 1));
+          [bag[index], bag[swapIndex]] = [bag[swapIndex], bag[index]];
+        }
+        if (bag.at(-1) === previous) [bag[0], bag[bag.length - 1]] = [bag.at(-1), bag[0]];
+      }
+      previous = bag.pop();
+      return previous;
+    }
     const paint = () => {
-      // read tokens live: pair/theme can change under us
-      const colors = ["--ak-a1-text", "--ak-a2-text", "--ak-ok", "--ak-warn", "--ak-info"]
-        .map(token)
-        .filter(Boolean);
-      el.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-      if (colors.length) el.style.color = colors[Math.floor(Math.random() * colors.length)];
+      el.textContent = next();
       if (!reduced()) {
-        el.style.display = "inline-block";
-        el.style.transition = "transform 250ms cubic-bezier(.2,.9,.25,1.05)";
-        el.style.transform = `scale(${rand(0.92, 1.12)}) rotate(${rand(-8, 8)}deg)`;
-        setTimeout(() => { el.style.transform = "none"; }, 260);
+        animation?.cancel();
+        animation = el.animate([{ opacity: 0.6, transform: "translateY(2px)" }, { opacity: 1, transform: "none" }], { duration: 120, easing: "ease-out" });
       }
     };
     // timer callback: a removed element stops cycling instead of
     // swapping forever in the background
     const swap = () => {
-      if (!el.isConnected) { retire(d); return; }
+      if (!el.isConnected) { d.destroy(); return; }
+      if (document.hidden || trigger.matches(":disabled")) return;
       paint();
     };
-    if (reduced()) paint();
+    el.textContent = next();
     const d = {
       el,
       start() {
         if (running) return;
         running = true;
-        slow = setInterval(swap, 1500);
+        if (idle && !document.hidden) slow = setInterval(swap, idle);
       },
       stop() {
         running = false;
         clearInterval(slow);
         clearTimeout(strobe);
+        animation?.cancel();
+      },
+      next() { if (!reduced()) swap(); return el.textContent; },
+      destroy() {
+        retire(d);
+        trigger.removeEventListener("mouseenter", hover);
+        trigger.removeEventListener("mouseleave", leave);
+        trigger.removeEventListener("blur", leave);
+        trigger.removeEventListener("click", burst);
+        window.removeEventListener("keydown", escape, true);
+        document.removeEventListener("visibilitychange", visibility);
+        WIRED.glyph.delete(el);
       },
     };
     WIRED.glyph.set(el, d);
     engage(d);
-    el.addEventListener("mouseenter", () => {
-      if (!running) return;
+    function cycle(left) {
+      if (reduced() || document.hidden || trigger.matches(":disabled")) return;
+      running = true;
       clearInterval(slow);
       clearTimeout(strobe);
-      (function s() { swap(); if (running) strobe = setTimeout(s, rand(100, 180)); })();
-    });
-    el.addEventListener("mouseleave", () => {
-      if (!running) return;
-      clearTimeout(strobe);
-      clearInterval(slow);
-      slow = setInterval(swap, 1500);
-    });
+      (function step() {
+        if (!el.isConnected) { d.destroy(); return; }
+        if (!running || reduced() || trigger.matches(":disabled")) { d.stop(); return; }
+        if (left === 0) { leave(); return; }
+        swap();
+        if (left !== null) left--;
+        strobe = setTimeout(step, 200);
+      })();
+    }
+    function hover() { cycle(null); }
+    function burst() { cycle(6); }
+    function leave() { d.stop(); if (!reduced()) d.start(); }
+    function escape(event) { if (event.key === "Escape") d.stop(); }
+    function visibility() { if (document.hidden) d.stop(); else if (!reduced()) d.start(); }
+    trigger.addEventListener("mouseenter", hover);
+    trigger.addEventListener("mouseleave", leave);
+    trigger.addEventListener("blur", leave);
+    trigger.addEventListener("click", burst);
+    window.addEventListener("keydown", escape, true);
+    document.addEventListener("visibilitychange", visibility);
+    return d;
   }
 
   // ---- type scatter ----
@@ -1540,6 +1597,223 @@
   const THEMES = { dark: "dark", paper: "paper", light: "paper" };
   const TOGGLE_SEL = "[data-wonk-theme-toggle]";
   let themeKey = null;
+  let paletteKey = "wonk-palette";
+  let paletteEnabled = false;
+  let paletteSeed = null;
+  let paletteMemory = null;
+  let generatedPalette = null;
+  const paletteOriginal = new Map();
+  const palettePickers = new WeakMap();
+
+  function paletteRead() {
+    if (paletteMemory) return paletteMemory;
+    for (const storageName of ["sessionStorage", "localStorage"]) {
+      try {
+        const raw = window[storageName].getItem(paletteKey);
+        if (!raw) continue;
+        const value = JSON.parse(raw);
+        if (value?.version !== 1 || ![...PAIRS, "dice"].includes(value.pair)
+          || (value.pair === "dice" && (!Number.isInteger(value.seed) || value.seed < 0 || value.seed > 0xffffffff))) {
+          console.warn(`wonk.palette: ignoring invalid saved palette in ${storageName}`);
+          continue;
+        }
+        return value;
+      } catch (error) {
+        console.warn(`wonk.palette: cannot read ${storageName}; trying the next store`, error);
+      }
+    }
+    return null;
+  }
+
+  function paletteSave(value) {
+    paletteMemory = value;
+    for (const storageName of ["localStorage", "sessionStorage"]) {
+      try {
+        window[storageName].setItem(paletteKey, JSON.stringify(value));
+        if (storageName === "localStorage") {
+          try { sessionStorage.removeItem(paletteKey); }
+          catch (error) { console.warn("wonk.palette: could not clear the session copy", error); }
+        }
+        return storageName;
+      } catch (error) {
+        console.warn(`wonk.palette: cannot write ${storageName}; trying the next store`, error);
+      }
+    }
+    console.warn("wonk.palette: storage unavailable; the choice lasts for this page only");
+    return "memory";
+  }
+
+  function paletteRgb(hue, saturation, lightness) {
+    const amplitude = saturation * Math.min(lightness, 1 - lightness);
+    return [0, 8, 4].map((offset) => {
+      const phase = (offset + hue / 30) % 12;
+      return Math.round(255 * (lightness - amplitude * Math.max(-1, Math.min(phase - 3, 9 - phase, 1))));
+    });
+  }
+  const paletteHex = (rgb) => `#${rgb.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+  function paletteLuminance(rgb) {
+    const linear = rgb.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  }
+  function paletteContrast(first, second) {
+    const left = paletteLuminance(first);
+    const right = paletteLuminance(second);
+    return (Math.max(left, right) + 0.05) / (Math.min(left, right) + 0.05);
+  }
+  function paletteColor(hue, saturation, paper) {
+    const backgrounds = paper ? [[236, 228, 212], [242, 236, 223], [247, 243, 233]] : [[15, 18, 20], [22, 25, 28], [28, 32, 36]];
+    for (let step = 0; step <= 100; step++) {
+      const lightness = paper ? 0.48 - step * 0.004 : 0.5 + step * 0.004;
+      const rgb = paletteRgb(hue, saturation, lightness);
+      if (backgrounds.every((background) => paletteContrast(rgb, background) >= 4.8)) return rgb;
+    }
+    throw new Error("wonk.palette: could not generate a readable accent");
+  }
+  function generatePalette(seed) {
+    if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new TypeError("wonk.palette.generate: seed must be an unsigned 32-bit integer");
+    let state = seed || 0x9e3779b9;
+    const random = () => {
+      state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
+      return (state >>> 0) / 0x100000000;
+    };
+    const hue = Math.floor(random() * 360);
+    const secondHue = (hue + 105 + Math.floor(random() * 150)) % 360;
+    const saturation = 0.55 + random() * 0.27;
+    const chartPair = PAIRS[Math.floor(random() * PAIRS.length)];
+    const build = (paper) => {
+      const accent = paletteColor(hue, saturation, paper);
+      const secondary = paletteColor(secondHue, saturation, paper);
+      const ink = paletteContrast(accent, [15, 18, 20]) >= 4.5 ? "#0f1214" : "#ffffff";
+      const tokens = {
+        "--ak-a1": paletteHex(accent), "--ak-a1-text": paletteHex(accent), "--ak-a1-ink": ink,
+        "--ak-a2": paletteHex(secondary), "--ak-a2-text": paletteHex(secondary),
+        "--ak-wash": `rgba(${accent.join(", ")}, ${paper ? 0.1 : 0.08})`,
+        "--ak-ok": paletteHex(paletteColor(135, 0.46, paper)),
+        "--ak-warn": paletteHex(paletteColor(36, 0.82, paper)),
+        "--ak-err": paletteHex(paletteColor(4, 0.75, paper)),
+        "--ak-info": paletteHex(accent),
+      };
+      const probe = document.createElement("span");
+      probe.hidden = true;
+      probe.dataset.pair = chartPair;
+      if (paper) probe.dataset.theme = "paper";
+      document.documentElement.append(probe);
+      try {
+        const style = getComputedStyle(probe);
+        for (let index = 1; index <= 6; index++) {
+          const key = `--ak-chart-${index}`;
+          const color = style.getPropertyValue(key).trim();
+          if (!color) throw new Error("wonk.palette: load wonk-tokens.css before generating a palette");
+          tokens[key] = color;
+        }
+      } finally { probe.remove(); }
+      return Object.freeze(tokens);
+    };
+    return Object.freeze({ version: 1, seed, chartPair, dark: build(false), paper: build(true) });
+  }
+  function paintPalette() {
+    if (!generatedPalette || currentPair() !== "dice") return;
+    const style = document.documentElement.style;
+    for (const [key, value] of Object.entries(generatedPalette[currentTheme()])) {
+      if (!paletteOriginal.has(key)) paletteOriginal.set(key, [style.getPropertyValue(key), style.getPropertyPriority(key)]);
+      style.setProperty(key, value);
+    }
+  }
+  function clearPalette() {
+    const style = document.documentElement.style;
+    for (const [key, [value, priority]] of paletteOriginal) {
+      if (value) style.setProperty(key, value, priority);
+      else style.removeProperty(key);
+    }
+    paletteOriginal.clear();
+  }
+  function rollPalette({ seed } = {}) {
+    if (seed === undefined) {
+      const bytes = new Uint32Array(1);
+      do { crypto.getRandomValues(bytes); } while (bytes[0] === paletteSeed);
+      seed = bytes[0];
+    }
+    const next = generatePalette(seed);
+    paletteEnabled = true;
+    paletteSeed = seed;
+    generatedPalette = next;
+    document.documentElement.setAttribute("data-pair", "dice");
+    paintPalette();
+    const storage = paletteSave({ version: 1, pair: "dice", seed });
+    emitTheme();
+    return { ...next, storage };
+  }
+  function initPalette({ key = "wonk-palette" } = {}) {
+    if (typeof key !== "string" || !key) throw new TypeError("wonk.palette.init: key must be a non-empty string");
+    if (key !== paletteKey) paletteMemory = null;
+    paletteKey = key;
+    paletteEnabled = true;
+    const saved = paletteRead();
+    if (saved?.pair === "dice") {
+      generatedPalette = generatePalette(saved.seed);
+      paletteSeed = saved.seed;
+      document.documentElement.setAttribute("data-pair", "dice");
+      paintPalette();
+    } else if (saved) {
+      clearPalette();
+      document.documentElement.setAttribute("data-pair", saved.pair);
+    }
+    emitTheme();
+    return { pair: currentPair(), seed: currentPair() === "dice" ? paletteSeed : null };
+  }
+  function palettePicker(host) {
+    if (!(host instanceof Element)) throw new TypeError("wonk.palette.mount: host element required");
+    if (palettePickers.has(host)) return palettePickers.get(host);
+    if (!paletteEnabled) initPalette();
+    host.classList.add("wonk-palette");
+    const label = document.createElement("label");
+    label.textContent = "Palette";
+    const select = document.createElement("select");
+    select.className = "wonk-select";
+    select.setAttribute("aria-label", "Color palette");
+    for (const name of [...PAIRS, "dice"]) {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name === "dice" ? "Dice roll" : name;
+      select.append(option);
+    }
+    label.append(select);
+    const roll = document.createElement("button");
+    roll.type = "button";
+    roll.className = "wonk-palette-dice";
+    roll.setAttribute("aria-label", "Roll a new color palette");
+    roll.dataset.tip = "Roll a new color palette";
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "\u2684";
+    roll.append(icon);
+    const status = document.createElement("output");
+    status.className = "wonk-sr";
+    status.setAttribute("aria-live", "polite");
+    const sync = () => { select.value = currentPair(); };
+    const reroll = () => {
+      const result = rollPalette();
+      status.textContent = `New palette ${result.seed.toString(16)}. ${result.storage === "memory" ? "Available for this page only." : result.storage === "sessionStorage" ? "Saved for this session." : "Saved on this device."}`;
+    };
+    const change = () => { if (select.value === "dice") reroll(); else { setPair(select.value); status.textContent = `${select.value} palette selected.`; } };
+    select.addEventListener("change", change);
+    roll.addEventListener("click", reroll);
+    document.addEventListener("wonk:themechange", sync);
+    host.append(label, roll, status);
+    sync();
+    const api = { destroy() {
+      document.removeEventListener("wonk:themechange", sync);
+      select.removeEventListener("change", change);
+      roll.removeEventListener("click", reroll);
+      label.remove(); roll.remove(); status.remove();
+      palettePickers.delete(host);
+    } };
+    palettePickers.set(host, api);
+    return api;
+  }
 
   const currentTheme = () => {
     const t = document.documentElement.getAttribute("data-theme");
@@ -1561,6 +1835,7 @@
   function applyTheme(theme) {
     if (theme === "paper") document.documentElement.setAttribute("data-theme", "paper");
     else document.documentElement.removeAttribute("data-theme");
+    paintPalette();
     emitTheme();
   }
 
@@ -1582,10 +1857,13 @@
   }
 
   function setPair(name) {
+    if (name === "dice") return rollPalette(paletteSeed === null ? {} : { seed: paletteSeed });
     if (!PAIRS.includes(name)) {
       throw new TypeError(`wonk.setPair: unknown pair ${JSON.stringify(name)}; use one of ${PAIRS.join(", ")}`);
     }
+    clearPalette();
     document.documentElement.setAttribute("data-pair", name);
+    if (paletteEnabled) paletteSave({ version: 1, pair: name });
     emitTheme();
   }
 
@@ -1692,6 +1970,12 @@
     scope.querySelectorAll(".wonk-menu").forEach(menu);
     scope.querySelectorAll("[data-wonk-secret]").forEach(secret);
     scope.querySelectorAll(TOGGLE_SEL).forEach(themeToggle);
+    scope.querySelectorAll("[data-wonk-palette]").forEach(palettePicker);
+    scope.querySelectorAll("[data-wonk-palette-roll]").forEach((button) => {
+      if (button.dataset.wonkPaletteWired) return;
+      button.dataset.wonkPaletteWired = "true";
+      button.addEventListener("click", () => rollPalette());
+    });
     scope.querySelectorAll("[data-wonk-drawer]").forEach(drawer);
     restoreFolds(scope);
     focusTips(scope);
@@ -1705,8 +1989,10 @@
   }
 
   window.wonk = {
-    toast, live, glyph, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
+    toast, live, glyph, glyphs: GLYPHS, tabs, menu, setPair, setTheme, init, reveal, spark, scatter,
     vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState, fmt,
-    theme: { init: initTheme }, drawer, version: "0.3.0",
+    theme: { init: initTheme },
+    palette: Object.freeze({ init: initPalette, roll: rollPalette, generate: generatePalette, mount: palettePicker, presets: Object.freeze([...PAIRS]) }),
+    drawer, version: "0.4.0",
   };
 })();

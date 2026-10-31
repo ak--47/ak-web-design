@@ -1,4 +1,4 @@
-/* WONK v0.3.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
+/* WONK v0.4.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
 .wonk-workbench { max-width: 90rem; margin: auto; padding: var(--ak-s6); }
 .wonk-workbench > * + * { margin-top: var(--ak-s6); }
 .wonk-rack { border: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: var(--ak-surface); min-width: 0; }
@@ -20,6 +20,18 @@
 .wonk-filter-chip { display: inline-flex; gap: var(--ak-s2); align-items: center; border: var(--ak-hairline-w) solid var(--ak-a1-text); border-radius: var(--ak-radius); background: var(--ak-wash); padding: var(--ak-s1) var(--ak-s2); color: var(--ak-ink); font: var(--ak-text-sm) var(--ak-font-mono); }
 .wonk-filter-chip button { color: var(--ak-a1-text); background: transparent; border: 0; cursor: pointer; min-width: 2.75rem; min-height: 2.75rem; font: inherit; }
 .wonk-table-scroll { overflow: auto; max-height: 28rem; scrollbar-gutter: stable; }
+.wonk-table :is(th, td) { padding-block: var(--ak-s2); }
+.wonk-inline-drill { grid-column: 1 / -1; min-width: 0; margin-block: var(--ak-s4); padding-top: var(--ak-s3); border-top: 1px solid var(--ak-hairline); }
+.wonk-inline-drill > summary { min-height: 44px; }
+.wonk-inline-drill > .body { min-width: 0; }
+.wonk-reading { max-width: 65ch; margin-inline: auto; font-size: var(--ak-text-md); line-height: 1.7; }
+.wonk-reading > .wonk-fold { border-top: 1px solid var(--ak-hairline); padding-block: var(--ak-s4); }
+.wonk-reading > .wonk-fold > summary { font-size: var(--ak-text-lg); min-height: 44px; }
+.wonk-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ak-s4); }
+.wonk-workspace-list { max-height: 24rem; overflow-y: auto; }
+.wonk-workspace-detail { min-width: 0; padding-block: var(--ak-s4); border-top: 1px solid var(--ak-hairline); }
+.wonk-advanced { border-top: 1px solid var(--ak-hairline); padding-top: var(--ak-s4); }
+.wonk-advanced > summary { cursor: pointer; min-height: 44px; font-size: var(--ak-text-md); }
 .wonk-table-scroll .wonk-table { min-width: 40rem; }
 .wonk-table-scroll th { position: sticky; top: 0; z-index: 1; background: var(--ak-surface-2); color: var(--ak-ink-2); }
 .wonk-table-scroll caption { text-align: left; padding: var(--ak-s3); color: var(--ak-ink-2); }

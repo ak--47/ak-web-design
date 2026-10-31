@@ -73,6 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // recolors the chips and redraws the token-driven swatches and svgs.
   document.addEventListener("wonk:themechange", () => {
     [...picker.children].forEach((c) => (c.style.background = chipColor(c.title)));
+    nameEl.textContent = "pair: " + document.documentElement.dataset.pair;
+    [...picker.children].forEach((chip) => chip.setAttribute("aria-pressed", String(chip.title === document.documentElement.dataset.pair)));
     renderAll();
   });
 

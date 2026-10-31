@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   for (const variant of ["a", "b"]) {
     const body = header(document.getElementById(`reading-${variant}`), "Import review", "Local fixture / 30 Oct 2026");
-    const reading = node("div", "reading-body");
+    const reading = node("div", "reading-body wonk-reading");
     const answer = node("div", "answer-line");
     answer.append(node("h3", "", "Repair the mobile payload before retrying."));
     const lead = node("p");
@@ -137,34 +137,11 @@ document.addEventListener("DOMContentLoaded", () => {
       records.scrollIntoView({ block: "nearest" });
     });
   }
-  const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
-  const highlights = new Map();
   function highlight(element) {
-    highlights.get(element)?.cancel();
-    highlights.delete(element);
-    if (motionPreference.matches) return;
-    const wash = getComputedStyle(element).getPropertyValue("--ak-wash").trim();
-    const animation = element.animate([
-      { backgroundColor: "transparent", offset: 0 },
-      { backgroundColor: wash, offset: 0.1 },
-      { backgroundColor: wash, offset: 0.3 },
-      { backgroundColor: "transparent", offset: 1 },
-    ], { duration: 800, easing: "linear" });
-    highlights.set(element, animation);
-    animation.onfinish = () => { if (highlights.get(element) === animation) highlights.delete(element); };
+    wonkMotion.play(element, "value-changed");
   }
-  motionPreference.addEventListener("change", () => {
-    if (!motionPreference.matches) return;
-    highlights.forEach((animation) => animation.cancel());
-    highlights.clear();
-  });
   function cancelMotion(scope) {
     scope.querySelectorAll("[data-wonk-motion-state]").forEach((element) => wonkMotion.cancel(element));
-    highlights.forEach((animation, element) => {
-      if (!scope.contains(element)) return;
-      animation.cancel();
-      highlights.delete(element);
-    });
   }
   document.addEventListener("visibilitychange", () => { if (document.hidden) cancelMotion(document); });
   window.addEventListener("pagehide", () => cancelMotion(document));
@@ -189,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
     core.append(node("legend", "", "Source and schedule"));
     const coreFields = node("div", "settings-fields");
     core.append(coreFields);
-    const advanced = node(variant === "a" ? "fieldset" : "details", variant === "a" ? "settings-section" : "settings-advanced");
+    const advanced = node(variant === "a" ? "fieldset" : "details", variant === "a" ? "settings-section" : "settings-advanced wonk-advanced");
     advanced.append(node(variant === "a" ? "legend" : "summary", "", "Notifications and recovery"));
     const advancedFields = node("div", "settings-fields body");
     advanced.append(advancedFields);
@@ -317,10 +294,10 @@ document.addEventListener("DOMContentLoaded", () => {
     toolbar.append(searchLabel, stateLabel);
     const count = node("button", "wonk-value-link workspace-count");
     count.type = "button";
-    const main = node("div", "workspace-main");
-    const list = node("ul", "batch-list");
+    const main = node("div", "workspace-main wonk-workspace");
+    const list = node("ul", "batch-list wonk-workspace-list");
     list.setAttribute("aria-label", "Batches");
-    const inspector = node("section", "record-inspector");
+    const inspector = node("section", "record-inspector wonk-workspace-detail");
     inspector.id = `workspace-inspector-${variant}`;
     inspector.setAttribute("aria-label", "Selected batch");
     inspector.addEventListener("focusin", () => wonkMotion.cancel(inspector));
