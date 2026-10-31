@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.3.0 · wonk-motion.js · purposeful motion pack for the WONK system
+   WONK v0.4.0 · wonk-motion.js · purposeful motion pack for the WONK system
    Dependency-free. Pairs with assets/wonk-motion.css. Requires
    wonk-tokens.css to already be loaded (durations come from it).
 
@@ -46,6 +46,7 @@
   const T_FAST = ms("--ak-t-fast");
   const T_MED = ms("--ak-t-med");
   const T_SLOW = ms("--ak-t-slow");
+  const T_FEEDBACK = ms("--ak-t-feedback");
 
   // name -> class to toggle, animation-name(s) that mark it done,
   // the descendant selector for multi-target effects (null = el
@@ -54,7 +55,7 @@
   const EFFECTS = Object.freeze({
     "panel-enter":       { cls: "wonk-anim-panel-enter",       anims: ["wonk-panel-enter"],                               selector: null,                                 budget: T_MED },
     "panel-exit":        { cls: "wonk-anim-panel-exit",        anims: ["wonk-panel-exit"],                                selector: null,                                 budget: T_FAST },
-    "value-changed":     { cls: "wonk-anim-value-changed",     anims: ["wonk-value-changed"],                             selector: null,                                 budget: T_MED },
+    "value-changed":     { cls: "wonk-anim-value-changed",     anims: ["wonk-value-changed"],                             selector: null,                                 budget: T_FEEDBACK },
     "row-inserted":      { cls: "wonk-anim-row-inserted",      anims: ["wonk-row-inserted"],                              selector: null,                                 budget: T_MED },
     "filter-applied":    { cls: "wonk-anim-filter-applied",    anims: ["wonk-filter-applied"],                            selector: null,                                 budget: T_FAST },
     "progress-complete": { cls: "wonk-anim-progress-complete", anims: ["wonk-progress-complete"],                         selector: null,                                 budget: T_SLOW },
@@ -123,7 +124,7 @@
    * must trace back to a real user action or a real data change.
    */
   function play(el, name) {
-    const def = EFFECTS[name];
+    const def = typeof name === "string" && Object.hasOwn(EFFECTS, name) ? EFFECTS[name] : null;
     if (!def) {
       return Promise.reject(
         new Error(`wonkMotion.play: unknown effect "${name}". Use one of: ${EFFECT_NAMES.join(", ")}`)

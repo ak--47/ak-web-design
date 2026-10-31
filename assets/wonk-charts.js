@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.3.0 · wonk-charts.js · Observable Plot, themed from WONK tokens
+   WONK v0.4.0 · wonk-charts.js · Observable Plot, themed from WONK tokens
    window.wonkCharts (frozen): plot.
 
    Needs the d3 and Plot globals: load assets/vendor/d3/d3.min.js,
@@ -26,6 +26,7 @@
   // el -> state, for every live chart (the theme observer walks it)
   const charts = new Map();
   let themeObserver = null;
+  const onThemeChange = () => charts.forEach(schedule);
 
   const make = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -112,6 +113,7 @@
     if (themeObserver) return;
     themeObserver = new MutationObserver(() => charts.forEach(schedule));
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-pair"] });
+    document.addEventListener("wonk:themechange", onThemeChange);
   }
 
   // ---- table view ----
@@ -231,6 +233,7 @@
     if (!charts.size && themeObserver) {
       themeObserver.disconnect();
       themeObserver = null;
+      document.removeEventListener("wonk:themechange", onThemeChange);
     }
     state.el.replaceChildren();
     state.node = null;

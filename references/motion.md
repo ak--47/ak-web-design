@@ -21,7 +21,7 @@ an error when the module loads. don't hide that error with a default duration.
 |---|---|---|---|
 | `panel-enter` | user opens a panel | panel | 250ms |
 | `panel-exit` | user closes a panel | panel | 150ms |
-| `value-changed` | a measured value changes | number wrapper | 250ms |
+| `value-changed` | a measured value changes | number or result wrapper | 800ms |
 | `row-inserted` | a record arrives or is created | row or list item | 250ms |
 | `filter-applied` | committed filters replace a result | result container | 150ms |
 | `progress-complete` | backend confirms completion | progress fill span | 400ms |
@@ -31,6 +31,13 @@ an error when the module loads. don't hide that error with a default duration.
 these are one-shot effects. no effect starts on load. no effect loops. change
 numbers immediately, then accent the new value. never count through invented
 intermediate values. a changing latency readout must show the measured latency.
+
+`panel-enter` moves 6px while fading over 250ms. `value-changed` uses the
+`--ak-t-feedback` token (800ms): 80ms rise, 160ms hold, then a 560ms linear
+fade. It does not scale text or alter the wrapper's display mode. The script's
+safety budget uses the same token. Copy tokens, CSS, and JS together on upgrade.
+For inline records, close immediately and cancel their current effect. Do not
+move a focused control; cancel entrance motion when focus enters its content.
 
 ## use the API
 

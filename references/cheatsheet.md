@@ -1,9 +1,10 @@
 # WONK cheatsheet
 
 One row per component. Find the need, copy the class or attribute, then read
-only the linked section for its markup. Every call below is idempotent per
-element; `wonk.js` auto-wires `data-wonk-*` on load, `wonk.init(scope)` wires
-injected DOM. "auto" means no call is needed.
+only the linked section for its markup. Mounting and wiring calls are idempotent
+where documented; actions such as palette rolls generate new state, and inline
+drills replace their host's prior drill. `wonk.js` auto-wires `data-wonk-*` on
+load, `wonk.init(scope)` wires injected DOM. "auto" means no call is needed.
 
 | need | class / attribute | JS call | reference |
 |---|---|---|---|
@@ -14,6 +15,9 @@ injected DOM. "auto" means no call is needed.
 | section divider | `.wonk-divider`, `.wonk-rule` | — | [components.md § layout](components.md#layout--dividers) |
 | dark / paper toggle | `data-wonk-theme-toggle` | `wonk.theme.init()`, `wonk.setTheme("paper")` | [components.md § theme](components.md#theme) |
 | poster pair | `data-pair` on `<html>` | `wonk.setPair(name)` | [pairs.md](pairs.md) |
+| saved generated palette | `data-wonk-palette`, `data-wonk-palette-roll` | `wonk.palette.init()` / `.roll()` / `.mount(host)` | [pairs.md](pairs.md#saved-dice-palettes) |
+| grouped exact quantity | `.wonk-fader[data-grouped]` or text input | `wonkControls.numberInput(input, opts)` | [instruments.md](instruments.md#grouped-exact-entry-and-console-geometry) |
+| inline record drill | `.wonk-inline-drill` | `wonkData.inline(host, opts)` | [data-tools.md](data-tools.md#inline-is-the-default-for-new-record-workflows) |
 | page title, label, number | `.wonk-title`, `.wonk-label`, `.wonk-num` | — | [components.md § typography](components.md#typography) |
 | formatted value | — | `wonk.fmt.num` / `.compact` / `.money` / `.pct` / `.duration` / `.date` / `.delta` | [components.md § wonk.fmt](components.md#formatting-wonkfmt) |
 | button | `.wonk-btn`, `.wonk-btn--primary`, `.wonk-btn--danger`, `.wonk-btn--quiet` | — | [components.md § buttons](components.md#buttons) |
@@ -23,7 +27,7 @@ injected DOM. "auto" means no call is needed.
 | breadcrumbs, pages, avatar | `.wonk-crumbs`, `.wonk-pages`, `.wonk-avatar` | — | [components.md § navigation](components.md#navigation) |
 | card | `.wonk-card`, `.wonk-card--accent` | — | [components.md § data display](components.md#data-display) |
 | headline stat that opens its records | `button.wonk-stat` + `data-wonk-drill` | `wonkData.drills(map)` | [data-tools.md § drill-down](data-tools.md#drill-down) |
-| inline value that opens records | `.wonk-value-link` | `wonkData.drill(opts)` | [components.md § drillable values](components.md#drillable-values) |
+| inline value that opens records | `.wonk-value-link` | `wonkData.inline(host, opts)` | [data-tools.md § inline drill](data-tools.md#inline-is-the-default-for-new-record-workflows) |
 | change vs last period | `.delta--good`, `.delta--bad`, `.delta--neutral` | `wonk.fmt.delta` | [components.md § deltas](components.md#deltas) |
 | records table (sort, totals, select, CSV) | `.wonk-table` | `wonkData.table(el, opts)` | [data-tools.md § table module](data-tools.md#table-module) |
 | badge, key-value list | `.wonk-badge`, `.wonk-kv` | — | [components.md § data display](components.md#data-display) |

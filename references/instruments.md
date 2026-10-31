@@ -120,7 +120,7 @@ straightforward linear value.
 </fieldset>
 ```
 
-`wonkControls.fader(el)` returns `{ value, valid, set(v), destroy() }`.
+`wonkControls.fader(el)` returns `{ value, draftValue, valid, set(v), destroy() }`.
 bounds resolve from `data-*`, then native `min`/`max`/`step` attributes,
 then a 0/100/1 default; an unset or empty native attribute never produces
 `NaN`. dragging live-updates the number. typing an exact value and
@@ -136,6 +136,51 @@ applies, nothing commits until you fix it (check `handle.valid` or
 `checkValidity()`). `set(v)` is different, it always snaps and clamps `v`,
 calling `set()` asserts a value rather than drafting one. disable with
 `<fieldset disabled>`, both inputs go inert for free.
+
+### Grouped exact entry and console geometry
+
+The fader uses an 8px track, a 24 x 32px rectangular grip, and a 44px input
+area. Keep its number field next to the range. Add `data-grouped` to opt into
+automatic comma grouping while preserving the numeric API:
+
+```html
+<fieldset class="wonk-fader" data-grouped data-min="0" data-max="30000"
+          data-step="1000" data-value="20000">
+  <legend class="wonk-label">Record threshold</legend>
+  <div class="wonk-fader-row">
+    <input type="range" class="wonk-range">
+    <input type="text" class="wonk-fader-exact">
+  </div>
+</fieldset>
+```
+
+`25000` displays as `25,000`. `value` is the committed numeric draft;
+`draftValue` reads the exact editor before blur. `valid` includes the grouped
+editor's validation. Use `valid` plus the form's `reportValidity()` before
+Apply, then `set(draftValue)` to snap to the configured step. No input or change
+event executes a backend request. Legacy number inputs without `data-grouped`
+keep their numeric-input behavior.
+
+For a standalone quantity field, call
+`wonkControls.numberInput(input, { min, max, step })`. It returns
+`{ value, valid, set(number), destroy() }`, preserves decimal fractions, accepts
+negative values within bounds, supports arrows/PageUp/PageDown, and formats
+with en-US comma grouping. Invalid pasted grouping, empty required values, and
+out-of-range drafts remain visible. It converts the input to text with a
+spinbutton role because native number inputs cannot display commas. Call
+`destroy()` before removal; it restores the original input type and role.
+Use this for quantities, not IDs, dates, or raw serialized data.
+
+Pass bounds explicitly: the adapter does not read native `min`, `max`, or
+`step` attributes. Defaults are plus/minus `Number.MAX_SAFE_INTEGER` and a
+keyboard step of 1. Typed off-step values are valid; only faders snap on commit.
+The adapter retains JavaScript Number precision when formatting and uses decimal
+step arithmetic, without imposing a 12-decimal or 14-significant-digit cap.
+Values beyond the safe-integer magnitude are rejected. It is not an arbitrary-
+precision decimal store; use strings or a decimal library for that contract.
+Delete/Backspace cross grouping separators. Native form reset restores grouping
+and validity on the next microtask, unless the reset was canceled. Call `valid`
+when setting `.value` programmatically without an input event, or use `set()`.
 
 ## bounded time/range window (`.wonk-window`)
 

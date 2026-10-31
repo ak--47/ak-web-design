@@ -132,7 +132,9 @@ target warns and does nothing.
   `key`. the snippet reads the same key.
 - `wonk.setTheme("dark" | "paper" | "light")`: `"light"` is an alias and
   applies `data-theme="paper"`. `wonk.setPair(name)` takes metathesis,
-  glorpla, demogorgon, ancient, or flourish. both throw on any other name,
+  glorpla, demogorgon, ancient, flourish, or dice. dice reuses the current
+  generated seed when available; `wonk.palette.roll()` creates a fresh one.
+  both throw on any other name,
   and both fire `wonk:themechange` on `document` with
   `{detail: {theme, pair}}`.
 - a `[data-wonk-theme-toggle]` button flips dark and paper. it reads `Paper`
@@ -586,9 +588,13 @@ resume when it turns off.
 | `wonk.fmt.num` / `.compact` / `.money` / `.pct` / `.duration` / `.date` / `.delta` | format numbers, dates, and deltas as strings; unknown input returns `—`; [formatting](#formatting-wonkfmt) |
 | `wonk.setPair(name)` / `wonk.setTheme("dark"\|"paper"\|"light")` | switch pair / theme; throw on an unknown name; fire `wonk:themechange` |
 | `wonk.theme.init({key}?)` | apply the saved theme (else `prefers-color-scheme`) and save later `setTheme` calls; returns the theme; [theme](#theme) |
+| `wonk.palette.init({key}?)` | restore the saved preset or generated seed; [pairs](pairs.md#saved-dice-palettes) |
+| `wonk.palette.generate(seed)` / `.roll({seed}?)` | generate tokens without applying / apply and persist a generated pair |
+| `wonk.palette.mount(host)` | mount preset selector plus dice button; idempotent, returns `{destroy}` |
+| `wonk.palette.presets` | frozen list of the five preset names |
 | `wonk.drawer(button)` | wire one `[data-wonk-drawer]` button (init does this) |
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |
-| `wonk.glyph(el)` | glyph morph (`[data-wonk-glyph]`) |
+| `wonk.glyph(el)` / `wonk.glyphs` | glyph handle (`start`, `stop`, `next`, `destroy`) / frozen 561-symbol pool; [glyph contracts](easter-eggs.md#motion-eggs) |
 | `wonk.scatter(el)` | hover type scatter (`[data-wonk-scatter]`) |
 | `wonk.tabs(root)` | wire one `.wonk-tabs` (ARIA + keyboard); a new selection fires `wonk:tabchange` |
 | `wonk.menu(details)` | wire one `.wonk-menu` (close on choose, Escape, edge flip) |

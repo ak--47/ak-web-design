@@ -37,15 +37,24 @@
     get("selection-count").textContent = `${count} selected`;
     get("export-selection").disabled = get("clear-selection").disabled = !count;
   }
+  let inspector;
+  let inspectedId;
   function inspect(row) {
-    get("inspector-title").textContent = row.id;
-    get("record-meta").replaceChildren();
-    for (const [label, value] of [["source", row.source], ["status", row.status], ["latency", `${row.latency} ms`]]) {
-      get("record-meta").append(node("dt", label), node("dd", value));
-    }
-    const payloadEl = get("record-payload");
-    wonkCode.render(payloadEl, row, "json");
-    get("inspector").showModal();
+    const payload = node("pre", undefined, "wonk-pre");
+    const code = node("code");
+    code.dataset.language = "json";
+    payload.append(code);
+    wonkCode.render(code, row, "json");
+    inspector = wonkData.inline(get("inspector"), {
+      title: row.id,
+      columns: [
+        { key: "event", label: "Event" }, { key: "source", label: "Source" },
+        { key: "latency", label: "Latency / ms", type: "num" }, { key: "status", label: "Status", type: "badge" },
+      ],
+      rows: [row],
+      note: payload,
+    });
+    inspectedId = row.id;
   }
   // the results table: sorting (every column), selection by record ID,
   // and the record button come from wonkData.table (assets/wonk-data.js).
@@ -73,6 +82,11 @@
       && row.latency >= applied.minimumLatency
       && `${row.id} ${row.event}`.toLowerCase().includes(applied.search.toLowerCase()));
     results.setRows(visible);
+    if (inspector && !visible.some((row) => row.id === inspectedId)) {
+      inspector.destroy();
+      inspector = null;
+      inspectedId = null;
+    }
     get("result-count").textContent = `${visible.length} / ${rows.length} records`;
     get("no-results").hidden = visible.length !== 0;
     updateSelection();

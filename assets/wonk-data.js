@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.3.0 · wonk-data.js · records table, drill-down dialog, CSV export
+   WONK v0.4.0 · wonk-data.js · records table, drill-down dialog, CSV export
    window.wonkData (frozen): table, drill, drills, toCSV.
 
    Requires wonk.js (wonk.fmt formats every number; row toggles,
@@ -670,7 +670,72 @@
   // ============================================================
   let current = null;
 
+  const inlineDrills = new WeakMap();
+  function inline(host, opts = {}) {
+    if (!(host instanceof Element) || typeof opts.title !== "string" || !opts.title || !Array.isArray(opts.rows)) throw new TypeError("wonkData.inline: host, title, and rows are required");
+    const fold = make("details", "wonk-fold wonk-inline-drill");
+    const summary = make("summary", "", `${opts.title} / ${fmt().num(opts.rows.length)} rows`);
+    const body = make("div", "body");
+    const tableHost = make("div");
+    const opener = opts.opener instanceof Element ? opts.opener : document.activeElement;
+    const controller = table(tableHost, { ...opts, caption: opts.title, captionHidden: true });
+    if (opts.subtitle) body.append(make("p", "wonk-drill-count", String(opts.subtitle)));
+    if (opts.note !== undefined && opts.note !== null) {
+      const note = make("div", "wonk-drill-note");
+      note.append(toContent(opts.note));
+      body.append(note);
+    }
+    body.append(tableHost);
+    if (opts.download) {
+      const download = make("button", "wonk-btn", "Download CSV");
+      download.type = "button";
+      download.addEventListener("click", () => saveCSV(typeof opts.download === "string" ? opts.download : "records.csv", opts.columns, controller.rows, body));
+      body.append(download);
+    }
+    fold.append(summary, body);
+    inlineDrills.get(host)?.destroy();
+    host.append(fold);
+    let destroyed = false;
+    const api = Object.freeze({
+      element: fold, table: controller,
+      close() {
+        fold.open = false;
+        window.wonkMotion?.cancel(body);
+        if (opener instanceof HTMLElement && opener.isConnected && !opener.matches(":disabled") && !opener.closest("[inert]") && opener.getClientRects().length) opener.focus();
+        if (document.activeElement !== opener || !opener?.getClientRects().length || opener.matches(":disabled")) summary.focus();
+      },
+      open() {
+        fold.open = true;
+        summary.focus({ preventScroll: true });
+        summary.scrollIntoView({ block: "nearest" });
+      },
+      destroy() {
+        if (destroyed) return;
+        destroyed = true;
+        window.wonkMotion?.cancel(body);
+        controller.destroy();
+        fold.remove();
+        if (inlineDrills.get(host) === api) inlineDrills.delete(host);
+      },
+    });
+    fold.addEventListener("toggle", () => {
+      if (fold.open && !body.contains(document.activeElement)) window.wonkMotion?.play(body, "panel-enter");
+      else window.wonkMotion?.cancel(body);
+    });
+    body.addEventListener("focusin", () => window.wonkMotion?.cancel(body));
+    fold.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented || event.target.matches("select")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      api.close();
+    });
+    inlineDrills.set(host, api);
+    api.open();
+    return api;
+  }
+
   function drill(opts = {}) {
+    if (opts.target instanceof Element) return inline(opts.target, opts);
     if (typeof opts.title !== "string" || !opts.title) {
       throw new TypeError("wonkData.drill(opts): opts.title must be a non-empty string");
     }
@@ -813,8 +878,10 @@
       return;
     }
     e.preventDefault();
-    drill({ ...factory(trigger), opener: trigger });
+    const options = factory(trigger);
+    const target = options.target || (options.presentation === "modal" ? null : trigger.closest("section, .wonk-rack"));
+    drill({ ...options, target, opener: trigger });
   });
 
-  window.wonkData = Object.freeze({ table, drill, drills, toCSV });
+  window.wonkData = Object.freeze({ table, drill, inline, drills, toCSV });
 })();

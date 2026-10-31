@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.3.0 · instrument controls · requires wonk-tokens.css + wonk.css
+   WONK v0.4.0 · instrument controls · requires wonk-tokens.css + wonk.css
    Precision inputs for data tools: fader, dual-input window, segmented
    selector, stepper (the knob is fully styled by wonk.css). Load after
    wonk.css.
@@ -49,6 +49,7 @@
 /* ---- fader: native range + exact numeric input ---- */
 .wonk-fader-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ak-s3);
 }
@@ -60,16 +61,28 @@
   border-color: var(--ak-err);
 }
 .wonk-fader-row .wonk-range {
-  flex: 1 1 auto;
+  flex: 1 1 6rem;
+  width: 0;
   min-width: 6rem;
+  height: 44px;
 }
+.wonk-fader .wonk-range::-webkit-slider-runnable-track { height: 8px; border: 1px solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: linear-gradient(to right, var(--ak-a1) var(--wonk-fader-fill, 0%), var(--ak-ground) var(--wonk-fader-fill, 0%)); }
+.wonk-fader .wonk-range::-webkit-slider-thumb { appearance: none; width: 24px; height: 32px; margin-top: -13px; border: 1px solid var(--ak-ink-2); border-radius: var(--ak-radius); background: linear-gradient(to bottom, var(--ak-surface-2) 0 38%, var(--ak-hairline-strong) 38% 42%, var(--ak-surface-2) 42% 48%, var(--ak-a1-text) 48% 54%, var(--ak-surface-2) 54% 60%, var(--ak-hairline-strong) 60% 64%, var(--ak-surface-2) 64%); }
+.wonk-fader .wonk-range::-webkit-slider-thumb:hover { transform: none; border-color: var(--ak-a1-text); }
+.wonk-fader .wonk-range::-moz-range-track { height: 8px; border: 1px solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: linear-gradient(to right, var(--ak-a1) var(--wonk-fader-fill, 0%), var(--ak-ground) var(--wonk-fader-fill, 0%)); }
+.wonk-fader .wonk-range::-moz-range-thumb { width: 24px; height: 32px; border: 1px solid var(--ak-ink-2); border-radius: var(--ak-radius); background: linear-gradient(to bottom, var(--ak-surface-2) 0 48%, var(--ak-a1-text) 48% 54%, var(--ak-surface-2) 54%); }
 .wonk-fader-exact {
-  width: 5.5em;
+  width: 7rem;
   flex: 0 0 auto;
   font-family: var(--ak-font-mono);
   font-variant-numeric: tabular-nums;
   text-align: right;
   padding: 0.35rem 0.5rem;
+  min-height: 44px;
+  color: var(--ak-ink);
+  background: var(--ak-ground);
+  border: 1px solid var(--ak-hairline);
+  border-radius: var(--ak-radius);
 }
 .wonk-fader-exact::-webkit-inner-spin-button,
 .wonk-fader-exact::-webkit-outer-spin-button {

@@ -24,10 +24,13 @@ and saves the choice ([README § install](../README.md#install)).
 An app that already has its own theme switcher (a platform `theme.js` that
 writes `data-theme="light"` or `"dark"` on `<html>`) keeps it and skips
 `wonk.theme.init()`, the no-flash snippet, and `[data-wonk-theme-toggle]`.
-No bridge is needed: `data-theme="light"` styles as paper, and
-`wonkCharts.plot` charts re-render on any `data-theme` change. Only
-`wonk:themechange` does not fire (it comes from `wonk.setTheme`), so the app
-redraws its own canvas or svg from its switcher.
+`data-theme="light"` styles as paper, and `wonkCharts.plot` charts re-render
+on any root `data-theme` change. With a generated palette active, the base
+pack observes that change, repaints the mode-specific overrides, and emits
+`wonk:themechange`. With a preset, attribute-only changes do not emit that
+event; redraw application-owned canvases from the existing switcher or call
+`wonk.setTheme(mode)` for consistent notification. Skipping `theme.init()`
+leaves theme persistence under the app's control.
 
 ## Tailwind (v3 config or v4 @theme)
 

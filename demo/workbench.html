@@ -85,6 +85,7 @@
       <button type="button" id="clear-selection" class="wonk-btn" disabled>Clear selection</button>
       <button type="button" id="export-selection" class="wonk-btn" disabled>Download selected JSON</button>
     </div>
+    <div id="inspector"></div>
   </section>
 
   <section class="wonk-rack" aria-labelledby="jobs-title">
@@ -134,12 +135,5 @@
   </section>
   <footer class="wonk-freshness">Fixture data stays in this browser. Fonts load from Google. Production apps should self-host fonts.</footer>
 </main>
-<dialog id="inspector" class="wonk-modal wonk-inspector" aria-labelledby="inspector-title">
-  <form method="dialog"><button class="wonk-btn" autofocus>Close inspector</button></form>
-  <h2 id="inspector-title">Record</h2>
-  <dl class="wonk-kv" id="record-meta"></dl>
-  <h3>Payload</h3>
-  <pre class="wonk-pre"><code id="record-payload" data-language="json"></code></pre>
-</dialog>
 </body>
 </html>

@@ -65,7 +65,7 @@
       doc.open();
       doc.write(
         "<!doctype html><html><head><style>:root{" +
-        ["--ak-t-fast", "--ak-t-med", "--ak-t-slow", "--ak-ease", "--ak-ease-out", "--ak-wash", "--ak-ok", "--ak-a1", "--ak-radius"]
+        ["--ak-t-fast", "--ak-t-med", "--ak-t-slow", "--ak-t-feedback", "--ak-ease", "--ak-ease-out", "--ak-wash", "--ak-ok", "--ak-a1", "--ak-radius"]
           .map((name) => `${name}:${getComputedStyle(document.documentElement).getPropertyValue(name)};`).join("") +
         "}</style></head><body></body></html>"
       );

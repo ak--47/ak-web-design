@@ -16,7 +16,7 @@ description: >
 # ak-web-design · WONK
 
 minimal structure, maximal color and texture, in defined slots. dark-first,
-paper is the real light mode, one poster pair per app, mono for data and
+paper is the real light mode, one active poster pair at the root, mono for data and
 labels. read only the sections of [README.md](README.md) the task needs.
 
 announce the mode: **build**, **reskin**, **audit**, or **demo**. infer it if
@@ -42,12 +42,12 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
 ## hard rules
 
 1. install: one recipe, `/wonk/` paths, fonts first, packs load after the base: [README § install](README.md#install), [§ optional packs](README.md#optional-packs).
-2. color: one poster pair per app, on the root only, never mixed; colored text uses a `-text` variant, never a raw accent: [README § color](README.md#color-and-pairs), [pairs.md](references/pairs.md).
+2. color: one active poster pair on the root, never mixed across sections. Consumers may expose presets plus the saved dice-roll generator (`data-wonk-palette`). Colored text uses a `-text` variant, never a raw accent: [pairs.md](references/pairs.md).
 3. type: Space Grotesk for UI, IBM Plex Mono for data, code, numbers, labels. uppercase + tracking only on labels, chrome (`.wonk-label`, buttons, badges, table headers, kv terms, brand) and page titles (`.wonk-title`); body, headings, nav, tabs stay mixed case, never uppercase prose: [README § typography](README.md#typography).
 4. geometry: 4px radius, hairlines, jitter only on live/loading states: [README § geometry](README.md#geometry-and-motion).
 5. accessibility: `-text` variants pass 4.5:1, no color-only status, visible focus rings, reduced motion respected.
-6. hierarchy: lead with the answer, detail behind `.wonk-fold`, plain visible copy: [hierarchy.md](references/hierarchy.md).
-7. numbers open records: every count is a `button.wonk-stat` or `.wonk-value-link` that opens a drill: [data-tools.md § drill-down](references/data-tools.md#drill-down).
+6. hierarchy: answer first, sectioned reading, core form fields visible with advanced fields folded, compact rows, stacked list above its inline inspector: [hierarchy.md](references/hierarchy.md).
+7. numbers: full quantities use comma grouping; compact K/M values are fine. Counts open matching records inline with `wonkData.inline`, never a modal for new record workflows. Grouped exact entry uses `wonkControls.numberInput` or a `data-grouped` fader: [data-tools.md](references/data-tools.md), [instruments.md](references/instruments.md).
 8. hints: help text and term definitions use `data-tip` / `.wonk-term`, never native `title=`: [components.md § hints](references/components.md#hints-and-terms).
 9. charts: `wonkCharts.plot` on the vendored d3 + Plot, never a CDN, never stock styling; read [charts.md](references/charts.md) first.
 10. instruments and data tools: read [instruments.md](references/instruments.md) and [data-tools.md](references/data-tools.md) first. `input` previews locally, `change` commits a draft, only an explicit Run/Apply runs the query; never fabricate activity, VU/scope helpers are decorative: [README § instruments](README.md#instruments-and-draft-state).
@@ -64,6 +64,13 @@ unstated (new UI -> build, existing app -> reskin, "check/review" -> audit).
 3. every item of the [README self-audit checklist](README.md#validation) holds.
 
 don't commit unless asked.
+
+Approved motion: 6px/250ms panel entrance; immediate close for inline details;
+800ms value-change accent with a held peak and slow fade. Always update real
+values before playing an effect and honor reduced motion. Prefer combined
+series for comparable measures; keep axes honest. Use the unframed 561-symbol
+glyph shuffle for brand corners, with 200ms hover cadence and optional idle
+cycling. The working consumer example is [demo/refined.html](demo/refined.html).
 
 ## deeper reference
 

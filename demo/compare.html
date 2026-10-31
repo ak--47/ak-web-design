@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WONK / design study 07</title>
+  <script>if(new URLSearchParams(location.search).get("approved")==="1")document.documentElement.dataset.review="approved";</script>
+  <link rel="icon" href="data:,">
+  <script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
+  <link rel="stylesheet" href="../assets/wonk-fonts.css">
+  <link rel="stylesheet" href="../assets/wonk-tokens.css">
+  <link rel="stylesheet" href="../assets/wonk.css">
+  <link rel="stylesheet" href="../assets/wonk-data.css">
+  <link rel="stylesheet" href="../assets/wonk-controls.css">
+  <link rel="stylesheet" href="../assets/wonk-motion.css">
+  <script defer src="../assets/vendor/d3/d3.min.js"></script>
+  <script defer src="../assets/vendor/plot/plot.umd.min.js"></script>
+  <script defer src="../assets/wonk.js"></script>
+  <script defer src="../assets/wonk-data.js"></script>
+  <script defer src="../assets/wonk-controls.js"></script>
+  <script defer src="../assets/wonk-charts.js"></script>
+  <script defer src="../assets/wonk-motion.js"></script>
+  <script defer src="review-checks.js"></script>
+  <style>
+    .study { margin: 0; letter-spacing: 0; }
+    .study *, .study *::before, .study *::after { box-sizing: border-box; letter-spacing: 0; }
+    .study button, .study input { font: inherit; }
+    .study-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; align-items: center; padding: 20px 28px; border-bottom: 1px solid var(--ak-hairline); }
+    .study-brand { display: flex; align-items: center; gap: 14px; }
+    .study .study-brand h1 { margin: 0; font-size: 18px; }
+    .study-brand small { color: var(--ak-ink-2); font: 12px var(--ak-font-mono); }
+    .study-mark { width: 34px; height: 34px; padding: 0; flex: 0 0 34px; white-space: nowrap; border: 1px solid var(--ak-a1-text); color: var(--ak-a1-text); background: var(--ak-wash); font: 17px var(--ak-font-mono) !important; cursor: pointer; }
+    .study-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+    .study-view { display: flex; gap: 0; padding: 3px; margin: 0; border: 1px solid var(--ak-hairline); border-radius: var(--ak-radius); }
+    .study-view label { position: relative; cursor: pointer; }
+    .study-view input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .study-view span { display: block; min-width: 44px; padding: 8px 12px; text-align: center; font: 13px var(--ak-font-mono); }
+    .study-view input:checked + span { background: var(--ak-active); color: var(--ak-ink); }
+    .study-view input:focus-visible + span { outline: 2px solid var(--ak-a1-text); outline-offset: 2px; }
+    .study-intro { max-width: 1600px; margin: auto; padding: 22px 28px; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .study .study-intro h2 { font-size: 22px; margin: 0; }
+    .study-intro p { font: 12px var(--ak-font-mono); color: var(--ak-ink-2); margin: 0; }
+    .study-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 1600px; margin: auto; padding: 0 28px 28px; gap: 24px; }
+    .study-grid[data-view="a"], .study-grid[data-view="b"] { grid-template-columns: minmax(0, 1050px); justify-content: center; }
+    .study-grid[data-view="a"] [data-variant="b"], .study-grid[data-view="b"] [data-variant="a"] { display: none; }
+    [data-review="approved"] .study-grid { grid-template-columns: minmax(0, 1050px); justify-content: center; }
+    [data-review="approved"] :is([data-variant="b"], .study-view, .specimen-letter) { display: none; }
+    .specimen { min-width: 0; }
+    .specimen-caption { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; }
+    .glyph-trigger { display: grid; place-items: center; width: 56px; height: 56px; flex: 0 0 56px; padding: 6px; border: 1px solid var(--ak-hairline); border-radius: var(--ak-radius); color: var(--ak-a1-text); background: var(--ak-wash); cursor: pointer; }
+    .glyph-trigger:hover { border-color: var(--ak-a1-text); }
+    [data-variant="a"] .glyph-trigger { border: 0; background: transparent; }
+    .glyph-symbol { display: grid; place-items: center; width: 40px; height: 40px; font: 32px/1 var(--ak-font-mono); }
+    .glyph-pattern { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 3px; width: 40px; height: 40px; }
+    .glyph-cell { background: currentColor; border-radius: 1px; transform: scale(0.25); opacity: 0.12; }
+    .glyph-cell[data-lit="true"] { transform: scale(1); opacity: 1; }
+    .glyph-playing .glyph-cell { transition: transform 180ms var(--ak-ease-out), opacity 180ms linear; }
+    @media (prefers-reduced-motion: reduce) {
+      .glyph-playing .glyph-cell { transition: none; }
+    }
+    .specimen-letter { font: 700 20px var(--ak-font-mono); color: var(--ak-a1-text); }
+    .study .specimen-caption h3 { font-size: 16px; margin: 0; }
+    .app-frame { border: 1px solid var(--ak-hairline); background: var(--ak-surface); min-width: 0; }
+    .app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--ak-hairline); }
+    .app-header strong { font-size: 15px; }
+    .app-header span { font: 12px var(--ak-font-mono); color: var(--ak-ink-2); }
+    .app-content { padding: 22px; display: flex; flex-direction: column; gap: 24px; }
+    .study .section-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .study .section-heading h4 { font-size: 15px; margin: 0; }
+    .section-heading span { font: 12px var(--ak-font-mono); color: var(--ak-ink-2); }
+    .answer { border-left: 3px solid var(--ak-err); padding-left: 16px; }
+    .answer .wonk-badge { margin-bottom: 10px; }
+    .study .answer h4 { font-size: 26px; line-height: 1.2; margin: 0 0 8px; max-width: 24ch; }
+    .answer p { font-size: 14px; line-height: 1.6; color: var(--ak-ink-2); margin: 0; max-width: 52ch; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ak-hairline); border-bottom: 1px solid var(--ak-hairline); }
+    .study button.wonk-stat { padding: 15px 10px; border: 0; border-radius: 0; min-width: 0; gap: 8px; }
+    .study button.wonk-stat + button.wonk-stat { border-left: 1px solid var(--ak-hairline); }
+    .study button.wonk-stat .wonk-num { font-size: 25px; }
+    .study button.wonk-stat .wonk-label { font-size: 11px; text-transform: none; }
+    .study button.wonk-stat small { color: var(--ak-ink-2); font: 11px var(--ak-font-mono); }
+    .study button.wonk-stat[data-metric="failed"] .wonk-num { color: var(--ak-err); }
+    .chart-host { min-width: 0; min-height: 364px; }
+    .chart-host > [role="img"] { margin: 0; }
+    .study .chart-host .wonk-btn { font-size: 11px; padding: 5px 8px; min-height: 30px; }
+    .failed-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--ak-hairline); }
+    .failed-list li { border-bottom: 1px solid var(--ak-hairline); }
+    .failure-link { display: grid; grid-template-columns: minmax(0, 1fr) auto; width: 100%; padding: 11px 0; gap: 12px; text-align: left; background: transparent; color: var(--ak-ink); border: 0; cursor: pointer; }
+    .failure-link:hover { background: var(--ak-hover); }
+    .failure-link strong { font-size: 13px; font-weight: 500; }
+    .failure-link small { display: block; font: 11px var(--ak-font-mono); color: var(--ak-ink-2); margin-top: 4px; }
+    .failure-link .failure-state { font: 11px var(--ak-font-mono); align-self: center; color: var(--ak-err); }
+    .failure-link[aria-expanded="true"] { background: var(--ak-wash); }
+    .specimen { --study-row-space: 8px; --study-enter-y: 6px; }
+    @keyframes wonk-panel-enter {
+      from { opacity: 0.35; transform: translateY(var(--study-enter-y)); }
+      to { opacity: 1; transform: none; }
+    }
+    .threshold-result { border-radius: var(--ak-radius); }
+    .specimen .failure-link { padding-block: var(--study-row-space); min-height: 44px; }
+    .specimen .wonk-table :is(th, td) { padding-block: var(--study-row-space); }
+    .batch-detail { padding: 16px 0; }
+    .study .batch-detail h3 { margin: 0 0 14px; font-size: 18px; }
+    .batch-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 10px 16px; margin: 0; font-size: 13px; }
+    .batch-fields dt { color: var(--ak-ink-2); }
+    .batch-fields dd { margin: 0; font-family: var(--ak-font-mono); overflow-wrap: anywhere; }
+    .batch-next { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--ak-hairline); font-size: 14px; line-height: 1.6; color: var(--ak-ink-2); }
+    .study-records { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--ak-hairline); }
+    .metrics > .study-records { grid-column: 1 / -1; min-width: 0; }
+    .threshold-form { border-block: 1px solid var(--ak-hairline); padding: 16px 0; }
+    .threshold-control { min-height: 110px; display: flex; align-items: center; }
+    .threshold-control > * { width: 100%; min-width: 0; }
+    .threshold-control .wonk-label { font-size: 12px; text-transform: none; }
+    .threshold-control .wonk-input { max-width: 160px; font-family: var(--ak-font-mono); }
+    .threshold-control .wonk-fader { margin: 0; padding: 0; border: 0; }
+    .threshold-control .wonk-fader-row { flex-wrap: wrap; }
+    .threshold-control .wonk-fader-row .wonk-range { min-width: 100px; width: 0; flex: 1 1 100px; }
+    .threshold-control .threshold-exact { width: 7rem; flex: 0 0 7rem; text-align: right; font-family: var(--ak-font-mono); }
+    .threshold-scale { display: flex; justify-content: space-between; margin-top: 8px; color: var(--ak-ink-2); font: 11px var(--ak-font-mono); }
+    .threshold-track { flex: 1 1 100px; min-width: 100px; }
+    .threshold-control .threshold-track .wonk-range { width: 100%; margin: 0; height: 44px; display: block; }
+    .console-fader .threshold-track { background: repeating-linear-gradient(to right, var(--ak-hairline) 0 1px, transparent 1px calc(100% / 12)) top / 100% 6px no-repeat; }
+    .console-fader .wonk-range::-webkit-slider-runnable-track { height: 8px; border: 1px solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: linear-gradient(to right, var(--ak-a1) var(--fader-fill), var(--ak-ground) var(--fader-fill)); }
+    .console-fader .wonk-range::-webkit-slider-thumb { appearance: none; width: 24px; height: 32px; margin-top: -13px; border: 1px solid var(--ak-ink-2); border-radius: var(--ak-radius); background: linear-gradient(to bottom, var(--ak-surface-2) 0 38%, var(--ak-hairline-strong) 38% 42%, var(--ak-surface-2) 42% 48%, var(--ak-a1-text) 48% 54%, var(--ak-surface-2) 54% 60%, var(--ak-hairline-strong) 60% 64%, var(--ak-surface-2) 64%); box-shadow: 0 2px 4px var(--ak-overlay); }
+    .console-fader .wonk-range::-webkit-slider-thumb:hover { transform: none; border-color: var(--ak-a1-text); }
+    .console-fader .wonk-range::-moz-range-track { height: 8px; border: 1px solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: linear-gradient(to right, var(--ak-a1) var(--fader-fill), var(--ak-ground) var(--fader-fill)); }
+    .console-fader .wonk-range::-moz-range-thumb { width: 24px; height: 32px; border: 1px solid var(--ak-ink-2); border-radius: var(--ak-radius); background: linear-gradient(to bottom, var(--ak-surface-2) 0 38%, var(--ak-hairline-strong) 38% 42%, var(--ak-surface-2) 42% 48%, var(--ak-a1-text) 48% 54%, var(--ak-surface-2) 54% 60%, var(--ak-hairline-strong) 60% 64%, var(--ak-surface-2) 64%); box-shadow: 0 2px 4px var(--ak-overlay); }
+    .threshold-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; }
+    .threshold-state { font: 12px var(--ak-font-mono); color: var(--ak-ink-2); }
+    .threshold-result { margin: 14px 0 0; font-size: 13px; line-height: 1.6; }
+    .study .wonk-fold > summary { font-size: 12px; }
+    .study .wonk-fold .body { font-size: 14px; line-height: 1.6; }
+    .specimen-foot { border-top: 1px solid var(--ak-hairline); padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; font: 11px var(--ak-font-mono); color: var(--ak-ink-2); }
+    .study-note { margin: 0; padding: 0 28px 28px; text-align: center; color: var(--ak-ink-2); font: 12px var(--ak-font-mono); }
+    .study :is(h1, h2, h3, h4, p, button) { overflow-wrap: anywhere; }
+    @media (max-width: 900px) {
+      .study-grid { grid-template-columns: minmax(0, 1fr); max-width: 720px; }
+      .study-intro { max-width: 720px; }
+    }
+    @media (max-width: 480px) {
+      .study-bar { padding: 16px; }
+      .study-tools { width: 100%; justify-content: space-between; }
+      .study-grid { padding: 0 12px 20px; }
+      .study-intro { padding: 20px 16px; }
+      .study .study-intro h2 { font-size: 19px; }
+      .app-content { padding: 16px; gap: 20px; }
+      .app-header { padding: 12px 16px; }
+      .study .answer h4 { font-size: 23px; }
+      .study button.wonk-stat { padding: 12px 6px; }
+      .study button.wonk-stat .wonk-num { font-size: 21px; }
+      .study button.wonk-stat .wonk-label { font-size: 10px; }
+      .study button.wonk-stat small { font-size: 10px; }
+    }
+  </style>
+</head>
+<body class="study">
+  <header class="study-bar">
+    <div class="study-brand">
+      <button class="study-mark" type="button" aria-label="WONK" data-wonk-secret="the hidden track is still the same dataset.">w.</button>
+      <div><h1>WONK / design studies</h1><small>07 / cycling glyphs</small></div>
+    </div>
+    <div class="study-tools">
+      <a href="review.html?chosen=1#workspace">Chosen designs</a>
+      <a href="refined.html">Refined components</a>
+      <fieldset class="study-view" aria-label="Comparison view">
+        <legend class="wonk-sr">Comparison view</legend>
+        <label><input type="radio" name="view" value="both" checked><span>A + B</span></label>
+        <label><input type="radio" name="view" value="a"><span>A</span></label>
+        <label><input type="radio" name="view" value="b"><span>B</span></label>
+      </fieldset>
+      <button class="wonk-btn" type="button" data-wonk-theme-toggle>Paper</button>
+    </div>
+  </header>
+  <main>
+    <div class="study-intro">
+      <h2>Which little detail feels like yours?</h2>
+      <p>Same palette / same working UI</p>
+    </div>
+    <div class="study-grid" data-view="both" id="comparison">
+      <article class="specimen" data-variant="a" aria-labelledby="variant-a">
+        <header class="specimen-caption"><span class="specimen-letter">A</span><h3 id="variant-a">Symbol shuffle</h3></header>
+        <div class="app-frame">
+          <header class="app-header"><strong>Imports</strong><span>Today / 09:00-12:00 UTC</span></header>
+          <div class="app-content">
+            <section class="answer" aria-label="Import status">
+              <span class="wonk-badge wonk-badge--err">Action needed</span>
+              <h4>Mobile imports need attention.</h4>
+              <p><button class="wonk-value-link" type="button" data-study-records="failed">3 batches failed validation.</button> Web and server imports completed.</p>
+            </section>
+            <section data-failures aria-label="Failed batches"></section>
+            <section class="metrics" aria-label="Import totals" data-metrics></section>
+            <section aria-labelledby="chart-a-title">
+              <div class="section-heading"><h4 id="chart-a-title">Records written</h4><span>By hourly batch</span></div>
+              <div class="chart-host" id="chart-a"></div>
+            </section>
+            <details class="wonk-fold"><summary>Validation rules</summary><div class="body">Each record needs an event name and a user ID. A batch fails when any record has no user ID. Failed batches write no records.</div></details>
+          </div>
+          <footer class="specimen-foot"><span>Local fixture / 30 Oct 2026</span><span>Snapshot 12:05 UTC</span></footer>
+        </div>
+      </article>
+      <article class="specimen" data-variant="b" aria-labelledby="variant-b">
+        <header class="specimen-caption"><span class="specimen-letter">B</span><h3 id="variant-b">Pattern morph</h3></header>
+        <div class="app-frame">
+          <header class="app-header"><strong>Imports</strong><span>Today / 09:00-12:00 UTC</span></header>
+          <div class="app-content">
+            <section class="answer" aria-label="Import status">
+              <span class="wonk-badge wonk-badge--err">Action needed</span>
+              <h4>Mobile imports need attention.</h4>
+              <p><button class="wonk-value-link" type="button" data-study-records="failed">3 batches failed validation.</button> Web and server imports completed.</p>
+            </section>
+            <section data-failures aria-label="Failed batches"></section>
+            <section class="metrics" aria-label="Import totals" data-metrics></section>
+            <section aria-labelledby="chart-b-title">
+              <div class="section-heading"><h4 id="chart-b-title">Records written</h4><span>By hourly batch</span></div>
+              <div class="chart-host" id="chart-b"></div>
+            </section>
+            <details class="wonk-fold"><summary>Validation rules</summary><div class="body">Each record needs an event name and a user ID. A batch fails when any record has no user ID. Failed batches write no records.</div></details>
+          </div>
+          <footer class="specimen-foot"><span>Local fixture / 30 Oct 2026</span><span>Snapshot 12:05 UTC</span></footer>
+        </div>
+      </article>
+    </div>
+    <p class="study-note">Study 07 / prototype / no changes to shipped components</p>
+  </main>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (document.documentElement.dataset.review === "approved") {
+        document.title = "WONK / approved baseline";
+        document.querySelector(".study-brand small").textContent = "Approved decisions / working preview";
+        document.querySelector(".study-intro h2").textContent = "Approved baseline";
+        document.querySelector(".study-intro p").textContent = "Rounds 1-7 / promoted in 0.4.0";
+        document.getElementById("variant-a").textContent = "Imports";
+        document.querySelector(".study-note").textContent = "Approved study reference / reusable APIs in Refined components";
+      }
+      const sources = ["Web", "Server", "Mobile"];
+      const volumes = [[18400, 22100, 8200], [20100, 23400, 0], [21700, 24100, 0], [22600, 25800, 0]];
+      const batches = volumes.flatMap((values, hourIndex) => values.map((written, sourceIndex) => ({
+        id: `batch-${hourIndex + 9}-${sourceIndex + 1}`,
+        source: sources[sourceIndex],
+        hour: hourIndex + 9,
+        time: `${String(hourIndex + 9).padStart(2, "0")}:00`,
+        written,
+        state: written ? "Complete" : "Failed",
+        stateKind: written ? "ok" : "err",
+        issue: written ? "None" : "Missing user_id",
+      })));
+      const failed = batches.filter((batch) => batch.state === "Failed");
+      const completed = batches.filter((batch) => batch.state === "Complete");
+      const total = batches.reduce((sum, batch) => sum + batch.written, 0);
+      const columns = [
+        { key: "id", label: "Batch" },
+        { key: "source", label: "Source" },
+        { key: "time", label: "UTC" },
+        { key: "written", label: "Written", type: "num", total: true },
+        { key: "state", label: "State", type: "badge" },
+        { key: "issue", label: "Validation" },
+      ];
+      wonk.theme.init();
+      const glyphStops = [];
+      const glyphMotion = matchMedia("(prefers-reduced-motion: reduce)");
+      const patterns = [
+        ["00100", "01110", "11111", "01110", "00100"],
+        ["10001", "01010", "00100", "01010", "10001"],
+        ["11111", "10001", "10101", "10001", "11111"],
+        ["00100", "00100", "11111", "00100", "00100"],
+        ["11000", "00100", "00011", "00100", "11000"],
+        ["10101", "01010", "10101", "01010", "10101"],
+        ["11100", "00100", "00100", "00100", "00111"],
+        ["00100", "01010", "10001", "01010", "00100"],
+      ].map((rows) => rows.join(""));
+      for (const specimen of document.querySelectorAll(".specimen")) {
+        const isPattern = specimen.dataset.variant === "b";
+        const trigger = document.createElement("button");
+        trigger.type = "button";
+        trigger.className = "glyph-trigger";
+        trigger.setAttribute("aria-label", isPattern ? "Play pattern cycle" : "Play symbol cycle");
+        trigger.dataset.tip = isPattern ? "Play pattern cycle" : "Play symbol cycle";
+        const art = document.createElement("span");
+        art.className = isPattern ? "glyph-pattern" : "glyph-symbol";
+        art.setAttribute("aria-hidden", "true");
+        if (isPattern) {
+          for (let index = 0; index < 25; index++) {
+            const cell = document.createElement("span");
+            cell.className = "glyph-cell";
+            art.append(cell);
+          }
+        }
+        trigger.append(art);
+        specimen.querySelector(".specimen-caption").prepend(trigger);
+        if (!isPattern) {
+          art.dataset.wonkGlyph = "";
+          art.dataset.glyphIdle = "0";
+          const glyph = wonk.glyph(art);
+          glyphStops.push(() => glyph.stop());
+          continue;
+        }
+        let frame = 0;
+        let timer;
+        let remaining;
+        let running = false;
+        function paint() {
+          trigger.dataset.frame = String(frame);
+          [...art.children].forEach((cell, index) => { cell.dataset.lit = String(patterns[frame][index] === "1"); });
+        }
+        function stop() {
+          clearTimeout(timer);
+          running = false;
+          trigger.classList.remove("glyph-playing");
+          for (const animation of art.getAnimations({ subtree: true })) animation.cancel();
+          if (isPattern) {
+            frame = 0;
+            paint();
+          }
+        }
+        function advance() {
+          if (!running || glyphMotion.matches || document.hidden || !trigger.isConnected || !trigger.getClientRects().length || remaining === 0) {
+            stop();
+            return;
+          }
+          frame = (frame + 1) % patterns.length;
+          paint();
+          if (remaining !== null) remaining--;
+          timer = setTimeout(advance, 400);
+        }
+        function start(burst) {
+          stop();
+          if (glyphMotion.matches || document.hidden) return;
+          remaining = burst ? 6 : null;
+          running = true;
+          trigger.classList.add("glyph-playing");
+          advance();
+        }
+        trigger.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") start(false); });
+        trigger.addEventListener("pointerleave", stop);
+        trigger.addEventListener("pointercancel", stop);
+        trigger.addEventListener("click", () => start(true));
+        trigger.addEventListener("blur", stop);
+        glyphStops.push(stop);
+        paint();
+      }
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") glyphStops.forEach((stop) => stop());
+      }, true);
+      glyphMotion.addEventListener("change", () => { if (glyphMotion.matches) glyphStops.forEach((stop) => stop()); });
+      document.addEventListener("visibilitychange", () => { if (document.hidden) glyphStops.forEach((stop) => stop()); });
+      window.addEventListener("pagehide", () => glyphStops.forEach((stop) => stop()));
+      function batchDetail(batch) {
+        const detail = document.createElement("div");
+        detail.className = "batch-detail";
+        const title = document.createElement("h3");
+        title.textContent = `${batch.source} / ${batch.time} UTC`;
+        const fields = document.createElement("dl");
+        fields.className = "batch-fields";
+        for (const [label, value] of [["Batch ID", batch.id], ["State", batch.state], ["Records written", wonk.fmt.num(batch.written)], ["Validation", batch.issue]]) {
+          const term = document.createElement("dt");
+          term.textContent = label;
+          const description = document.createElement("dd");
+          description.textContent = value;
+          fields.append(term, description);
+        }
+        const next = document.createElement("p");
+        next.className = "batch-next";
+        next.textContent = batch.state === "Failed"
+          ? "Required field user_id is missing. Correct the source payload before retrying. No records were written."
+          : "Batch completed. All records passed validation.";
+        detail.append(title, fields, next);
+        return detail;
+      }
+      function showRecords(anchor, title, rows) {
+        const section = anchor.closest("section");
+        let panel = section.querySelector(":scope > .study-records");
+        if (!panel) {
+          panel = document.createElement("details");
+          panel.className = "wonk-fold study-records";
+          const summary = document.createElement("summary");
+          const body = document.createElement("div");
+          body.className = "body";
+          panel.append(summary, body);
+          section.append(panel);
+          panel.addEventListener("toggle", () => {
+            if (panel.open) wonkMotion.play(body, "panel-enter");
+            else wonkMotion.cancel(body);
+          });
+          panel.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            panel.open = false;
+            panel.querySelector("summary").focus();
+          });
+        }
+        const summary = panel.querySelector("summary");
+        summary.textContent = `${title} / ${wonk.fmt.num(rows.length)} batches`;
+        const body = panel.querySelector(".body");
+        wonkMotion.cancel(body);
+        wonkData.table(body, { columns, rows, detail: batchDetail, caption: title, captionHidden: true });
+        if (panel.open) wonkMotion.play(body, "panel-enter");
+        panel.open = true;
+        summary.focus({ preventScroll: true });
+        summary.scrollIntoView({ block: "nearest" });
+      }
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-study-records]");
+        if (!button) return;
+        const groups = { failed: ["Failed batches", failed], completed: ["Completed batches", completed], written: ["Records written by batch", batches] };
+        const [title, rows] = groups[button.dataset.studyRecords];
+        showRecords(button, title, rows);
+      });
+      for (const host of document.querySelectorAll("[data-metrics]")) {
+        for (const [key, label, value, detail] of [
+          ["written", "Records written", wonk.fmt.compact(total), "Across all sources"],
+          ["completed", "Completed", wonk.fmt.num(completed.length), "Batches"],
+          ["failed", "Failed", wonk.fmt.num(failed.length), "Batches"],
+        ]) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "wonk-stat";
+          button.dataset.studyRecords = key;
+          button.dataset.metric = key;
+          button.setAttribute("aria-label", `${label}: ${key === "written" ? wonk.fmt.num(total) : value}. Open batches`);
+          for (const [tag, className, text] of [["span", "wonk-label", label], ["span", "wonk-num", value], ["small", "", detail]]) {
+            const element = document.createElement(tag);
+            element.className = className;
+            element.textContent = text;
+            button.append(element);
+          }
+          host.append(button);
+        }
+      }
+      for (const host of document.querySelectorAll("[data-failures]")) {
+        const heading = document.createElement("div");
+        heading.className = "section-heading";
+        const title = document.createElement("h4");
+        title.textContent = "Failed batches";
+        heading.append(title);
+        const list = document.createElement("ul");
+        list.className = "failed-list";
+        for (const batch of [...failed].reverse()) {
+          const item = document.createElement("li");
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "failure-link";
+          button.setAttribute("aria-label", `Inspect ${batch.source} batch at ${batch.time} UTC`);
+          const name = document.createElement("strong");
+          name.textContent = `${batch.source} / ${batch.time} UTC`;
+          const issue = document.createElement("small");
+          issue.textContent = batch.issue;
+          name.append(issue);
+          const state = document.createElement("span");
+          state.className = "failure-state";
+          state.textContent = "Failed";
+          button.append(name, state);
+          item.append(button);
+          const detail = batchDetail(batch);
+          detail.id = `inline-${host.closest("[data-variant]").dataset.variant}-${batch.id}`;
+          detail.hidden = true;
+          button.setAttribute("aria-expanded", "false");
+          button.setAttribute("aria-controls", detail.id);
+          button.addEventListener("click", () => {
+            wonkMotion.cancel(detail);
+            detail.hidden = !detail.hidden;
+            button.setAttribute("aria-expanded", String(!detail.hidden));
+            if (!detail.hidden) wonkMotion.play(detail, "panel-enter");
+          });
+          item.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape" || detail.hidden) return;
+            event.preventDefault();
+            event.stopPropagation();
+            wonkMotion.cancel(detail);
+            detail.hidden = true;
+            button.setAttribute("aria-expanded", "false");
+            button.focus();
+          });
+          item.append(detail);
+          list.append(item);
+        }
+        host.append(heading, list);
+      }
+      for (const host of document.querySelectorAll(".chart-host")) {
+        const variant = host.closest("[data-variant]");
+        let appliedThreshold = 20000;
+        const section = document.createElement("section");
+        section.setAttribute("aria-label", "Low-volume threshold");
+        const form = document.createElement("form");
+        form.className = "threshold-form";
+        const control = document.createElement("div");
+        control.className = "threshold-control";
+        const label = "Flag batches below (records)";
+        const field = document.createElement("fieldset");
+        field.className = "wonk-fader console-fader";
+        Object.assign(field.dataset, { min: "0", max: "30000", step: "1000", value: "20000" });
+        const legend = document.createElement("legend");
+        legend.className = "wonk-label";
+        legend.textContent = label;
+        const row = document.createElement("div");
+        row.className = "wonk-fader-row";
+        const track = document.createElement("div");
+        track.className = "threshold-track";
+        const range = document.createElement("input");
+        range.type = "range";
+        range.className = "wonk-range";
+        const scale = document.createElement("div");
+        scale.className = "threshold-scale";
+        scale.setAttribute("aria-hidden", "true");
+        for (const value of [0, 15000, 30000]) {
+          const tick = document.createElement("span");
+          tick.textContent = wonk.fmt.num(value);
+          scale.append(tick);
+        }
+        track.append(range, scale);
+        const exact = document.createElement("input");
+        exact.type = "text";
+        exact.inputMode = "numeric";
+        exact.className = "wonk-input wonk-fader-exact threshold-exact";
+        exact.id = `threshold-${variant.dataset.variant}`;
+        exact.required = true;
+        exact.autocomplete = "off";
+        exact.spellcheck = false;
+        exact.setAttribute("role", "spinbutton");
+        exact.setAttribute("aria-label", `${label} exact value`);
+        exact.setAttribute("aria-valuemin", "0");
+        exact.setAttribute("aria-valuemax", "30000");
+        row.append(track, exact);
+        field.append(legend, row);
+        control.append(field);
+        const actions = document.createElement("div");
+        actions.className = "threshold-actions";
+        const state = document.createElement("output");
+        state.className = "threshold-state";
+        state.setAttribute("aria-live", "polite");
+        state.textContent = "Applied";
+        const apply = document.createElement("button");
+        apply.type = "submit";
+        apply.className = "wonk-btn wonk-btn--primary";
+        apply.textContent = "Apply";
+        actions.append(state, apply);
+        form.append(control, actions);
+        const result = document.createElement("p");
+        result.className = "threshold-result";
+        function highlightResult() {
+          wonkMotion.play(result, "value-changed");
+        }
+        const matches = document.createElement("button");
+        matches.type = "button";
+        matches.className = "wonk-value-link";
+        const resultText = document.createElement("span");
+        result.append(matches, resultText);
+        section.append(form, result);
+        variant.querySelector(".answer").after(section);
+        wonkControls.init(control);
+        const fader = field.wonkFader;
+        function draftValue() {
+          return fader.draftValue;
+        }
+        function validateDraft() {
+          const valid = fader.valid;
+          state.textContent = valid && draftValue() === appliedThreshold ? "Applied" : "Unapplied changes";
+          return valid;
+        }
+        function paintRange() {
+          range.style.setProperty("--fader-fill", `${fader.value / 30000 * 100}%`);
+        }
+        range.addEventListener("input", () => {
+          validateDraft();
+          paintRange();
+        });
+        exact.addEventListener("input", validateDraft);
+        validateDraft();
+        paintRange();
+        const selectedBatches = () => batches.filter((batch) => batch.written < appliedThreshold);
+        function updateResult() {
+          matches.textContent = `${wonk.fmt.num(selectedBatches().length)} batches`;
+          resultText.textContent = ` below ${wonk.fmt.num(appliedThreshold)} records. Dashed line: applied threshold.`;
+        }
+        matches.addEventListener("click", () => showRecords(matches, `Below ${wonk.fmt.num(appliedThreshold)} records`, selectedBatches()));
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          validateDraft();
+          if (!form.reportValidity()) return;
+          const changed = appliedThreshold !== draftValue();
+          appliedThreshold = draftValue();
+          fader.set(appliedThreshold);
+          appliedThreshold = fader.value;
+          paintRange();
+          state.textContent = "Applied";
+          updateResult();
+          chart.render();
+          if (changed) highlightResult();
+          const records = section.querySelector(".study-records");
+          if (records) {
+            wonkMotion.cancel(records.querySelector(".body"));
+            records.querySelector(".body").wonkDataTable?.destroy();
+            records.remove();
+          }
+        });
+        updateResult();
+        const chart = wonkCharts.plot(host, (tokens) => ({
+          height: 330,
+          marginLeft: 44,
+          marginRight: 60,
+          style: { fontSize: "12px", color: tokens.ink },
+          x: { label: null, ticks: [9, 10, 11, 12], tickFormat: (hour) => `${hour}:00` },
+          y: { label: null, grid: true, domain: [0, 30000], ticks: [0, 15000, 30000], tickFormat: (value) => `${value / 1000}k` },
+          color: { domain: sources, range: tokens.series, legend: true },
+          marks: [
+            Plot.ruleY([0], { stroke: tokens.grid }),
+            Plot.ruleY([appliedThreshold], { stroke: tokens.ink, strokeDasharray: "4,4" }),
+            Plot.lineY(batches, { x: "hour", y: "written", stroke: "source", strokeWidth: 2 }),
+            Plot.dot(batches, { x: "hour", y: "written", stroke: "source", fill: tokens.ground, r: 4, strokeWidth: 2, tip: true, title: (batch) => `${batch.source} / ${batch.time} UTC\n${wonk.fmt.num(batch.written)} written\n${batch.state}` }),
+          ],
+        }), { label: "Records written by source and hourly batch, 30 October 2026. Mobile writes zero after 09:00.", table: { columns, rows: batches, detail: batchDetail }, onClick: (batch) => showRecords(host, `${batch.source} / ${batch.time} UTC`, [batch]) });
+      }
+      document.querySelectorAll('input[name="view"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          glyphStops.forEach((stop) => stop());
+          document.getElementById("comparison").dataset.view = input.value;
+        });
+      });
+    });
+  </script>
+</body>
+</html>

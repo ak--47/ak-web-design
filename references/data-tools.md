@@ -3,7 +3,7 @@
 read this before building a dashboard, event explorer, import tool, or query console.
 `demo/workbench.html` is the working reference. its 12 records are local fixtures.
 `assets/wonk-data.css` is the reusable layout and component pack. `assets/wonk-data.js`
-(`window.wonkData`) renders records tables and drill-down dialogs. `demo/workbench.js`
+(`window.wonkData`) renders records tables and inline drill-downs. `demo/workbench.js`
 is example application logic on top of them, not a generic query engine.
 
 ## keep the instrument useful
@@ -32,12 +32,12 @@ say the estimate is unavailable. never invent a scan count or completion percent
 | query toolbar | `.wonk-toolbar` | wrapping labeled inputs and explicit Run/Reset buttons |
 | applied filter chip | `.wonk-filter-list`, `.wonk-filter-chip` | removable applied condition; name the remove button; restore focus after removal |
 | records table | `wonkData.table(host, opts)` | typed, sortable, selectable table with totals, row detail, and a row limit: [table module](#table-module) |
-| drill-down dialog | `dialog.wonk-drill`, `wonkData.drill()`, `[data-wonk-drill]` | the records behind a number, in a modal table with CSV download: [drill-down](#drill-down) |
+| inline drill-down | `.wonk-inline-drill`, `wonkData.inline()`, `[data-wonk-drill]` | the records behind a number, in a fold with optional CSV download: [drill-down](#drill-down) |
 | results region | `.wonk-table-scroll` | local horizontal scrolling, sticky headers, caption, keyboard focus |
 | sortable header | `button.wonk-sort` | update the owning `th[aria-sort]`; preserve numeric sorting |
 | row selection | `tr[data-selected]`, `.wonk-selection-bar` | native checkboxes, mixed select-all state, count, explicit bulk action |
 | query specification | `.wonk-query-editor`, `.wonk-query-meta` | mono editor/readout; explain whether it executes SQL or displays a specification |
-| record inspector | `dialog.wonk-inspector` | side panel using native `showModal()`, Escape, focus containment and return |
+| record inspector | `.wonk-workspace-detail` or `wonkData.inline()` | stacked inline detail, Escape, and focus return |
 | freshness strip | `.wonk-freshness` | source, timezone, snapshot timestamp, stale label |
 | job queue | `.wonk-job-list`, `.wonk-job` | ordered jobs with named state and native progress |
 | result state | `.wonk-state[data-state]` | separate empty, stale, failed, unconfigured, and permission states |
@@ -146,6 +146,50 @@ declared selection policy](#tables-need-a-declared-selection-policy)).
 
 ## drill-down
 
+### Inline is the default for new record workflows
+
+```js
+const records = wonkData.inline(document.querySelector("#record-details"), {
+  title: "Failed batches",
+  columns,
+  rows: failedBatches,
+  opener: countButton,
+  detail: (row) => row.reason,
+  download: "failed-batches.csv",
+});
+records.close();
+records.open();
+records.destroy();
+```
+
+`inline(host, opts)` returns `{element, table, open, close, destroy}`. It appends
+a full-width fold, preserves the host's existing content, and replaces only
+the prior inline drill owned by that host. Counts and tables use the same rows.
+Opening reveals and focuses the summary. Escape closes the fold and returns
+focus to a usable opener, or to the summary if that opener is hidden, disabled,
+inert, or gone. `subtitle` appears above the table, and `note` accepts text or a
+Node. Bad table options leave the previous drill and its note intact. Call
+`destroy()` before removing its host. Motion is
+optional and uses the shared pack when loaded.
+
+`drill({target: host, ...opts})` uses the same inline implementation. Registered
+`data-wonk-drill` triggers automatically use their nearest `section` or
+`.wonk-rack`; factories can provide a dedicated `target`. For compatibility,
+direct `drill()` calls without a target retain the modal API below, and a
+registered factory may explicitly request `presentation: "modal"`. New record
+workflows should always provide an inline target. Generic confirmation dialogs
+are unaffected.
+
+Tables use compact 8px vertical padding. Reading containers use `.wonk-reading`
+with section headings in `.wonk-fold`. Forms keep core fields visible and place
+advanced fields in `details.wonk-advanced`; reveal a containing fold before
+focusing a validation error. Stacked workspaces use `.wonk-workspace`,
+`.wonk-workspace-list`, and `.wonk-workspace-detail`. Selection, validation,
+save/discard, filtering, and live announcements remain application state.
+Working compositions: `demo/review.html?chosen=1`; shared APIs: `demo/refined.html`.
+
+### Legacy modal API
+
 every number that counts records opens those records
 ([hierarchy.md](hierarchy.md#numbers-lead-to-records)). `wonkData.drill(opts)`
 opens a native modal `dialog.wonk-drill` with the title, a count line
@@ -169,6 +213,7 @@ accessible description.
 ```js
 wonkData.drills({
   pipeline: () => ({
+    presentation: "modal",
     title: "Open pipeline",
     subtitle: "this quarter",
     columns: dealColumns,
@@ -176,7 +221,7 @@ wonkData.drills({
     sort: { key: "amount", dir: "desc" },
     download: "open-pipeline.csv",   // adds a Download CSV button
   }),
-  "at-risk": (el) => ({ title: "Deals at risk", columns: dealColumns, rows: atRisk, detail: (row) => row.risk }),
+  "at-risk": (el) => ({ presentation: "modal", title: "Deals at risk", columns: dealColumns, rows: atRisk, detail: (row) => row.risk }),
 });
 
 // or open one directly, from a row action or a chart mark:
@@ -263,22 +308,22 @@ last-page response. don't send a million rows to the browser to imitate the gall
 ## inspectors keep the original context
 
 ```html
-<dialog class="wonk-modal wonk-inspector" id="record" aria-labelledby="record-heading">
-  <form method="dialog"><button class="wonk-btn" autofocus>Close inspector</button></form>
-  <h2 id="record-heading">evt-004</h2>
-  <pre class="wonk-pre"><code id="payload"></code></pre>
-</dialog>
+<div id="record"></div>
 ```
 
 ```js
+const payload = document.createElement("pre");
+payload.className = "wonk-pre";
 payload.textContent = JSON.stringify(record, null, 2);
-document.querySelector('#record').showModal();
+wonkData.inline(document.querySelector("#record"), {
+  title: record.id, columns, rows: [record], note: payload, opener: recordButton,
+});
 ```
 
 render data through text nodes. event properties, SQL errors, source names, and record
 IDs can contain markup. never interpolate them into `innerHTML`. redact credentials
-before rendering or exporting. native dialog returns focus to the opener when it
-still exists; explicitly choose a remaining control if a result update removes it.
+before rendering or exporting. closing the inline drill returns focus to its
+opener when it still exists; choose a remaining control if a result update removes it.
 
 ## state copy must identify the cause
 

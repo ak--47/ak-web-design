@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" class="wonk" data-pair="metathesis">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WONK / next studies</title>
+  <script>if(new URLSearchParams(location.search).get("chosen")==="1")document.documentElement.dataset.review="chosen";</script>
+  <link rel="icon" href="data:,">
+  <script>try{var t=localStorage.getItem("wonk-theme");if(t==="paper"||(!t&&matchMedia("(prefers-color-scheme: light)").matches))document.documentElement.setAttribute("data-theme","paper")}catch(e){}</script>
+  <link rel="stylesheet" href="../assets/wonk-fonts.css">
+  <link rel="stylesheet" href="../assets/wonk-tokens.css">
+  <link rel="stylesheet" href="../assets/wonk.css">
+  <link rel="stylesheet" href="../assets/wonk-data.css">
+  <link rel="stylesheet" href="../assets/wonk-motion.css">
+  <link rel="stylesheet" href="review.css">
+  <script defer src="../assets/wonk.js"></script>
+  <script defer src="../assets/wonk-data.js"></script>
+  <script defer src="../assets/wonk-motion.js"></script>
+  <script defer src="review.js"></script>
+  <script defer src="review-checks.js"></script>
+</head>
+<body class="review">
+  <header class="review-head">
+    <div><h1>WONK / design studies</h1><p>Rounds 08-10 / choices recorded</p></div>
+    <button type="button" class="wonk-btn" data-wonk-theme-toggle>Paper</button>
+  </header>
+  <nav class="review-nav" aria-label="Design studies">
+    <a href="#reading" data-round="reading">08 / Reading</a>
+    <a href="#forms" data-round="forms">09 / Editing</a>
+    <a href="#workspace" data-round="workspace">10 / Workspace</a>
+    <a href="compare.html?approved=1">Approved baseline</a>
+    <a href="refined.html">Refined components</a>
+    <a href="review.html?chosen=1#workspace" id="review-mode-link">Chosen designs</a>
+  </nav>
+  <main>
+    <header class="review-question">
+      <div><h2 id="question">How much of a brief should stay open?</h2><p id="comparison-note">Same text, evidence, and type. Only disclosure changes.</p></div>
+      <fieldset class="review-view">
+        <legend class="wonk-sr">Comparison view</legend>
+        <label><input type="radio" name="review-view" value="both" checked><span>A + B</span></label>
+        <label><input type="radio" name="review-view" value="a"><span>A</span></label>
+        <label><input type="radio" name="review-view" value="b"><span>B</span></label>
+      </fieldset>
+    </header>
+    <section class="round-grid" id="reading" aria-label="Reading comparison" data-view="both">
+      <article class="candidate" data-variant="a"><header class="candidate-label"><span>A</span><h3>Continuous brief</h3></header><div class="preview" id="reading-a"></div></article>
+      <article class="candidate" data-variant="b"><header class="candidate-label"><span>B</span><h3>Sectioned brief</h3></header><div class="preview" id="reading-b"></div></article>
+    </section>
+    <section class="round-grid" id="forms" aria-label="Editing comparison" data-view="both" hidden>
+      <article class="candidate" data-variant="a"><header class="candidate-label"><span>A</span><h3>Full form</h3></header><div class="preview" id="forms-a"></div></article>
+      <article class="candidate" data-variant="b"><header class="candidate-label"><span>B</span><h3>Core + advanced</h3></header><div class="preview" id="forms-b"></div></article>
+    </section>
+    <section class="round-grid" id="workspace" aria-label="Workspace comparison" data-view="both" hidden>
+      <article class="candidate" data-variant="a"><header class="candidate-label"><span>A</span><h3>Stacked workspace</h3></header><div class="preview" id="workspace-a"></div></article>
+      <article class="candidate" data-variant="b"><header class="candidate-label"><span>B</span><h3>Split workspace</h3></header><div class="preview" id="workspace-b"></div></article>
+    </section>
+  </main>
+  <footer class="review-footer">Local fixtures / no backend requests / approved designs promoted in WONK 0.4.0</footer>
+</body>
+</html>
