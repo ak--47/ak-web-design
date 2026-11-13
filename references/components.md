@@ -149,7 +149,45 @@ target warns and does nothing.
 <button class="wonk-btn wonk-btn--danger">Destroy</button>
 <button class="wonk-btn wonk-btn--quiet">Nevermind</button>
 <button class="wonk-btn" disabled>Disabled</button>
+<button class="wonk-btn wonk-btn--tight">Summarize</button>  <!-- dense grids -->
 ```
+
+`.wonk-btn--tight` uses `--ak-track-btn-tight` (0.06em) instead of
+`--ak-track-btn` (0.08rem). Use it in dense grids of mono buttons (3 or more
+columns) and in narrow surfaces. Default buttons keep the wider tracking.
+
+### icon glyphs
+
+A fixed Unicode text glyph can act as a small icon on a button or before a
+section title. Use `.wonk-icon-glyph` with `aria-hidden="true"`. The label
+still names the action.
+
+```html
+<button class="wonk-btn wonk-btn--tight"><span class="wonk-icon-glyph" aria-hidden="true">∑</span>Summarize</button>
+<h3><span class="wonk-icon-glyph" aria-hidden="true">⊕</span>Projects</h3>
+```
+
+The class sets a fixed 1.2em width, so labels align when the platform
+fallback font draws the glyph (IBM Plex Mono has none of these). The glyph is
+`--ak-ink-2` at rest and `--ak-a1-text` when its button, link, or summary is
+hovered. On a danger or primary button it takes the button text color.
+
+Glyphs that render as text (macOS Chrome, checked):
+
+| use | glyphs |
+|---|---|
+| actions | ¶ ⌗ ⋈ ◐ ✎ ◇ ⊞ ❝ ≣ ∑ § ↧ № ↺ ⋔ |
+| section titles | ⊕ ◉ ⇄ ✦ ↯ ▷ ⧉ ⚑ ∞ ◎ ⁂ ▥ |
+| controls | ♫ (radio), ⚄ (dice), ☾ ☼ (theme), ⋯ (menu) |
+
+Do not use a code point with the Unicode Emoji property. Some draw as color
+emoji: ▶ ⏺ ⚙ ⚒ ⌨ ⚡ ℹ ☀. Use ▷ for play and ☼ for light. `npm test` fails on
+an emoji-presentation glyph in demo or template HTML, and on any Emoji code
+point inside a `.wonk-icon-glyph`. A U+FE0E after the code point forces text
+and passes.
+
+Use a glyph that changes on hover (`data-glyph-rest`) for an icon control
+that shows activity: [easter-eggs.md § motion eggs](easter-eggs.md#motion-eggs).
 
 ## Forms
 
@@ -594,7 +632,7 @@ resume when it turns off.
 | `wonk.palette.presets` | frozen list of the five preset names |
 | `wonk.drawer(button)` | wire one `[data-wonk-drawer]` button (init does this) |
 | `wonk.live(el)` | irregular live jitter (`[data-wonk-live]`) |
-| `wonk.glyph(el)` / `wonk.glyphs` | glyph handle (`start`, `stop`, `next`, `destroy`) / frozen 561-symbol pool; [glyph contracts](easter-eggs.md#motion-eggs) |
+| `wonk.glyph(el)` / `wonk.glyphs` | glyph handle (`start`, `stop`, `next`, `setActive`, `destroy`) / frozen 561-symbol pool; [glyph contracts](easter-eggs.md#motion-eggs) |
 | `wonk.scatter(el)` | hover type scatter (`[data-wonk-scatter]`) |
 | `wonk.tabs(root)` | wire one `.wonk-tabs` (ARIA + keyboard); a new selection fires `wonk:tabchange` |
 | `wonk.menu(details)` | wire one `.wonk-menu` (close on choose, Escape, edge flip) |

@@ -5,6 +5,31 @@ This file is the upgrade guide for apps that vendor a copy of `assets/`.
 `--wonk-version` token always carry the same number; `npm test` fails when
 they differ.
 
+## 0.5.0 (2026-11-13)
+
+Copy the complete `assets/` folder and update the consuming app's version pin.
+Nothing existing changes behavior except the inline drill layout.
+
+- **Inline drill width.** `wonkData.inline()` folds now use the full width of
+  their host, and the table lines up with the host's left edge (the drill body
+  drops the fold rail). Before, the `.wonk-fold > .body` 65ch reading cap squeezed the
+  records table to about 590px and made it scroll sideways in a wide rack.
+  Prose folds keep 65ch. Delete any app-local
+  `.wonk-inline-drill > .body { max-width: none; }` override.
+- **Rest glyph.** `data-glyph-rest` on a `data-wonk-glyph` keeps the markup
+  glyph at rest and restores it on leave, blur, Escape, disabled, and reduced
+  motion. Hover or keyboard focus cycles. `handle.setActive(bool)` cycles at
+  `data-glyph-active-ms` (default 700) for "playing" or "working". Apps that
+  forked the glyph engine for icons can delete the fork.
+- **Icon glyphs.** `.wonk-icon-glyph` sets a fixed-width text glyph icon:
+  `--ak-ink-2`, accent on hover, button color on danger and primary.
+  components.md § icon glyphs lists text-safe glyphs and glyphs that draw as
+  emoji. `npm test` fails on emoji glyphs in demo and template HTML.
+- **Tight button tracking.** `--ak-track-btn-tight` (0.06em) and
+  `.wonk-btn--tight` for dense mono button grids.
+- **Density floor.** hierarchy.md: compact rows keep at least 10px vertical
+  padding, and gutters stay at least `--ak-s4`, also in narrow surfaces.
+
 ## 0.4.0 (2026-10-30)
 
 Copy the complete `assets/` folder and update the consuming app's version pin.

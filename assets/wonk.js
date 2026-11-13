@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.4.0 · wonk.js · behaviors for the WONK design system
+   WONK v0.5.0 · wonk.js · behaviors for the WONK design system
    Dependency-free. Safe to load once per page.
    Everything respects prefers-reduced-motion.
    ============================================================ */
@@ -102,6 +102,10 @@
   // ---- glyph morph ----
   // Slow cycle through glyphs + token colors; strobes on hover.
   // Apply to any element with [data-wonk-glyph].
+  // [data-glyph-rest] makes it an icon: the markup glyph stays at rest and
+  // returns on leave, blur, Escape, disabled, and reduced motion. Hover or
+  // keyboard focus cycles at 200ms; setActive(true) cycles at
+  // data-glyph-active-ms (default 700) with no hover.
   const glyphCodes = [
     0x223f, 0x2301, 0x2325, 0x29c9,
     0x0393, 0x0394, 0x0398, 0x039b, 0x039e, 0x03a0, 0x03a3, 0x03a6, 0x03a8, 0x03a9,
@@ -125,9 +129,14 @@
   function glyph(el) {
     const known = WIRED.glyph.get(el);
     if (known) { engage(known); return known; }
-    const idle = Number(el.dataset.glyphIdle ?? 1500);
+    const rest = el.hasAttribute("data-glyph-rest") ? el.textContent.trim() : null;
+    if (rest === "") throw new TypeError("wonk.glyph: data-glyph-rest needs a glyph in the markup");
+    const idle = Number(el.dataset.glyphIdle ?? (rest === null ? 1500 : 0));
     if (!Number.isFinite(idle) || idle < 0) throw new TypeError("wonk.glyph: data-glyph-idle must be a non-negative duration");
-    let slow = null, strobe = null, running = false;
+    if (rest !== null && idle) throw new TypeError("wonk.glyph: data-glyph-rest has no idle cycle; remove data-glyph-idle or set it to 0");
+    const activeMs = Number(el.dataset.glyphActiveMs ?? 700);
+    if (!Number.isFinite(activeMs) || activeMs <= 0) throw new TypeError("wonk.glyph: data-glyph-active-ms must be a positive duration");
+    let slow = null, strobe = null, running = false, active = false;
     let bag = [];
     let previous = null;
     let animation;
@@ -155,22 +164,33 @@
     // swapping forever in the background
     const swap = () => {
       if (!el.isConnected) { d.destroy(); return; }
-      if (reduced() || document.hidden || trigger.matches(":disabled")) return;
+      if (reduced() || document.hidden || trigger.matches(":disabled")) {
+        if (rest !== null) el.textContent = rest;
+        return;
+      }
       paint();
     };
-    el.textContent = next();
+    if (rest === null) el.textContent = next();
     const d = {
       el,
       start() {
         if (running || reduced()) return;
         running = true;
-        if (idle && !document.hidden) slow = setInterval(swap, idle);
+        const every = rest === null ? idle : active ? activeMs : 0;
+        if (every && !document.hidden) slow = setInterval(swap, every);
       },
       stop() {
         running = false;
         clearInterval(slow);
         clearTimeout(strobe);
         animation?.cancel();
+        if (rest !== null) el.textContent = rest;
+      },
+      setActive(on) {
+        if (rest === null) throw new TypeError("wonk.glyph: setActive needs data-glyph-rest");
+        active = Boolean(on);
+        d.stop();
+        if (!reduced()) d.start();
       },
       next() { if (!reduced()) swap(); return el.textContent; },
       destroy() {
@@ -178,6 +198,7 @@
         trigger.removeEventListener("mouseenter", hover);
         trigger.removeEventListener("mouseleave", leave);
         trigger.removeEventListener("blur", leave);
+        trigger.removeEventListener("focus", focus);
         trigger.removeEventListener("click", burst);
         window.removeEventListener("keydown", escape, true);
         document.removeEventListener("visibilitychange", visibility);
@@ -203,11 +224,17 @@
     function hover() { cycle(null); }
     function burst() { cycle(6); }
     function leave() { d.stop(); if (!reduced()) d.start(); }
-    function escape(event) { if (event.key === "Escape") d.stop(); }
+    function escape(event) {
+      if (event.key !== "Escape") return;
+      if (rest === null) d.stop();
+      else leave();
+    }
+    function focus() { if (rest !== null && trigger.matches(":focus-visible")) cycle(null); }
     function visibility() { if (document.hidden) d.stop(); else if (!reduced()) d.start(); }
     trigger.addEventListener("mouseenter", hover);
     trigger.addEventListener("mouseleave", leave);
     trigger.addEventListener("blur", leave);
+    trigger.addEventListener("focus", focus);
     trigger.addEventListener("click", burst);
     window.addEventListener("keydown", escape, true);
     document.addEventListener("visibilitychange", visibility);
@@ -2002,6 +2029,6 @@
     vu, knob, scope: scopeWidget, glossary, tip, hint, foldAll, foldState, fmt,
     theme: { init: initTheme },
     palette: Object.freeze({ init: initPalette, roll: rollPalette, generate: generatePalette, mount: palettePicker, presets: Object.freeze([...PAIRS]) }),
-    drawer, version: "0.4.0",
+    drawer, version: "0.5.0",
   };
 })();

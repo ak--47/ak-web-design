@@ -224,6 +224,27 @@
         assert(!second.element.open && document.activeElement === opener, "Escape closes and restores focus");
         second.destroy(); host.remove();
       });
+      await check("inline drills: the body fills its host flush left; a prose fold keeps 65ch", () => {
+        const host = document.createElement("section");
+        host.style.width = "1200px";
+        const prose = document.createElement("details");
+        prose.className = "wonk-fold";
+        prose.open = true;
+        prose.innerHTML = `<summary>How this works</summary><div class="body"><p>${"word ".repeat(200)}</p></div>`;
+        host.append(prose);
+        document.body.append(host);
+        const drill = wonkData.inline(host, { title: "Wide", columns: [{ key: "a" }, { key: "b" }], rows: [{ a: "x".repeat(200), b: 1 }] });
+        try {
+          const hostW = host.getBoundingClientRect().width;
+          const bodyW = drill.element.querySelector(".body").getBoundingClientRect().width;
+          assert(bodyW >= hostW * 0.9, `drill body ${Math.round(bodyW)}px is under 90% of host ${Math.round(hostW)}px`);
+          const tableL = drill.element.querySelector("table").getBoundingClientRect().left;
+          assert(Math.abs(tableL - host.getBoundingClientRect().left) < 1, `drill table starts ${Math.round(tableL - host.getBoundingClientRect().left)}px right of its host`);
+          const proseBody = prose.querySelector(".body");
+          const ch = parseFloat(getComputedStyle(proseBody).maxWidth);
+          assert(getComputedStyle(proseBody).maxWidth.endsWith("px") && proseBody.getBoundingClientRect().width <= ch + 0.5 && proseBody.getBoundingClientRect().width < hostW * 0.9, `prose body ${Math.round(proseBody.getBoundingClientRect().width)}px is not capped`);
+        } finally { drill.destroy(); host.remove(); }
+      });
       await check("inline drills: failed replacement preserves note and close finds usable focus", () => {
         const host = document.createElement("section");
         const opener = document.createElement("button");

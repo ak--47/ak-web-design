@@ -165,6 +165,8 @@ records.destroy();
 `inline(host, opts)` returns `{element, table, open, close, destroy}`. It appends
 a full-width fold, preserves the host's existing content, and replaces only
 the prior inline drill owned by that host. Counts and tables use the same rows.
+The inline drill body is full width with no rail, so the table lines up with
+the host's left edge. Prose folds stay at 65ch.
 Opening reveals and focuses the summary. Escape closes the fold and returns
 focus to a usable opener, or to the summary if that opener is hidden, disabled,
 inert, or gone. `subtitle` appears above the table, and `note` accepts text or a

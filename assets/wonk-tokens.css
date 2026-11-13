@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.4.0 · design tokens · the aesthetic of maximalism
+   WONK v0.5.0 · design tokens · the aesthetic of maximalism
    Source of truth for the AK design system.
    Dark-first. Paper is the light mode. One poster pair per app.
 
@@ -12,7 +12,7 @@
    ============================================================ */
 
 :root {
-  --wonk-version: "0.4.0"; /* matches VERSION and wonk.version */
+  --wonk-version: "0.5.0"; /* matches VERSION and wonk.version */
 
   /* ---- type ---- */
   --ak-font-sans: "Space Grotesk", system-ui, -apple-system, sans-serif;
@@ -30,6 +30,7 @@
   --ak-track-label: 0.06em;
   --ak-track-title: 0.3rem;
   --ak-track-btn: 0.08rem; /* buttons stay mono/uppercase but read as words */
+  --ak-track-btn-tight: 0.06em; /* .wonk-btn--tight: dense button grids, small text */
 
   /* ---- geometry ---- */
   --ak-radius: 4px;

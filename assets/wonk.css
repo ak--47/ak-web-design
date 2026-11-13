@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.4.0 · components · requires wonk-tokens.css
+   WONK v0.5.0 · components · requires wonk-tokens.css
    Class prefix: .wonk-
    Fonts: load Space Grotesk (400,500,700) + IBM Plex Mono (400,500,600,700)
    ============================================================ */
@@ -143,6 +143,28 @@
 .wonk-btn--danger:hover { background: color-mix(in srgb, var(--ak-err) 12%, transparent); }
 .wonk-btn--quiet { border-color: transparent; color: var(--ak-ink-2); }
 .wonk-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+/* dense mono button grids and small surfaces: em tracking scales with size */
+.wonk-btn--tight { letter-spacing: var(--ak-track-btn-tight); }
+
+/* a fixed text glyph used as an icon (aria-hidden; the label names the
+   action). Pick from the text-safe list in components.md § icon glyphs. */
+.wonk-icon-glyph {
+  display: inline-block;
+  width: 1.2em;
+  flex: 0 0 1.2em;
+  text-align: center;
+  font-family: var(--ak-font-mono);
+  font-variant-emoji: text;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ak-ink-2);
+  transition: color var(--ak-t-fast) var(--ak-ease);
+}
+:is(button, a, summary):not([disabled]):hover > .wonk-icon-glyph { color: var(--ak-a1-text); }
+.wonk-btn--danger > .wonk-icon-glyph,
+.wonk-btn--danger:not([disabled]):hover > .wonk-icon-glyph,
+.wonk-btn--primary > .wonk-icon-glyph,
+.wonk-btn--primary:not([disabled]):hover > .wonk-icon-glyph { color: inherit; }
 
 /* ---- forms ---- */
 .wonk-field { display: flex; flex-direction: column; gap: var(--ak-s2); margin-bottom: var(--ak-s4); }

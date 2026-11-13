@@ -191,6 +191,58 @@
     } finally { iso.cleanup(); }
   });
 
+  check("glyph rest mode: markup glyph at rest, restored on leave, blur, Escape, disabled, and reduced motion", async () => {
+    const iso = await loadIsolatedWonk();
+    try {
+      const { win, doc } = iso;
+      const button = doc.createElement("button");
+      button.innerHTML = `<span data-wonk-glyph data-glyph-rest data-glyph-active-ms="650">♫</span>`;
+      doc.body.append(button);
+      const el = button.firstElementChild;
+      const { calls: atRest } = withTimerSpy(win, "setInterval", () => win.wonk.glyph(el));
+      const glyph = win.wonk.glyph(el);
+      assert(el.textContent === "♫", `wire time kept the markup glyph, got ${el.textContent}`);
+      assert(atRest.length === 0, "rest mode schedules no idle interval");
+      button.dispatchEvent(new win.MouseEvent("mouseenter"));
+      assert(el.textContent !== "♫", "hover cycles away from the rest glyph");
+      button.dispatchEvent(new win.MouseEvent("mouseleave"));
+      assert(el.textContent === "♫", "leave restores the rest glyph");
+      button.dispatchEvent(new win.MouseEvent("mouseenter"));
+      button.dispatchEvent(new win.FocusEvent("blur"));
+      assert(el.textContent === "♫", "blur restores the rest glyph");
+      button.dispatchEvent(new win.MouseEvent("mouseenter"));
+      win.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape" }));
+      assert(el.textContent === "♫", "Escape restores the rest glyph");
+      const { calls: activeCalls } = withTimerSpy(win, "setInterval", () => glyph.setActive(true));
+      assert(activeCalls.length === 1 && activeCalls[0].args[1] === 650, "setActive(true) cycles at data-glyph-active-ms");
+      activeCalls[0].args[0]();
+      assert(el.textContent !== "♫", "an active tick cycles");
+      button.disabled = true;
+      activeCalls[0].args[0]();
+      assert(el.textContent === "♫", "a disabled trigger shows the rest glyph");
+      button.disabled = false;
+      activeCalls[0].args[0]();
+      iso.setReduced(true);
+      assert(el.textContent === "♫", "reduced motion restores the rest glyph");
+      const { calls: reducedCalls } = withTimerSpy(win, "setInterval", () => glyph.setActive(true));
+      assert(reducedCalls.length === 0, "reduced motion suppresses the active cycle");
+      iso.setReduced(false);
+      glyph.setActive(false);
+      assert(el.textContent === "♫", "setActive(false) shows the rest glyph");
+      glyph.destroy();
+      const bad = (html) => { const host = doc.createElement("div"); host.innerHTML = html; try { win.wonk.glyph(host.firstElementChild); return false; } catch (err) { return err instanceof win.TypeError; } };
+      assert(bad(`<span data-wonk-glyph data-glyph-rest></span>`), "an empty rest glyph throws");
+      assert(bad(`<span data-wonk-glyph data-glyph-rest data-glyph-idle="1500">♫</span>`), "rest with an idle cycle throws");
+      assert(bad(`<span data-wonk-glyph data-glyph-rest data-glyph-active-ms="0">♫</span>`), "a zero active cadence throws");
+      const plain = doc.createElement("span");
+      plain.dataset.glyphIdle = "0";
+      doc.body.append(plain);
+      let threw = false;
+      try { win.wonk.glyph(plain).setActive(true); } catch (err) { threw = err instanceof win.TypeError; }
+      assert(threw, "setActive without data-glyph-rest throws");
+    } finally { iso.cleanup(); }
+  });
+
   check("reduced motion flipped on mid-session stops live and vu loops; flipped off resumes them", async () => {
     const iso = await loadIsolatedWonk();
     try {

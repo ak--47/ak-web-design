@@ -46,6 +46,11 @@ it: a total of 12 deals opens those 12 deals. see
   `details.wonk-advanced`. Reveal invalid fields before focusing them.
 - Workspaces: `.wonk-workspace` stacks `.wonk-workspace-list` above
   `.wonk-workspace-detail`. Use compact rows and preserve selection by ID.
+- Compact has a floor, also in narrow surfaces (popups, side panels):
+  - rows keep at least 10px vertical padding,
+  - outer gutters stay at least `--ak-s4`,
+  - gaps between buttons and grid cells stay at least `--ak-s3`,
+  - card padding stays at least `--ak-s3`.
 - Counts: open matching records with `wonkData.inline(host, opts)`. Full
   quantities are comma-grouped; compact K/M output remains appropriate.
 

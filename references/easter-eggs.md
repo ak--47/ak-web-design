@@ -57,6 +57,30 @@ unmount. `wonk.glyphs` exposes the frozen symbol pool. Font coverage depends
 on the platform; the local Chromium rendering audit passes. Use one in a
 brand corner or footer, not on every record or incident indicator.
 
+### Rest glyph: a glyph that is an icon
+
+`data-glyph-rest` turns the morph into an icon control. An icon must keep its
+meaning, so it returns to its own glyph when interaction stops.
+
+```html
+<button type="button" class="wonk-glyph" aria-label="Radio" aria-pressed="false">
+  <span data-wonk-glyph data-glyph-rest data-glyph-active-ms="700" aria-hidden="true">♫</span>
+</button>
+```
+
+- At rest, the element shows its markup glyph. Wiring does not replace it.
+- Hover or `:focus-visible` cycles at 200ms. Leave, blur, and Escape restore
+  the rest glyph. A click plays the burst, then restores it.
+- `handle.setActive(true)` cycles at `data-glyph-active-ms` (default 700) with
+  no hover. Use it for "playing" or "working". `setActive(false)` restores the
+  rest glyph. Hover during the active state strobes, then returns to it.
+- A disabled trigger and reduced motion (also when it turns on mid-session)
+  always show the rest glyph.
+- Rest mode has no idle cycle. `data-glyph-idle` other than 0 throws, an
+  empty markup glyph throws, and `setActive` without `data-glyph-rest` throws.
+- Pick the rest glyph from the text-safe list in
+  [components.md § icon glyphs](components.md#icon-glyphs).
+
 The type scatter (`data-wonk-scatter`) makes a short display word spring
 apart letter-by-letter on hover and snap back on leave. Hero titles and
 wordmarks only, never body text, one per view.

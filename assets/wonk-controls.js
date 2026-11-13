@@ -1,5 +1,5 @@
 /* ============================================================
-   WONK v0.4.0 · wonk-controls.js · instrument controls pack for WONK data tools
+   WONK v0.5.0 · wonk-controls.js · instrument controls pack for WONK data tools
    Depends on wonk.js (loaded first) and wonk-controls.css.
    Dependency-free otherwise. Safe to load once per page.
 

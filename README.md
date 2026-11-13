@@ -110,7 +110,7 @@ const SKILL = path.join(os.homedir(), ".agents/skills/ak-web-design/assets");
 const LOCAL = path.resolve("public/wonk");
 const FILES = ["wonk-fonts.css", "wonk-tokens.css", "wonk.css", "wonk.js"];
 
-const PINNED = "0.4.0"; // the WONK version this app vendors
+const PINNED = "0.5.0"; // the WONK version this app vendors
 
 test("vendored WONK files match the skill",
   { skip: !existsSync(SKILL) && `no skill checkout at ${SKILL} (CI): drift not checked` },

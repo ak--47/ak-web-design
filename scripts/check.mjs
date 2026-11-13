@@ -13,6 +13,8 @@
 // selector matches an element and the page threw no error.
 // Before any browser starts, checkVersion() compares VERSION with every
 // asset header, wonk.version, and --wonk-version, and exits 1 on a mismatch.
+// checkEmojiGlyphs() then fails on emoji-presentation glyphs in demo/ and
+// templates/ HTML.
 // The static server lives in scripts/server.mjs (shared with npm run serve).
 // Only dependency: playwright.
 // ============================================================
@@ -72,6 +74,31 @@ function checkVersion() {
   console.log(`PASS version › VERSION ${version} matches ${assets.length} asset headers, wonk.version, and --wonk-version`);
 }
 checkVersion();
+
+// ---- emoji glyphs: runs before the browser starts ----
+// A code point with default emoji presentation draws as a color emoji on
+// macOS. In demo/ and templates/ HTML, fail on any such code point, and on
+// any Emoji-property code point inside a .wonk-icon-glyph (those flip to
+// emoji in some fonts). U+FE0E after the code point forces text and passes.
+function checkEmojiGlyphs() {
+  const files = [
+    ...fs.readdirSync(path.join(ROOT, "demo")).filter((f) => f.endsWith(".html")).map((f) => `demo/${f}`),
+    ...fs.readdirSync(path.join(ROOT, "templates")).filter((f) => f.endsWith(".html")).map((f) => `templates/${f}`),
+  ];
+  const bad = [];
+  const hex = (ch) => `U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), "utf8");
+    for (const m of src.matchAll(/\p{Emoji_Presentation}(?!\uFE0E)/gu)) bad.push(`${f}: ${m[0]} ${hex(m[0])} has default emoji presentation`);
+    for (const m of src.matchAll(/class="[^"]*\bwonk-icon-glyph\b[^"]*"[^>]*>([^<]*)</g)) {
+      for (const e of m[1].matchAll(/(?![#*0-9])\p{Emoji}(?!\uFE0E)/gu)) bad.push(`${f}: ${e[0]} ${hex(e[0])} in a .wonk-icon-glyph can render as emoji`);
+    }
+  }
+  for (const line of bad) console.log(`FAIL emoji › ${line}`);
+  if (bad.length) process.exit(1);
+  console.log(`PASS emoji › no emoji-presentation glyphs in ${files.length} demo and template pages`);
+}
+checkEmojiGlyphs();
 
 // ---- suite selection ----
 const filter = process.argv.slice(2);

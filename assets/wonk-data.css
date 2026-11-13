@@ -1,4 +1,4 @@
-/* WONK v0.4.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
+/* WONK v0.5.0 · data workbench. Load after wonk.css. Native HTML owns semantics. */
 .wonk-workbench { max-width: 90rem; margin: auto; padding: var(--ak-s6); }
 .wonk-workbench > * + * { margin-top: var(--ak-s6); }
 .wonk-rack { border: var(--ak-hairline-w) solid var(--ak-hairline-strong); border-radius: var(--ak-radius); background: var(--ak-surface); min-width: 0; }
@@ -23,7 +23,9 @@
 .wonk-table :is(th, td) { padding-block: var(--ak-s2); }
 .wonk-inline-drill { grid-column: 1 / -1; min-width: 0; margin-block: var(--ak-s4); padding-top: var(--ak-s3); border-top: 1px solid var(--ak-hairline); }
 .wonk-inline-drill > summary { min-height: 44px; }
-.wonk-inline-drill > .body { min-width: 0; }
+/* a table, not prose: lift the 65ch fold cap and drop the rail so the
+   table lines up with the host's left edge */
+.wonk-inline-drill > .body { min-width: 0; max-width: none; padding-left: 0; border-left: 0; }
 .wonk-reading { max-width: 65ch; margin-inline: auto; font-size: var(--ak-text-md); line-height: 1.7; }
 .wonk-reading > .wonk-fold { border-top: 1px solid var(--ak-hairline); padding-block: var(--ak-s4); }
 .wonk-reading > .wonk-fold > summary { font-size: var(--ak-text-lg); min-height: 44px; }

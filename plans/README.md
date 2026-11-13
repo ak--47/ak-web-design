@@ -37,8 +37,13 @@ bug, and copy), a WONK audit, and the dm4 radio.
 | 011 | AK feedback | Radio album art + hover enlarge (with select caret, a.wonk-btn border, live divider fixes done directly) | S-M | 010 | DONE (see git log) |
 | 012 | cerebros | Suggested improvements from the Cerebros 0.2 upgrade (CSV dates + formula guard, focus rules, lazy detail, table/fold/tab events, styling, docs) | M | 001-011 | DONE in 0.3.0 (item 5's `rowClass` skipped) |
 | 013 | dm4 | Suggested improvements from the dm4 0.2 re-vendor (`CSS` guard at load, sticky focus hint, hint overlap + Escape decisions, Tailwind adapter + cascade docs, hint placement rules) | S-M | 001-011 | DONE in 0.3.0 (item 5, `wonk.color`, REJECTED by AK) |
+| 014 | mp-tweaks | Suggested improvements from the MP Tweaks 0.4 upgrade (rest glyph, icon glyphs, tight button tracking, density floor, narrow header) | M | 013 | DONE in 0.5.0 (item 5, narrow header, skipped by AK) |
+| 015 | cerebros | The inline drill table is capped at 65ch | S | 013 | DONE in 0.5.0 (drill body also drops the fold rail, per AK) |
 
-All plans are DONE and live in `completed/`. `npm test`: 217 passed, 0 failed.
+All plans are DONE and live in `completed/`. `npm test`: 256 passed, 0 failed.
+
+AK's decisions for 014/015 (2026-11-13): ship 014 items 1-4, skip item 5; the
+inline drill body is flush left with no rail; the release is 0.5.0 (new API).
 
 AK's decisions for 012/013 (2026-09-24): hint overlap uses smart placement
 (013 item 3, option a); element defaults move to `:where(.wonk)` (013 item 8);
